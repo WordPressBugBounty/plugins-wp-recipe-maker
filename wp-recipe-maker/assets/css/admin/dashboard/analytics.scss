@@ -1,0 +1,62 @@
+.wprm-admin-dashboard-block-chart {
+    padding: 10px 0;
+    border-top: 1px solid #ddd;
+
+    &:first-child {
+        border-top: none;
+        padding-top: 0;
+    }
+
+    .wprm-admin-dashboard-block-chart-title {
+        font-weight: bold;
+        font-size: 1.1em;
+        margin-bottom: 10px;
+    }
+}
+
+table.wprm-admin-dashboard-block-chart-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th:nth-child(1) {
+        text-align: left;
+    }
+
+    td { 
+        padding: 3px 0;
+
+        &:nth-child(2),
+        &:nth-child(3) {
+            width: 75px;
+            text-align: center;
+        }
+
+        .wprm-admin-dashboard-block-chart-table-recipe {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            .wprm-admin-dashboard-block-chart-table-recipe-name {
+                flex: 1;
+            }
+
+            .wprm-admin-dashboard-block-chart-table-actions {
+                flex-shrink: 0;
+                margin-left: 5px;
+    
+                display: flex;
+                align-items: center;
+    
+                .wprm-admin-dashboard-block-chart-table-action {
+                    margin-left: 10px;
+                }
+            }
+        }
+    }
+
+    tbody {
+        tr:hover {
+            background-color: #eee;
+        }
+    }
+}

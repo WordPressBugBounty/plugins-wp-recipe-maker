@@ -1,0 +1,37 @@
+.wprm-admin-dashboard-marketing {
+    .wprm-admin-dashboard-block-container {
+        margin-bottom: 0;
+    }
+
+    .wprm-admin-dashboard-marketing-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        a.wprm-admin-dashboard-marketing-actions-remove {
+            font-size: 12px;
+            margin: 0 10px;
+        }
+    }
+}
+
+.wprm-admin-dashboard-marketing-countdown {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+
+    .wprm-admin-dashboard-marketing-countdown-unit {
+        display: flex;
+        align-items: center;
+
+        margin-right: 10px;
+
+        .tick {
+            margin-right: 5px;
+        }
+    }
+
+    .wprm-admin-dashboard-marketing-countdown-label {
+        margin-left: -5px;
+    }
+}

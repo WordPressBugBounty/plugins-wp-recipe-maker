@@ -1,0 +1,687 @@
+{
+    "news": [
+        {
+            "date": "2024-09-19",
+            "label": "Release",
+            "title": "WP Recipe Maker 9.6.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-9-6-0/"
+        },
+        {
+            "date": "2024-09-10",
+            "label": "Blog",
+            "title": "Maximizing Profits: Top Ad Networks for Food Blogs",
+            "url": "https://bootstrapped.ventures/food-blog-networks/"
+        },        {
+            "date": "2024-09-03",
+            "label": "Blog",
+            "title": "Master Overhead Food Shots with These Pro Tricks",
+            "url": "https://bootstrapped.ventures/overhead-photography/"
+        },
+        {
+            "date": "2024-08-29",
+            "label": "Blog",
+            "title": "Navigating the Calories: A Food Blogger's Guide to Staying Healthy",
+            "url": "https://bootstrapped.ventures/how-do-food-bloggers-eat-so-much/"
+        },
+        {
+            "date": "2024-08-13",
+            "label": "Blog",
+            "title": "The Food Bloggers' Guide to Tax Deductions",
+            "url": "https://bootstrapped.ventures/food-blogger-tax-deductions/"
+        },
+        {
+            "date": "2024-08-07",
+            "label": "Blog",
+            "title": "Step Up Your Food Blogging: 7 Key Pieces of Equipment",
+            "url": "https://bootstrapped.ventures/food-blogger-equipment/"
+        },
+        {
+            "date": "2024-07-23",
+            "label": "Blog",
+            "title": "Craft Your Food Blog Media Kit Like a Pro",
+            "url": "https://bootstrapped.ventures/food-blogger-media-kit/"
+        },
+        {
+            "date": "2024-06-27",
+            "label": "Blog",
+            "title": "Culinary Translation Essentials for Food Professionals",
+            "url": "https://bootstrapped.ventures/culinary-translation/"
+        },
+        {
+            "date": "2024-06-24",
+            "label": "Blog",
+            "title": "Top 10 Cooking Affiliate Programs to Join",
+            "url": "https://bootstrapped.ventures/cooking-affiliate-programs/"
+        },
+        {
+            "date": "2024-06-20",
+            "label": "Blog",
+            "title": "How to Market Your Spice Blends with Success",
+            "url": "https://bootstrapped.ventures/sell-spices-online/"
+        },
+        {
+            "date": "2024-06-14",
+            "label": "Blog",
+            "title": "A Foodie's Guide to Instagram Bio Brilliance",
+            "url": "https://bootstrapped.ventures/bio-for-food-bloggers/"
+        },
+        {
+            "date": "2024-06-11",
+            "label": "Release",
+            "title": "WP Recipe Maker 9.5.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-9-5-0/"
+        },
+        {
+            "date": "2024-05-30",
+            "label": "Blog",
+            "title": "Cook Mode: How To Keep Your Screen Bright While Cooking",
+            "url": "https://bootstrapped.ventures/cook-mode/"
+        },
+        {
+            "date": "2024-05-27",
+            "label": "Blog",
+            "title": "Understanding the Differences Between Food Bloggers and Vloggers",
+            "url": "https://bootstrapped.ventures/food-blogger-or-vlogger/"
+        },
+        {
+            "date": "2024-05-23",
+            "label": "Blog",
+            "title": "Top Recipe Sharing Sites for Home Cooks",
+            "url": "https://bootstrapped.ventures/recipe-sharing-website/"
+        },
+        {
+            "date": "2024-05-21",
+            "label": "Blog",
+            "title": "Find Your Food Blog Niche: Expert Tips",
+            "url": "https://bootstrapped.ventures/find-your-food-blog-niche-expert-tips/"
+        },
+        {
+            "date": "2024-05-15",
+            "label": "Blog",
+            "title": "Turn Your Food Blogs into Profit: Top Affiliate Programs",
+            "url": "https://bootstrapped.ventures/food-blog-affiliate-programs/"
+        },
+        {
+            "date": "2024-05-13",
+            "label": "Blog",
+            "title": "The Art of Recipe Writing: Strategies for Success",
+            "url": "https://bootstrapped.ventures/recipe-guidelines/"
+        },
+        {
+            "date": "2024-05-09",
+            "label": "Blog",
+            "title": "Food Blogs and the Intent Behind Lengthy Stories",
+            "url": "https://bootstrapped.ventures/why-do-recipe-blogs-have-stories/"
+        },
+        {
+            "date": "2024-05-07",
+            "label": "Blog",
+            "title": "Boost Your Cooking Recognition: Recipe Submission Tips",
+            "url": "https://bootstrapped.ventures/submit-recipe/"
+        },
+        {
+            "date": "2024-05-04",
+            "label": "Blog",
+            "title": "Pave Your Way in the Food Industry: How to Sell a Recipe to a Company",
+            "url": "https://bootstrapped.ventures/sell-your-recipe/"
+        },
+        {
+            "date": "2024-05-02",
+            "label": "Blog",
+            "title": "Maximizing Your Recipes: How Much Should You Sell For",
+            "url": "https://bootstrapped.ventures/how-much-is-a-recipe-worth/"
+        },
+        {
+            "date": "2024-04-30",
+            "label": "Blog",
+            "title": "The Art of Engaging: Creative Food Quotes for Food Bloggers",
+            "url": "https://bootstrapped.ventures/food-blogging-captions/"
+        },
+        {
+            "date": "2024-04-29",
+            "label": "Release",
+            "title": "WP Recipe Maker 9.4.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-9-4-0/"
+        },
+        {
+            "date": "2024-04-25",
+            "label": "Blog",
+            "title": "Your Guide to AI-Generated Recipes",
+            "url": "https://bootstrapped.ventures/ai-for-cooking/"
+        },
+        {
+            "date": "2024-04-22",
+            "label": "Blog",
+            "title": "Navigating copyright and your recipes: What’s protected",
+            "url": "https://bootstrapped.ventures/recipe-copyright/"
+        },
+        {
+            "date": "2024-04-18",
+            "label": "Blog",
+            "title": "Master the Art of Recipe Testing: A Comprehensive Guide",
+            "url": "https://bootstrapped.ventures/recipe-testing/"
+        },
+        {
+            "date": "2024-04-11",
+            "label": "Blog",
+            "title": "Beyond Cooking: Exploring the Science of Recipe Development",
+            "url": "https://bootstrapped.ventures/how-to-develop-a-recipe/"
+        },
+        {
+            "date": "2024-04-08",
+            "label": "Blog",
+            "title": "The Essential Food Blogging Courses for Aspiring Bloggers",
+            "url": "https://bootstrapped.ventures/food-blogging-course/"
+        },
+        {
+            "date": "2024-03-28",
+            "label": "Blog",
+            "title": "Unlocking the Secrets of Food Videography: Essential Gear and Tools",
+            "url": "https://bootstrapped.ventures/food-videography-equipment/"
+        },
+        {
+            "date": "2024-03-15",
+            "label": "Blog",
+            "title": "How to Set Up Lights for Cooking Videos (Complete Guide)",
+            "url": "https://bootstrapped.ventures/best-lighting-for-cooking-videos/"
+        },
+        {
+            "date": "2024-03-07",
+            "label": "Blog",
+            "title": "Top 10 Strategies for a Successful Food Vlog",
+            "url": "https://bootstrapped.ventures/food-vlog/"
+        },
+        {
+            "date": "2024-03-07",
+            "label": "Release",
+            "title": "WP Recipe Maker 9.3.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-9-3-0/"
+        },
+        {
+            "date": "2024-02-29",
+            "label": "Blog",
+            "title": "Mastering Food Photography: Secrets and Tricks Revealed",
+            "url": "https://bootstrapped.ventures/food-photography-tricks/"
+        },
+        {
+            "date": "2024-02-22",
+            "label": "Blog",
+            "title": "Exploring the Key Angles in Food Photography",
+            "url": "https://bootstrapped.ventures/food-photography-angles/"
+        },
+        {
+            "date": "2024-02-15",
+            "label": "Blog",
+            "title": "Marketing Strategies for Professional Chefs",
+            "url": "https://bootstrapped.ventures/chef-marketing/"
+        },
+        {
+            "date": "2024-02-08",
+            "label": "Blog",
+            "title": "6 Effective Digital Marketing Tactics for Food Brands",
+            "url": "https://bootstrapped.ventures/food-digital-marketing/"
+        },
+        {
+            "date": "2024-02-06",
+            "label": "Release",
+            "title": "WP Recipe Maker 9.2.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-9-2-0/"
+        },
+        {
+            "date": "2024-02-02",
+            "label": "Blog",
+            "title": "4 Unbeatable Tips for Food Influencer Marketing Success",
+            "url": "https://bootstrapped.ventures/food-influencer-marketing/"
+        },
+        {
+            "date": "2024-01-25",
+            "label": "Blog",
+            "title": "A Comprehensive Guide to Food Photography Lighting Setup",
+            "url": "https://bootstrapped.ventures/food-photography-setup/"
+        },
+        {
+            "date": "2024-01-12",
+            "label": "Blog",
+            "title": "2024 Guide: The Best Cameras for Food Photography",
+            "url": "https://bootstrapped.ventures/best-camera-for-food-photography/"
+        },
+        {
+            "date": "2024-01-03",
+            "label": "Blog",
+            "title": "Essential Tips to Kickstart Your Food Instagram",
+            "url": "https://bootstrapped.ventures/how-to-start-food-blogging-on-instagram/"
+        },
+        {
+            "date": "2023-12-15",
+            "label": "Blog",
+            "title": "Becoming a Food Influencer: A Comprehensive Guide",
+            "url": "https://bootstrapped.ventures/how-to-become-a-food-influencer/"
+        },
+        {
+            "date": "2023-12-13",
+            "label": "Release",
+            "title": "WP Recipe Maker 9.1.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-9-1-0/"
+        },
+        {
+            "date": "2023-12-12",
+            "label": "Blog",
+            "title": "Get Started Teaching Online Cooking Classes: A How-To Guide",
+            "url": "https://bootstrapped.ventures/teach-cooking-class/"
+        },
+        {
+            "date": "2023-12-07",
+            "label": "Blog",
+            "title": "Content Marketing in the Food Industry: Tips for Success",
+            "url": "https://bootstrapped.ventures/content-marketing-in-the-food-industry-tips-for-success/"
+        },
+        {
+            "date": "2023-11-27",
+            "label": "Blog",
+            "title": "How to Start a Fitness Blog in 4 Easy Steps",
+            "url": "https://bootstrapped.ventures/how-to-start-a-fitness-blog/"
+        },
+        {
+            "date": "2023-11-16",
+            "label": "Blog",
+            "title": "Kickstart Your Lifestyle Blog and Make Money: A 2024 Guide",
+            "url": "https://bootstrapped.ventures/how-to-start-a-lifestyle-blog/"
+        },
+        {
+            "date": "2023-11-16",
+            "label": "Release",
+            "title": "WP Recipe Maker 9.0.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-9-0-0/"
+        },
+        {
+            "date": "2023-11-02",
+            "label": "Blog",
+            "title": "10 Food Business Ideas with Minimal Capital Investment",
+            "url": "https://bootstrapped.ventures/food-business-ideas-with-small-capital/"
+        },
+        {
+            "date": "2023-10-26",
+            "label": "Blog",
+            "title": "Storing Your Favorite Recipes in the Cloud: Top 3 Methods",
+            "url": "https://bootstrapped.ventures/recipe-software/"
+        },
+        {
+            "date": "2023-10-19",
+            "label": "Blog",
+            "title": "Your Go-To Guide for Writing Winning Recipes",
+            "url": "https://bootstrapped.ventures/how-to-write-recipe/"
+        },
+        {
+            "date": "2023-09-29",
+            "label": "Blog",
+            "title": "5 Essential Tips for Making Money from Food",
+            "url": "https://bootstrapped.ventures/how-to-make-money-from-food/"
+        },
+        {
+            "date": "2023-09-21",
+            "label": "Blog",
+            "title": "7 Tasty Tips to Kickstart Your Food-Writing Career",
+            "url": "https://bootstrapped.ventures/food-writing/"
+        },
+        {
+            "date": "2023-09-14",
+            "label": "Blog",
+            "title": "6 Pro Tips for Food Photography Lighting",
+            "url": "https://bootstrapped.ventures/food-photography-lighting/"
+        },
+        {
+            "date": "2023-09-14",
+            "label": "Release",
+            "title": "WP Recipe Maker 8.10.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-8-10-0/"
+        },
+        {
+            "date": "2023-09-08",
+            "label": "Blog",
+            "title": "Pizza Photo Perfection: A Comprehensive Guide",
+            "url": "https://bootstrapped.ventures/pizza-photography/"
+        },
+        {
+            "date": "2023-09-01",
+            "label": "Blog",
+            "title": "How to Launch Your Own Weight Loss Blog (Step-by-Step)",
+            "url": "https://bootstrapped.ventures/how-to-start-a-weight-loss-journey-blog/"
+        },
+        {
+            "date": "2023-08-24",
+            "label": "Blog",
+            "title": "Top 20 Tips for Food Blogging Success in 2023",
+            "url": "https://bootstrapped.ventures/food-blog-tips/"
+        },
+        {
+            "date": "2023-08-17",
+            "label": "Blog",
+            "title": "The Complete Guide to Monetizing a Food Blog in 2023",
+            "url": "https://bootstrapped.ventures/how-to-monetize-a-food-blog/"
+        },
+        {
+            "date": "2023-08-11",
+            "label": "Blog",
+            "title": "A Guide to Becoming a Food Writer in 2023",
+            "url": "https://bootstrapped.ventures/how-to-become-a-food-writer/"
+        },
+        {
+            "date": "2023-08-07",
+            "label": "Blog",
+            "title": "How to Create a Recipe Section with Elementor (Step-by-Step)",
+            "url": "https://bootstrapped.ventures/elementor-recipe/"
+        },
+        {
+            "date": "2023-07-28",
+            "label": "Blog",
+            "title": "The Beginner's Guide to Starting a Health Blog [2023]",
+            "url": "https://bootstrapped.ventures/how-to-start-a-health-blog/"
+        },
+        {
+            "date": "2023-06-26",
+            "label": "Release",
+            "title": "WP Recipe Maker 8.9.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-8-9-0/"
+        },
+        {
+            "date": "2023-06-16",
+            "label": "Blog",
+            "title": "How to Create a Recipe Roundup for Your Food Blog [2023]",
+            "url": "https://bootstrapped.ventures/recipe-roundup/"
+        },
+        {
+            "date": "2023-06-08",
+            "label": "Blog",
+            "title": "How to Add a Jump to Recipe Button to Your Food Blog",
+            "url": "https://bootstrapped.ventures/jump-to-recipe/"
+        },
+        {
+            "date": "2023-05-25",
+            "label": "Blog",
+            "title": "How to Make a Recipe Website with WordPress",
+            "url": "https://bootstrapped.ventures/build-a-recipe-website/"
+        },
+        {
+            "date": "2023-05-09",
+            "label": "Release",
+            "title": "WP Recipe Maker 8.8.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-8-8-0/"
+        },
+        {
+            "date": "2023-05-04",
+            "label": "Blog",
+            "title": "How to Share Recipes Properly - Step by Step",
+            "url": "https://bootstrapped.ventures/share-a-recipe/"
+        },
+        {
+            "date": "2023-04-26",
+            "label": "Blog",
+            "title": "How to Create the Ultimate Digital Cookbook in 2023",
+            "url": "https://bootstrapped.ventures/digital-cookbook/"
+        },
+        {
+            "date": "2023-04-20",
+            "label": "Blog",
+            "title": "How to Create and Print Your Own Recipes [2023]",
+            "url": "https://bootstrapped.ventures/print-recipe/"
+        },
+        {
+            "date": "2023-04-13",
+            "label": "Blog",
+            "title": "How to Organize Your Recipes Like a Pro in 2023",
+            "url": "https://bootstrapped.ventures/how-to-organize-recipes/"
+        },
+        {
+            "date": "2023-03-31",
+            "label": "Blog",
+            "title": "How to Take Professional Cooking Photos With Your Smartphone",
+            "url": "https://bootstrapped.ventures/food-photography-ideas-with-phone/"
+        },
+        {
+            "date": "2023-03-22",
+            "label": "Blog",
+            "title": "The Complete Guide to Starting a Cooking Channel on YouTube (2023)",
+            "url": "https://bootstrapped.ventures/how-to-start-a-cooking-channel-on-youtube/"
+        },
+        {
+            "date": "2023-03-15",
+            "label": "Blog",
+            "title": "15 Food Styling Tricks to Make Your Food Photography Shine",
+            "url": "https://bootstrapped.ventures/food-styling-tips/"
+        },
+        {
+            "date": "2023-03-13",
+            "label": "Release",
+            "title": "WP Recipe Maker 8.7.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-8-7-0/"
+        },
+        {
+            "date": "2023-03-09",
+            "label": "Blog",
+            "title": "WordPress Food Themes: 7 Best Free Themes for Sharing Recipes in 2023",
+            "url": "https://bootstrapped.ventures/wordpress-food-theme/"
+        },
+        {
+            "date": "2023-02-23",
+            "label": "Blog",
+            "title": "The Best Tripods for Food Photography (5 Best Picks)",
+            "url": "https://bootstrapped.ventures/tripods-for-food-photography/"
+        },
+        {
+            "date": "2023-02-10",
+            "label": "Blog",
+            "title": "The Best Backdrops & Surfaces for Food Photography in 2023",
+            "url": "https://bootstrapped.ventures/background-for-food-photography/"
+        },
+        {
+            "date": "2023-02-02",
+            "label": "Blog",
+            "title": "20 Inspiring Blog Post Ideas for Food Bloggers in 2023",
+            "url": "https://bootstrapped.ventures/food-blog-ideas/"
+        },
+        {
+            "date": "2023-01-25",
+            "label": "Blog",
+            "title": "How to Choose Plates and Props for Your Food Photography (2023)",
+            "url": "https://bootstrapped.ventures/food-photography-props/"
+        },
+        {
+            "date": "2023-01-16",
+            "label": "Blog",
+            "title": "5 Steps to Making Recipe Videos on Your Phone",
+            "url": "https://bootstrapped.ventures/how-to-make-cooking-video-with-smartphone/"
+        },
+        {
+            "date": "2023-01-10",
+            "label": "Blog",
+            "title": "Food Blogging Tips: How to Take Pictures of Your Food",
+            "url": "https://bootstrapped.ventures/food-blog-pictures/"
+        },
+        {
+            "date": "2022-12-22",
+            "label": "Blog",
+            "title": "Ever Wondered Where Food Bloggers Get Their Recipes? Here's the Answer!",
+            "url": "https://bootstrapped.ventures/where-do-food-bloggers-get-their-recipes/"
+        },
+        {
+            "date": "2022-12-09",
+            "label": "Blog",
+            "title": "How to Make Cooking Videos At Home (Step-by-Step)",
+            "url": "https://bootstrapped.ventures/how-to-make-cooking-videos/"
+        },
+        {
+            "date": "2022-12-01",
+            "label": "Blog",
+            "title": "How To Write an Introduction Page For Your Food Blog",
+            "url": "https://bootstrapped.ventures/food-blog-introduction-sample/"
+        },
+        {
+            "date": "2022-11-23",
+            "label": "Blog",
+            "title": "How to Make the Most of Your Food Blog with Recipe Videos",
+            "url": "https://bootstrapped.ventures/how-to-make-a-food-video/"
+        },
+        {
+            "date": "2022-11-14",
+            "label": "Release",
+            "title": "WP Recipe Maker 8.6.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-8-6-0/"
+        },
+        {
+            "date": "2022-11-03",
+            "label": "Blog",
+            "title": "6 Food Blogger Tips for Amazing Instagram Food Reels",
+            "url": "https://bootstrapped.ventures/food-reels/"
+        },
+        {
+            "date": "2022-10-28",
+            "label": "Blog",
+            "title": "How Much Money Can Food Bloggers Make? (2022 Update)",
+            "url": "https://bootstrapped.ventures/food-blogger-salary/"
+        },
+        {
+            "date": "2022-10-20",
+            "label": "Blog",
+            "title": "The Top 10 Instagram Food Bloggers in 2022",
+            "url": "https://bootstrapped.ventures/food-blog-instagram/"
+        },
+        {
+            "date": "2022-08-31",
+            "label": "Release",
+            "title": "WP Recipe Maker 8.5.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-8-5-0/"
+        },
+        {
+            "date": "2022-07-14",
+            "label": "Release",
+            "title": "WP Recipe Maker 8.4.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-8-4-0/"
+        },
+        {
+            "date": "2022-06-08",
+            "label": "Release",
+            "title": "WP Recipe Maker 8.3.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-8-3-0/"
+        },
+        {
+            "date": "2022-04-27",
+            "label": "Release",
+            "title": "WP Recipe Maker 8.2.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-8-2-0/"
+        },
+        {
+            "date": "2022-02-08",
+            "label": "Release",
+            "title": "WP Recipe Maker 8.1.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-8-1-0/"
+        },
+        {
+            "date": "2021-12-28",
+            "label": "Release",
+            "title": "WP Recipe Maker 8.0.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-8-0-0/"
+        },
+        {
+            "date": "2021-11-29",
+            "label": "Blog",
+            "title": "How to Create and Share Recipe Cards: A Step-by-Step Guide",
+            "url": "https://bootstrapped.ventures/share-recipe-cards/"
+        },
+        {
+            "date": "2021-10-27",
+            "label": "Release",
+            "title": "WP Recipe Maker 7.7.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-7-7-0/"
+        },
+        {
+            "date": "2021-10-19",
+            "label": "Blog",
+            "title": "How to start a food blog with WordPress.com and publish stunning recipes with WP Recipe Maker",
+            "url": "https://bootstrapped.ventures/how-to-start-a-food-blog-with-wordpress-com-and-publish-stunning-recipes-with-wp-recipe-maker/"
+        },
+        {
+            "date": "2021-10-04",
+            "label": "Blog",
+            "title": "Food blog writing examples: What should food bloggers be writing about?",
+            "url": "https://bootstrapped.ventures/food-blog-writing-examples/"
+        },
+        {
+            "date": "2021-09-15",
+            "label": "Release",
+            "title": "WP Recipe Maker 7.6.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-7-6-0/"
+        },
+        {
+            "date": "2021-08-17",
+            "label": "Release",
+            "title": "WP Recipe Maker 7.5.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-7-5-0/"
+        },
+        {
+            "date": "2021-07-26",
+            "label": "Blog",
+            "title": "Affiliate Marketing for Food Bloggers: What You Need to Know, Plus Do’s and Don’ts",
+            "url": "https://bootstrapped.ventures/affiliate-marketing-for-food-bloggers/"
+        },
+        {
+            "date": "2021-07-14",
+            "label": "Release",
+            "title": "WP Recipe Maker 7.4.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-7-4-0/"
+        },
+        {
+            "date": "2021-07-05",
+            "label": "Blog",
+            "title": "How to create a WordPress cookbook: a step-by-step guide",
+            "url": "https://bootstrapped.ventures/wordpress-cookbook/"
+        },
+        {
+            "date": "2021-06-29",
+            "label": "Blog",
+            "title": "Creative Ideas to Come Up With a Captivating Food Blog Name",
+            "url": "https://bootstrapped.ventures/best-food-blog-name-ideas/"
+        },
+        {
+            "date": "2021-06-28",
+            "label": "Partner",
+            "title": "Why Analytics Matter",
+            "url": "https://dailygrub.com/blog/why-analytics-matter"
+        },
+        {
+            "date": "2021-06-21",
+            "label": "Blog",
+            "title": "How to make money as a food blogger? Our tips to monetize your recipes",
+            "url": "https://bootstrapped.ventures/how-to-make-money-as-a-food-blogger/"
+        },
+        {
+            "date": "2021-06-14",
+            "label": "Blog",
+            "title": "Why Adding Recipe Schema Markup to Your Food Blog is Important",
+            "url": "https://bootstrapped.ventures/recipe-schema/"
+        },
+        {
+            "date": "2021-05-31",
+            "label": "Blog",
+            "title": "A full guide to SEO for food bloggers",
+            "url": "https://bootstrapped.ventures/seo-for-food-blogs/"
+        },
+        {
+            "date": "2021-05-27",
+            "label": "Release",
+            "title": "WP Recipe Maker 7.3.0",
+            "url": "https://help.bootstrapped.ventures/article/124-wp-recipe-maker-changelog"
+        },
+        {
+            "date": "2021-05-25",
+            "label": "Blog",
+            "title": "How to choose a WordPress recipe plugin for your very first food blog",
+            "url": "https://bootstrapped.ventures/wordpress-recipe-plugin/"
+        },
+        {
+            "date": "2021-05-21",
+            "label": "Blog",
+            "title": "How to become a food blogger: essential tips for a hassle-free start",
+            "url": "https://bootstrapped.ventures/how-to-become-a-food-blogger/"
+        }
+    ]
+}

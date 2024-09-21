@@ -1,0 +1,50 @@
+.comments th#wprm_rating,
+.comments td.wprm_rating {
+    width: 130px;
+}
+
+.column-wprm_rating {
+	.comment-form-wprm-rating {
+		margin: 0;
+	}
+
+	.wprm-rating-change-save {
+		display: none;
+	}
+}
+
+.comments th#wprm_review,
+.comments td.wprm_review {
+    width: 150px;
+}
+
+.column-wprm_review {
+	.wprm-comment-review-status-na {
+		opacity: 0.3;
+	}
+	.wprm-comment-review-status-featured {
+		color: darkgreen;
+		font-weight: bold;
+	}
+	.wprm-comment-review-status-excluded {
+		color: darkred;
+		font-weight: bold;
+	}
+}
+
+.wp-admin {
+	// Prevent huge stars in backend.
+	fieldset.wprm-comment-ratings-container input[type=radio] {
+		max-width: 16px;
+		max-height: 16px;
+	}
+	fieldset.wprm-comment-ratings-container span {
+		max-width: 80px;
+		max-height: 16px;
+	}
+
+	// Make empty stars faded.
+	fieldset.wprm-comment-ratings-container legend + input + span svg {
+		opacity: 0.3;
+	}
+}

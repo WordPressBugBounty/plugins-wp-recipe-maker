@@ -1,0 +1,54 @@
+#wp-admin-bar-wp-recipe-maker {
+	display: block !important;
+}
+
+#wp-admin-bar-wp-recipe-maker .ab-icon {
+	margin: 2px 4px 0 0;
+}
+
+#wp-admin-bar-wp-recipe-maker .ab-icon::before {
+	content: "\f187";
+}
+
+#wp-admin-bar-wp-recipe-maker .ab-label {
+	display: flex;
+	align-items: center;
+}
+
+#wp-admin-bar-wp-recipe-maker .wprm-admin-bar-badge {
+	box-sizing: border-box;
+	margin: 1px 0 -1px 5px;
+	padding: 0 5px;
+	min-width: 18px;
+	height: 18px;
+	border-radius: 9px;
+	background-color: #d63638;
+	color: #fff;
+	line-height: 1;
+	text-align: center;
+	z-index: 26;
+	float: right;
+
+	// Hidden by default to prevent unstyled look when WPRM CSS is not loaded.
+	display: inline !important;
+
+	span {
+		line-height: 18px;
+		font-size: 11px;
+	}
+}
+
+#wp-admin-bar-wp-recipe-maker .ab-sub-wrapper .ab-empty-item {
+    font-weight: 200;
+    text-align: center;
+}
+
+@media (max-width: 782px) {
+	#wp-admin-bar-wp-recipe-maker .ab-icon {
+		margin-left: 4px;
+	}
+
+	#wp-admin-bar-wp-recipe-maker .ab-label {
+		display: none;
+	}
+}
