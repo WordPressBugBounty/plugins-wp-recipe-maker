@@ -123,7 +123,9 @@ class WPRM_Compatibility {
 	public static function cache_js_excludes( $excludes ) {
 		if ( WPRM_Settings::get( 'assets_prevent_caching_optimization' ) && is_array( $excludes ) ) {
 			$excludes[] = 'wp-recipe-maker/dist/public-modern.js';
-			$excludes[] = 'wp-recipe-maker-premium/dist/public-' . strtolower( WPRMP_BUNDLE ) . '.js';
+			if ( defined( 'WPRMP_BUNDLE' ) ) {
+				$excludes[] = 'wp-recipe-maker-premium/dist/public-' . strtolower( WPRMP_BUNDLE ) . '.js';
+			}
 		}
 
 		return $excludes;
