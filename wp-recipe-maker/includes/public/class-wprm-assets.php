@@ -329,7 +329,7 @@ class WPRM_Assets {
 		$css = str_ireplace( ' !important', '', $css );
 		$css = str_ireplace( '!important', '', $css );
 
-		echo esc_html( $css );
+		echo $css;
 	}
 
 	/**
@@ -385,7 +385,7 @@ class WPRM_Assets {
 			$css = self::get_custom_css( $type );
 
 			if ( $css ) {
-				echo '<style type="text/css">' . esc_html( $css ) . '</style>';
+				echo '<style type="text/css">' . $css . '</style>';
 			}
 		}
 
@@ -416,7 +416,7 @@ class WPRM_Assets {
 		
 			$css .= '}';
 
-			echo '<style type="text/css">' . esc_html( $css ) . '</style>';
+			echo '<style type="text/css">' . $css . '</style>';
 		}
 	}
 

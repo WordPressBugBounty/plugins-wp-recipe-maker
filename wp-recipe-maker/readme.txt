@@ -5,7 +5,7 @@ Tags: recipe, recipes, food, cooking, schema
 Requires at least: 4.4
 Tested up to: 6.7
 Requires PHP: 5.4
-Stable tag: 9.8.1
+Stable tag: 9.8.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -137,6 +137,9 @@ Yes! We pride ourselves on offering awesome support and almost always answer sup
 6. Fully compatible with the Classic Editor.
 
 == Changelog ==
+= 9.8.2 =
+* Fix: Potential styling problems when using special characters in custom CSS
+
 = 9.8.1 =
 * Feature: Export analytics to CSV
 * Improvement: Prevent Instacart button popup from getting blocked
@@ -352,6 +355,9 @@ Yes! We pride ourselves on offering awesome support and almost always answer sup
 For earlier versions, please refer to [our full changelog](https://help.bootstrapped.ventures/article/124-wp-recipe-maker-changelog).
 
 == Upgrade notice ==
+= 9.8.2 =
+Update recommended when using any custom CSS code
+
 = 9.8.1 =
 Some improvements and fixes
 
