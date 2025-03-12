@@ -5,7 +5,7 @@ Tags: recipe, recipes, food, cooking, schema
 Requires at least: 4.4
 Tested up to: 6.7
 Requires PHP: 5.4
-Stable tag: 9.8.0
+Stable tag: 9.8.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -137,6 +137,15 @@ Yes! We pride ourselves on offering awesome support and almost always answer sup
 6. Fully compatible with the Classic Editor.
 
 == Changelog ==
+= 9.8.1 =
+* Feature: Export analytics to CSV
+* Improvement: Prevent Instacart button popup from getting blocked
+* Improvement: Extra comment type filter options
+* Improvement: Better handling of update notices
+* Fix: Potential encoding problem during import from Recipe Card Blocks
+* Fix: Grow me button with multiple recipes on the same page
+* Fix: Potential misuse of list shortcode by contributors
+
 = 9.8.0 =
 * Feature: Non-public recipes shoppable with Instacart
 * Feature: Filter by recipe content on Posts overview page
@@ -343,6 +352,9 @@ Yes! We pride ourselves on offering awesome support and almost always answer sup
 For earlier versions, please refer to [our full changelog](https://help.bootstrapped.ventures/article/124-wp-recipe-maker-changelog).
 
 == Upgrade notice ==
+= 9.8.1 =
+Some improvements and fixes
+
 = 9.8.0 =
 Some great new features and improvements
 

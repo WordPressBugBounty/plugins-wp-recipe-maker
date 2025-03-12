@@ -103,7 +103,7 @@ class WPRM_Template_Manager {
 		}
 		
 		if ( $style ) {
-			echo '<style type="text/css">' . $style . '</style>';
+			echo '<style type="text/css">' . esc_html( $style ) . '</style>';
 		}
 	}
 
@@ -125,7 +125,7 @@ class WPRM_Template_Manager {
 			}
 
 			if ( $style ) {
-				echo '<style type="text/css">' . $style . '</style>';
+				echo '<style type="text/css">' . esc_html( $style ) . '</style>';
 			}
 		}
 	}
@@ -176,7 +176,7 @@ class WPRM_Template_Manager {
 		$css = str_ireplace( ' !important', '', $css );
 		$css = str_ireplace( '!important', '', $css );
 
-		echo $css;
+		echo esc_html( $css );
 	}
 
 	/**
