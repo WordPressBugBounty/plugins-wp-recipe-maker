@@ -3,6 +3,9 @@
 }
 
 .wprm-recipe {
+    // Allow @container queries to work.
+    container-type: inline-size;
+
     // Clearfix
     overflow: hidden;
     zoom: 1;

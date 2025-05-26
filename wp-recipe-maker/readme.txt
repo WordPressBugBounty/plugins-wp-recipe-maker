@@ -3,9 +3,9 @@ Contributors: BrechtVds, BirtheVdm
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=QG7KZMGFU325Y
 Tags: recipe, recipes, food, cooking, schema
 Requires at least: 4.4
-Tested up to: 6.7
+Tested up to: 6.8
 Requires PHP: 5.4
-Stable tag: 9.8.3
+Stable tag: 10.0.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -137,6 +137,31 @@ Yes! We pride ourselves on offering awesome support and almost always answer sup
 6. Fully compatible with the Classic Editor.
 
 == Changelog ==
+= 10.0.0 =
+* Feature: Meadow Recipe Template
+* Feature: Selection of Google Fonts in Template Editor
+* Feature: Inline size based breakpoints for container blocks
+* Feature: Pills layout style for meta container block
+* Feature: Jump to Section shortcode
+* Feature: Internal container option for different template blocks
+* Feature: Bottom border style option for equipment, ingredient and nutrition lists
+* Improvement: Output shortcodes for current recipe in query loop when using shortcode block
+* Improvement: Set background and text color for container blocks
+* Improvement: Option to include notes with inline or associated ingredients
+* Improvement: Rounded stars option for ratings
+* Improvement: Toggle switch style for instruction media toggle
+* Improvement: Add spacing after headers in Template Editor
+* Improvement: More text style options in the Template Editor
+* Improvement: Add border radius to instruction images in Template Editor
+* Improvement: Row gap option for column container
+* Improvement: Optional column gap for grouped nutrition style
+* Improvement: Action hooks for the print page
+* Improvement: Better Bricks Builder compatibility
+* Improvement: Better WPML compatibility
+* Fix: Problem with columns on comment admin page with some settings
+* Fix: Column container gap forcing column out of bounds
+* Fix: Filtering on the changelog manage page
+
 = 9.8.3 =
 * Fix: Headers not translated when using default template
 * Fix: Print problem with special characters in slug
@@ -360,6 +385,9 @@ Yes! We pride ourselves on offering awesome support and almost always answer sup
 For earlier versions, please refer to [our full changelog](https://help.bootstrapped.ventures/article/124-wp-recipe-maker-changelog).
 
 == Upgrade notice ==
+= 10.0.0 =
+Some great new features and improvements
+
 = 9.8.3 =
 Some small fixes
 
