@@ -590,6 +590,43 @@ export default {
                     },
                 }
             );
+            columns.push(
+                {
+                    groupHeader: __wprm( 'General' ),
+                    Header: __wprm( 'Recipe Language' ),
+                    id: 'language',
+                    accessor: 'language',
+                    width: 150,
+                    sortable: false,
+                    Filter: ({ filter, onChange }) => (
+                        <select
+                            onChange={event => onChange(event.target.value)}
+                            style={{ width: '100%', fontSize: '1em' }}
+                            value={filter ? filter.value : 'all'}
+                        >
+                            <option value="all">{ __wprm( 'All Languages' ) }</option>
+                            {
+                                Object.values(wprm_admin_manage.multilingual.languages).map((language, index) => {
+                                    return (
+                                        <option value={ language.value } key={index}>{ `${ language.value } - ${ he.decode( language.label ) }` }</option>
+                                    )
+                                })
+                            }
+                        </select>
+                    ),
+                    Cell: row => {
+                        const language = wprm_admin_manage.multilingual.languages.hasOwnProperty( row.value ) ? wprm_admin_manage.multilingual.languages[ row.value ] : false;
+                
+                        if ( ! language ) {
+                            return (<div></div>);
+                        } else {
+                            return (
+                                <div>{ `${ language.value } - ${ he.decode( language.label ) }` }</div>
+                            )
+                        }
+                    },
+                }
+            );
         }
         
         columns.push({

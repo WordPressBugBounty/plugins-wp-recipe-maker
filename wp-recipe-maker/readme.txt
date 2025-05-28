@@ -5,7 +5,7 @@ Tags: recipe, recipes, food, cooking, schema
 Requires at least: 4.4
 Tested up to: 6.8
 Requires PHP: 5.4
-Stable tag: 10.0.0
+Stable tag: 10.0.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -129,14 +129,19 @@ Yes! We pride ourselves on offering awesome support and almost always answer sup
 
 == Screenshots ==
 
-1. Example recipe using the default Chic template.
-2. Our Template Editor allows you to completely customize the look and feel.
+1. Example recipe using the default Meadow template.
+2. Example recipe using the Chic template.
 3. A powerful manage pages gives you full control over your recipes.
 4. The recipe input form.
 5. Fully compatible with the Gutenberg Block Editor.
 6. Fully compatible with the Classic Editor.
+7. Our Template Editor allows you to completely customize the look and feel.
 
 == Changelog ==
+= 10.0.1 =
+* Improvement: View and filter recipe language on manage page (using WPML or Polylang)
+* Fix: Snippets not showing in some themes due to styling conflicts
+
 = 10.0.0 =
 * Feature: Meadow Recipe Template
 * Feature: Selection of Google Fonts in Template Editor
@@ -385,6 +390,9 @@ Yes! We pride ourselves on offering awesome support and almost always answer sup
 For earlier versions, please refer to [our full changelog](https://help.bootstrapped.ventures/article/124-wp-recipe-maker-changelog).
 
 == Upgrade notice ==
+= 10.0.1 =
+Prevent some theme compatibility issues
+
 = 10.0.0 =
 Some great new features and improvements
 

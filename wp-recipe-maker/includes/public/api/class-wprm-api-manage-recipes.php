@@ -248,9 +248,11 @@ class WPRM_Api_Manage_Recipes {
 			}
 		}
 
-		// Make sure all recipes show up when using WPML.
+		// Make sure all recipes show up when using WPML, unless filtering by language.
+		$filtering_by_language = isset( $args['lang'] ) && $args['lang'];
+
 		global $wpml_query_filter;
-		if ( $wpml_query_filter ) {
+		if ( $wpml_query_filter && ! $filtering_by_language ) {
 			remove_filter( 'posts_join', array( $wpml_query_filter, 'posts_join_filter' ), 10, 2 );
 			remove_filter( 'posts_where', array( $wpml_query_filter, 'posts_where_filter' ), 10, 2 );
 		}
@@ -259,7 +261,7 @@ class WPRM_Api_Manage_Recipes {
 		$query = new WP_Query( $args );
 		remove_filter( 'posts_where', array( __CLASS__, 'api_manage_recipes_query_where' ), 10, 2 );
 
-		if ( $wpml_query_filter ) {
+		if ( $wpml_query_filter && ! $filtering_by_language ) {
 			add_filter( 'posts_join', array( $wpml_query_filter, 'posts_join_filter' ), 10, 2 );
 			add_filter( 'posts_where', array( $wpml_query_filter, 'posts_where_filter' ), 10, 2 );
 		}
@@ -559,6 +561,22 @@ class WPRM_Api_Manage_Recipes {
 								'value' => $parent_posts_ids,
 							);
 						}
+					}
+				}
+				break;
+			case 'language':
+				if ( 'all' !== $value ) {
+					// Not directly related to recipe, so needs an extra query.
+					$multilingual = WPRM_Compatibility::multilingual();
+
+					if ( $multilingual ) {
+						if ( 'wpml' === $multilingual['plugin'] ) {
+							// Switch language context
+							do_action( 'wpml_switch_language', $value );
+						}						
+
+						// For both WPML and Polylang.
+						$args['lang'] = $value;
 					}
 				}
 				break;

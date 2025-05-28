@@ -1,6 +1,12 @@
 {
     "news": [
         {
+            "date": "2025-05-27",
+            "label": "Blog",
+            "title": "How to Price Food Photography for Small Business Clients",
+            "url": "https://bootstrapped.ventures/food-photography-pricing/"
+        },
+        {
             "date": "2025-05-26",
             "label": "Release",
             "title": "WP Recipe Maker 10.0.0",
