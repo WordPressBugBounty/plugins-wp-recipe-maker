@@ -323,7 +323,7 @@ class WPRM_Comment_Rating {
 	 * @since    1.1.0
 	 */
 	public static function add_rating_field_to_comments() {
-		if ( ! WPRM_Settings::get( 'features_comment_ratings' ) ) {
+		if ( WPRM_Settings::get( 'features_comment_ratings' ) ) {
 			$rating = 0;
 			$template = apply_filters( 'wprm_template_comment_rating_form', WPRM_DIR . 'templates/public/comment-rating-form.php' );
 			require( $template );

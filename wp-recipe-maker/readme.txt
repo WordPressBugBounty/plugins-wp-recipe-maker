@@ -5,7 +5,7 @@ Tags: recipe, recipes, food, cooking, schema
 Requires at least: 4.4
 Tested up to: 6.8
 Requires PHP: 5.4
-Stable tag: 10.0.1
+Stable tag: 10.0.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -138,6 +138,9 @@ Yes! We pride ourselves on offering awesome support and almost always answer sup
 7. Our Template Editor allows you to completely customize the look and feel.
 
 == Changelog ==
+= 10.0.2 =
+* Fix: wpDiscuz compatibility
+
 = 10.0.1 =
 * Improvement: View and filter recipe language on manage page (using WPML or Polylang)
 * Fix: Snippets not showing in some themes due to styling conflicts
@@ -390,6 +393,9 @@ Yes! We pride ourselves on offering awesome support and almost always answer sup
 For earlier versions, please refer to [our full changelog](https://help.bootstrapped.ventures/article/124-wp-recipe-maker-changelog).
 
 == Upgrade notice ==
+= 10.0.2 =
+Update recommended to prevent wpDiscuz compatibility issues
+
 = 10.0.1 =
 Prevent some theme compatibility issues
 
