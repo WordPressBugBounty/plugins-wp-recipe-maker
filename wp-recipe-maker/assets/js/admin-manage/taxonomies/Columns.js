@@ -184,6 +184,52 @@ export default {
             }
         ];
 
+        if ( wprm_admin_manage.multilingual ) {
+            columns.push({
+                Header: __wprm( 'Language' ),
+                id: 'language',
+                accessor: 'language',
+                sortable: false,
+                filterable: false,
+                width: 220,
+                Cell: row => {
+                    const languages = wprm_admin_manage.multilingual.languages || {};
+                    const current = row.value && languages.hasOwnProperty( row.value ) ? row.value : '';
+
+                    return (
+                        <div className="wprm-admin-manage-language-select">
+                            <select
+                                value={ current }
+                                onChange={ (event) => {
+                                    const newLanguage = event.target.value;
+
+                                    if ( ! newLanguage || newLanguage === current ) {
+                                        return;
+                                    }
+
+                                    Api.manage.updateTermLanguage(
+                                        datatable.props.options.id,
+                                        row.original.term_id,
+                                        newLanguage
+                                    ).then(() => datatable.refreshData());
+                                }}
+                                style={{ width: '100%', fontSize: '1em' }}
+                            >
+                                <option value="">{ __wprm( 'Select language' ) }</option>
+                                {
+                                    Object.values( languages ).map((language, index) => (
+                                        <option value={ language.value } key={ index }>
+                                            { `${ language.value } - ${ he.decode( language.label ) }` }
+                                        </option>
+                                    ))
+                                }
+                            </select>
+                        </div>
+                    );
+                },
+            });
+        }
+
         if ( 'suitablefordiet' === datatable.props.options.id ) {
             columns.push({
                 Header: __wprm( 'Label' ),
@@ -583,13 +629,42 @@ export default {
                                             term: row.original,
                                             search: asin,
                                             selectCallback: ( product ) => {
-                                                Api.manage.updateTaxonomyMeta( 'equipment', row.original.term_id, {
-                                                    amazon_updated: Date.now(),
-                                                    amazon_image: product.image,
-                                                    amazon_name: product.name,
-                                                    amazon_asin: product.asin,
-                                                    link: product.link,
-                                                } ).then(() => datatable.refreshData());
+                                                // Always fetch full product details to get availability status.
+                                                Api.amazon.getProducts( [ product.asin ] ).then(( data ) => {
+                                                    let amazon_status = 'UNKNOWN';
+                                                    
+                                                    if ( data && data.products && data.products[ product.asin ] ) {
+                                                        const fullProduct = data.products[ product.asin ];
+                                                        if ( fullProduct.availability_type ) {
+                                                            // Always save just the type as a string.
+                                                            amazon_status = fullProduct.availability_type;
+                                                        }
+                                                    }
+                                                    
+                                                    // Save all product data including status in one call.
+                                                    Api.manage.updateTaxonomyMeta( 'equipment', row.original.term_id, {
+                                                        amazon_updated: Date.now(),
+                                                        amazon_image: product.image,
+                                                        amazon_image_width: product.image_width,
+                                                        amazon_image_height: product.image_height,
+                                                        amazon_name: product.name,
+                                                        amazon_asin: product.asin,
+                                                        amazon_status: amazon_status,
+                                                        link: product.link,
+                                                    } ).then(() => datatable.refreshData());
+                                                }).catch(() => {
+                                                    // On error, save with UNKNOWN status.
+                                                    Api.manage.updateTaxonomyMeta( 'equipment', row.original.term_id, {
+                                                        amazon_updated: Date.now(),
+                                                        amazon_image: product.image,
+                                                        amazon_image_width: product.image_width,
+                                                        amazon_image_height: product.image_height,
+                                                        amazon_name: product.name,
+                                                        amazon_asin: product.asin,
+                                                        amazon_status: 'UNKNOWN',
+                                                        link: product.link,
+                                                    } ).then(() => datatable.refreshData());
+                                                });
                                             },
                                         } );
                                     } else {
@@ -611,13 +686,42 @@ export default {
                                     WPRM_Modal.open( 'amazon', {
                                         term: row.original,
                                         selectCallback: ( product ) => {
-                                            Api.manage.updateTaxonomyMeta( 'equipment', row.original.term_id, {
-                                                amazon_updated: Date.now(),
-                                                amazon_image: product.image,
-                                                amazon_name: product.name,
-                                                amazon_asin: product.asin,
-                                                link: product.link,
-                                            } ).then(() => datatable.refreshData());
+                                            // Always fetch full product details to get availability status.
+                                            Api.amazon.getProducts( [ product.asin ] ).then(( data ) => {
+                                                let amazon_status = 'UNKNOWN';
+                                                
+                                                if ( data && data.products && data.products[ product.asin ] ) {
+                                                    const fullProduct = data.products[ product.asin ];
+                                                    if ( fullProduct.availability_type ) {
+                                                        // Always save just the type as a string.
+                                                        amazon_status = fullProduct.availability_type;
+                                                    }
+                                                }
+                                                
+                                                // Save all product data including status in one call.
+                                                Api.manage.updateTaxonomyMeta( 'equipment', row.original.term_id, {
+                                                    amazon_updated: Date.now(),
+                                                    amazon_image: product.image,
+                                                    amazon_image_width: product.image_width,
+                                                    amazon_image_height: product.image_height,
+                                                    amazon_name: product.name,
+                                                    amazon_asin: product.asin,
+                                                    amazon_status: amazon_status,
+                                                    link: product.link,
+                                                } ).then(() => datatable.refreshData());
+                                            }).catch(() => {
+                                                // On error, save with UNKNOWN status.
+                                                Api.manage.updateTaxonomyMeta( 'equipment', row.original.term_id, {
+                                                    amazon_updated: Date.now(),
+                                                    amazon_image: product.image,
+                                                    amazon_image_width: product.image_width,
+                                                    amazon_image_height: product.image_height,
+                                                    amazon_name: product.name,
+                                                    amazon_asin: product.asin,
+                                                    amazon_status: 'UNKNOWN',
+                                                    link: product.link,
+                                                } ).then(() => datatable.refreshData());
+                                            });
                                         },
                                     } );
                                 }}
@@ -633,6 +737,8 @@ export default {
                                         Api.manage.updateTaxonomyMeta( 'equipment', row.original.term_id, {
                                             amazon_updated: Date.now(),
                                             amazon_image: '',
+                                            amazon_image_width: '',
+                                            amazon_image_height: '',
                                             amazon_name: '',
                                             amazon_asin: '',
                                             link: '',
@@ -697,10 +803,92 @@ export default {
                     return dt.toLocaleString();
                 },
             });
+
+            columns.push({
+                Header: __wprm( 'Amazon Status' ),
+                id: 'amazon_status',
+                accessor: row => {
+                    // If no ASIN, return 'empty' for filtering.
+                    if ( ! row.amazon_asin ) {
+                        return 'empty';
+                    }
+                    
+                    // Status is stored as a plain string.
+                    return row.amazon_status || '';
+                },
+                width: 180,
+                Filter: ({ filter, onChange }) => (
+                    <select
+                        onChange={event => onChange(event.target.value)}
+                        style={{ width: '100%', fontSize: '1em' }}
+                        value={filter ? filter.value : 'all'}
+                    >
+                        <option value="all">{ __wprm( 'Show All' ) }</option>
+                        <option value="IN_STOCK">{ __wprm( 'In Stock' ) }</option>
+                        <option value="IN_STOCK_SCARCE">{ __wprm( 'In Stock (Scarce)' ) }</option>
+                        <option value="OUT_OF_STOCK">{ __wprm( 'Out of Stock' ) }</option>
+                        <option value="UNAVAILABLE">{ __wprm( 'Unavailable' ) }</option>
+                        <option value="PREORDER">{ __wprm( 'Preorder' ) }</option>
+                        <option value="AVAILABLE_DATE">{ __wprm( 'Available Date' ) }</option>
+                        <option value="LEADTIME">{ __wprm( 'Leadtime' ) }</option>
+                        <option value="UNKNOWN">{ __wprm( 'Unknown' ) }</option>
+                        <option value="NOT_FOUND">{ __wprm( 'Not Found' ) }</option>
+                        <option value="empty">{ __wprm( 'No ASIN' ) }</option>
+                        <option value="">----------------</option>
+                        <option value="not_in_stock">{ __wprm( 'Any status except "In Stock"' ) }</option>
+                    </select>
+                ),
+                Cell: row => {
+                    // If no ASIN is set, show empty.
+                    if ( ! row.original.amazon_asin ) {
+                        return null;
+                    }
+
+                    const status = row.original.amazon_status;
+                    if ( ! status ) {
+                        return <span className="wprm-manage-equipment-amazon-status-none">?</span>;
+                    }
+                    
+                    // Status is stored as a plain string.
+                    const statusType = status;
+                    
+                    // Map status types to user-friendly labels and CSS classes.
+                    const statusLabels = {
+                        'IN_STOCK': { label: __wprm( 'In Stock' ), className: 'status-in-stock' },
+                        'IN_STOCK_SCARCE': { label: __wprm( 'In Stock (Scarce)' ), className: 'status-in-stock' },
+                        'OUT_OF_STOCK': { label: __wprm( 'Out of Stock' ), className: 'status-out-of-stock' },
+                        'UNAVAILABLE': { label: __wprm( 'Unavailable' ), className: 'status-unavailable' },
+                        'PREORDER': { label: __wprm( 'Preorder' ), className: 'status-preorder' },
+                        'AVAILABLE_DATE': { label: __wprm( 'Available Date' ), className: 'status-preorder' },
+                        'LEADTIME': { label: __wprm( 'Leadtime' ), className: 'status-preorder' },
+                        'UNKNOWN': { label: __wprm( 'Unknown' ), className: 'status-unknown' },
+                        'NOT_FOUND': { label: __wprm( 'Not Found' ), className: 'status-not-found' },
+                    };
+                    
+                    const statusInfo = statusLabels[ statusType ] || { label: statusType, className: 'status-unknown' };
+                    
+                    return (
+                        <div className={ `wprm-manage-equipment-amazon-status ${ statusInfo.className }` }>
+                            <span className="wprm-manage-equipment-amazon-status-type">{ statusInfo.label }</span>
+                            { row.original.amazon_product_url && (
+                                <a
+                                    href={ row.original.amazon_product_url }
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="wprm-manage-equipment-amazon-status-link"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <Icon type="link" title={ __wprm( 'View product on Amazon' ) }/>
+                                </a>
+                            ) }
+                        </div>
+                    );
+                },
+            });
         }
 
-        // TODO Products.
-        if ( false && wprm_admin.addons.elite && ( 'ingredient' === datatable.props.options.id || 'equipment' === datatable.props.options.id ) ) {
+        // Products column - only show if products integration is available.
+        if ( wprm_admin.addons.elite && wprm_admin_manage.products_integrations_available && ( 'ingredient' === datatable.props.options.id || 'equipment' === datatable.props.options.id ) ) {
             columns.push({
                 Header: __wprm( 'Product' ),
                 id: 'product',
@@ -737,7 +925,42 @@ export default {
                             {
                                 row.value
                                 ?
-                                <a href={ row.value.url } target="_blank">{ row.value.name } (#{ row.value.id })</a>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginLeft: '10px' }}>
+                                    {
+                                        row.value.image_url
+                                        ?
+                                        <img 
+                                            src={ row.value.image_url } 
+                                            alt={ row.value.name }
+                                            style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }}
+                                        />
+                                        :
+                                        null
+                                    }
+                                    <div>
+                                        <a href={ row.value.url } target="_blank">{ row.value.name } (#{ row.value.id })</a>
+                                        {
+                                            row.value.variation_id && row.value.variation_name
+                                            ?
+                                            <div style={{ fontSize: '0.9em', color: '#666', marginTop: '2px', marginLeft: '5px' }}>
+                                                { __wprm( 'Variation' ) }: { row.value.variation_name } (#{ row.value.variation_id })
+                                                {
+                                                    row.value.variation_image_url
+                                                    ?
+                                                    <img 
+                                                        src={ row.value.variation_image_url } 
+                                                        alt={ row.value.variation_name }
+                                                        style={{ width: '20px', height: '20px', objectFit: 'cover', borderRadius: '2px', marginLeft: '5px', verticalAlign: 'middle' }}
+                                                    />
+                                                    :
+                                                    null
+                                                }
+                                            </div>
+                                            :
+                                            null
+                                        }
+                                    </div>
+                                </div>
                                 :
                                 null
                             }

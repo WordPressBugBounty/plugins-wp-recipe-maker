@@ -2,7 +2,7 @@
 /**
  * Internal container component for shortcodes.
  *
- * @link       http://bootstrapped.ventures
+ * @link       https://bootstrapped.ventures
  * @since      10.0.0
  *
  * @package    WP_Recipe_Maker
@@ -170,7 +170,7 @@ class WPRM_Shortcode_Reusable_Internal_Container {
 				$atts['container_icon_collapsed'],
 				$atts['container_icon_expanded'],
 				$atts['container_icon_color'],
-				'internal-container',
+				'internal-container'
 			);
 
 			if ( $collapsible_output ) {

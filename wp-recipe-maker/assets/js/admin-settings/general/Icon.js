@@ -13,6 +13,7 @@ import IconCog from '../../../icons/settings/cog.svg';
 import IconCrane from '../../../icons/settings/crane.svg';
 import IconDocApple from '../../../icons/settings/doc-apple.svg';
 import IconDoc from '../../../icons/settings/doc.svg';
+import IconDollar from '../../../icons/settings/dollar.svg';
 import IconEdit from '../../../icons/settings/edit.svg';
 import IconFiles from '../../../icons/settings/files.svg';
 import IconHealth from '../../../icons/settings/health.svg';
@@ -37,6 +38,7 @@ import IconShare from '../../../icons/settings/share.svg';
 import IconShoppingCart from '../../../icons/settings/shopping-cart.svg';
 import IconSliders from '../../../icons/settings/sliders.svg';
 import IconSpeed from '../../../icons/settings/speed.svg';
+import IconSparks from '../../../icons/settings/sparks.svg';
 import IconStar from '../../../icons/settings/star.svg';
 import IconSupport from '../../../icons/settings/support.svg';
 import IconText from '../../../icons/settings/text.svg';
@@ -45,6 +47,7 @@ import IconTouch from '../../../icons/settings/touch.svg';
 import IconUndo from '../../../icons/settings/undo.svg';
 import IconUp from '../../../icons/settings/up.svg';
 import IconWarning from '../../../icons/settings/warning.svg';
+import IconWhisk from '../../../icons/settings/whisk.svg';
 
 const icons = {
     arrows: IconArrows,
@@ -59,6 +62,7 @@ const icons = {
     crane: IconCrane,
     'doc-apple': IconDocApple,
     doc: IconDoc,
+    dollar: IconDollar,
     edit: IconEdit,
     files: IconFiles,
     health: IconHealth,
@@ -83,6 +87,7 @@ const icons = {
     'shopping-cart': IconShoppingCart,
     sliders: IconSliders,
     speed: IconSpeed,
+    sparks: IconSparks,
     star: IconStar,
     support: IconSupport,
     text: IconText,
@@ -91,6 +96,7 @@ const icons = {
     undo: IconUndo,
     up: IconUp,
     warning: IconWarning,
+    whisk: IconWhisk,
 };
 
 const Icon = (props) => {

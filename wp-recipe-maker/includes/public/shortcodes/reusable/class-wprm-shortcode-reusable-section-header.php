@@ -2,7 +2,7 @@
 /**
  * Section header component for shortcodes.
  *
- * @link       http://bootstrapped.ventures
+ * @link       https://bootstrapped.ventures
  * @since      10.0.0
  *
  * @package    WP_Recipe_Maker
@@ -356,6 +356,10 @@ class WPRM_Shortcode_Reusable_Section_Header {
 
 			// Special for instructions.
 			if ( 'instructions' === $field ) {
+				if ( 'header' === $atts['cook_mode'] && isset( $args['cook_mode_atts'] ) ) {
+					$after_header .= '&nbsp;' . WPRM_SC_Cook_Mode::shortcode( $args['cook_mode_atts'] );
+					$classes[] = 'wprm-header-has-actions';
+				}
 				if ( 'header' === $atts['prevent_sleep'] && isset( $args['prevent_sleep_atts'] ) ) {
 					$after_header .= '&nbsp;' . WPRM_SC_Prevent_Sleep::shortcode( $args['prevent_sleep_atts'] );
 					$classes[] = 'wprm-header-has-actions';
@@ -373,7 +377,7 @@ class WPRM_Shortcode_Reusable_Section_Header {
 					$atts['header_icon_collapsed'],
 					$atts['header_icon_expanded'],
 					$atts['header_collapsible_icon_color'],
-					'header',
+					'header'
 				);
 
 				if ( $collapsible_output ) {

@@ -2,7 +2,7 @@
 /**
  * Template for tools page.
  *
- * @link       http://bootstrapped.ventures
+ * @link       https://bootstrapped.ventures
  * @since      3.0.0
  *
  * @package    WP_Recipe_Maker
@@ -100,23 +100,87 @@
 					</p>
 				</td>
 			</tr>
-			<tr>
-				<th scope="row">
-					<?php esc_html_e( 'Reset Settings', 'wp-recipe-maker' ); ?>
-				</th>
-				<td>
-				<a href="#" class="button" id="tools_reset_settings"><?php esc_html_e( 'Reset Settings to Default', 'wp-recipe-maker' ); ?></a>
-					<p class="description" id="tagline-tools_reset_settings">
-						<?php esc_html_e( 'Try using this if the settings page is not working at all.', 'wp-recipe-maker' ); ?>
-					</p>
-				</td>
-			</tr>
 		</tbody>
 	</table>
+	<?php if ( current_user_can( 'manage_options' ) ) : ?>
+		<h2><?php esc_html_e( 'Settings Utilities', 'wp-recipe-maker' ); ?></h2>
+		<table class="form-table">
+			<tbody>
+				<tr>
+					<th scope="row">
+						<?php esc_html_e( 'Export Settings', 'wp-recipe-maker' ); ?>
+					</th>
+					<td>
+						<button type="button" class="button" id="tools_export_settings"><?php esc_html_e( 'Export Settings', 'wp-recipe-maker' ); ?></button>
+						<p class="description" id="tagline-tools_export_settings">
+							<?php esc_html_e( 'Download all WP Recipe Maker settings as a JSON file so you can restore them later or move them to another site.', 'wp-recipe-maker' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
+						<?php esc_html_e( 'Import Settings', 'wp-recipe-maker' ); ?>
+					</th>
+					<td>
+						<form id="wprm-import-settings-form" enctype="multipart/form-data">
+							<input type="file" name="wprm_settings_file" accept=".json,application/json" required />
+							<button type="submit" class="button"><?php esc_html_e( 'Import Settings', 'wp-recipe-maker' ); ?></button>
+						</form>
+						<p class="description">
+							<?php esc_html_e( 'Upload a settings export file to import those values on this site. This will overwrite existing settings.', 'wp-recipe-maker' ); ?>
+						</p>
+						<p class="description" id="wprm-import-settings-result"></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
+						<?php esc_html_e( 'Reset Settings', 'wp-recipe-maker' ); ?>
+					</th>
+					<td>
+						<a href="#" class="button" id="tools_reset_settings"><?php esc_html_e( 'Reset Settings to Default', 'wp-recipe-maker' ); ?></a>
+						<p class="description" id="tagline-tools_reset_settings">
+							<?php esc_html_e( 'Try using this if the settings page is not working at all.', 'wp-recipe-maker' ); ?>
+						</p>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+		<h2><?php esc_html_e( 'Template Utilities', 'wp-recipe-maker' ); ?></h2>
+		<table class="form-table">
+			<tbody>
+				<tr>
+					<th scope="row">
+						<?php esc_html_e( 'Export Templates', 'wp-recipe-maker' ); ?>
+					</th>
+					<td>
+						<button type="button" class="button" id="tools_export_templates"><?php esc_html_e( 'Export Templates', 'wp-recipe-maker' ); ?></button>
+						<p class="description">
+							<?php esc_html_e( 'Download all user-created recipe templates so you can move them to another site or keep a backup.', 'wp-recipe-maker' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
+						<?php esc_html_e( 'Import Templates', 'wp-recipe-maker' ); ?>
+					</th>
+					<td>
+						<form id="wprm-import-templates-form" enctype="multipart/form-data">
+							<input type="file" name="wprm_templates_file" accept=".json,application/json" required />
+							<button type="submit" class="button"><?php esc_html_e( 'Import Templates', 'wp-recipe-maker' ); ?></button>
+						</form>
+						<p class="description">
+							<?php esc_html_e( 'Upload a template export file to add those templates to this site. Existing templates with the same slug will be updated.', 'wp-recipe-maker' ); ?>
+						</p>
+						<p class="description" id="wprm-import-templates-result"></p>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	<?php endif; ?>
 <?php
 	if ( class_exists( 'WPRMP_Amazon_api' ) ) :
 		$partner_tag_set = WPRM_Settings::get( 'amazon_partner_tag' ) ? true : false;
-		$api_credentials_set = WPRMP_Amazon_Api::validate_api_credentials();
+		$api_credentials_set = class_exists( 'WPRMP_Amazon_Api_Factory' ) ? WPRMP_Amazon_Api_Factory::has_api_credentials() : ( class_exists( 'WPRMP_Amazon_Api' ) ? WPRMP_Amazon_Api::validate_api_credentials() : false );
 ?>
 	<h2><?php esc_html_e( 'Amazon Affiliate Links Migration for Equipment', 'wp-recipe-maker' ); ?></h2>
 	<?php if ( ! $partner_tag_set ) : ?>
@@ -139,7 +203,7 @@
 								esc_html_e( 'Converts Amazon Affiliate HTML code to either products or regular links.', 'wp-recipe-maker' );
 								if ( ! $api_credentials_set ) {
 									echo ' ';
-									esc_html_e( 'Converting to products is only possible when the PA-API credentials are set on the WP Recipe Maker > Settings > Amazon Products page.', 'wp-recipe-maker' );
+									esc_html_e( 'Converting to products is only possible when the Amazon API credentials are set on the WP Recipe Maker > Settings > Amazon Products page.', 'wp-recipe-maker' );
 								}
 							?>
 						</p>
@@ -160,7 +224,7 @@
 								esc_html_e( 'Converts regular Amazon equipment links to products. Does not work for short links.', 'wp-recipe-maker' );
 								if ( ! $api_credentials_set ) {
 									echo ' ';
-									esc_html_e( 'Converting to products is only possible when the PA-API credentials are set on the WP Recipe Maker > Settings > Amazon Products page.', 'wp-recipe-maker' );
+									esc_html_e( 'Converting to products is only possible when the Amazon API credentials are set on the WP Recipe Maker > Settings > Amazon Products page.', 'wp-recipe-maker' );
 								}
 							?>
 						</p>

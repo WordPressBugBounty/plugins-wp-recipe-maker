@@ -2,7 +2,7 @@
 /**
  * Handle the recipe instructions shortcode.
  *
- * @link       http://bootstrapped.ventures
+ * @link       https://bootstrapped.ventures
  * @since      3.3.0
  *
  * @package    WP_Recipe_Maker
@@ -900,6 +900,194 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 					),
 				),
 			),
+			'cook_mode_header' => array(
+				'type' => 'header',
+				'default' => __( 'Cook Mode', 'wp-recipe-maker' ),
+			),
+			'cook_mode' => array(
+				'default' => '',
+				'type' => 'dropdown',
+				'options' => array(
+					'' => "Don't show",
+					'header' => 'Show cook mode button in the header',
+					'before' => 'Show cook mode button before the instructions',
+					'after' => 'Show cook mode button after the instructions',
+				),
+			),
+			'cook_mode_style' => array(
+				'label' => __( 'Style', 'wp-recipe-maker' ),
+				'default' => 'text',
+				'type' => 'dropdown',
+				'options' => array(
+					'text' => 'Text',
+					'button' => 'Button',
+					'inline-button' => 'Inline Button',
+					'wide-button' => 'Full Width Button',
+				),
+				'dependency' => array(
+					array(
+						'id' => 'cook_mode',
+						'value' => '',
+						'type' => 'inverse',
+					),
+				),
+			),
+			'cook_mode_icon' => array(
+				'label' => __( 'Icon', 'wp-recipe-maker' ),
+				'default' => '',
+				'type' => 'icon',
+				'dependency' => array(
+					array(
+						'id' => 'cook_mode',
+						'value' => '',
+						'type' => 'inverse',
+					),
+				),
+			),
+			'cook_mode_text' => array(
+				'label' => __( 'Text', 'wp-recipe-maker' ),
+				'default' => __( 'Start Cooking', 'wp-recipe-maker' ),
+				'type' => 'text',
+				'dependency' => array(
+					array(
+						'id' => 'cook_mode',
+						'value' => '',
+						'type' => 'inverse',
+					),
+				),
+			),
+			'cook_mode_text_style' => array(
+				'label' => __( 'Text Style', 'wp-recipe-maker' ),
+				'default' => 'normal',
+				'type' => 'dropdown',
+				'options' => 'text_styles',
+				'dependency' => array(
+					array(
+						'id' => 'cook_mode',
+						'value' => '',
+						'type' => 'inverse',
+					),
+				),
+			),
+			'cook_mode_icon_color' => array(
+				'label' => __( 'Icon Color', 'wp-recipe-maker' ),
+				'default' => '#333333',
+				'type' => 'color',
+				'dependency' => array(
+					array(
+						'id' => 'cook_mode',
+						'value' => '',
+						'type' => 'inverse',
+					),
+					array(
+						'id' => 'cook_mode_icon',
+						'value' => '',
+						'type' => 'inverse',
+					),
+				),
+			),
+			'cook_mode_text_color' => array(
+				'label' => __( 'Text Color', 'wp-recipe-maker' ),
+				'default' => '#333333',
+				'type' => 'color',
+				'dependency' => array(
+					array(
+						'id' => 'cook_mode',
+						'value' => '',
+						'type' => 'inverse',
+					),
+					array(
+						'id' => 'cook_mode_text',
+						'value' => '',
+						'type' => 'inverse',
+					),
+				),
+			),
+			'cook_mode_horizontal_padding' => array(
+				'label' => __( 'Horizontal Padding', 'wp-recipe-maker' ),
+				'default' => '5px',
+				'type' => 'size',
+				'dependency' => array(
+					array(
+						'id' => 'cook_mode',
+						'value' => '',
+						'type' => 'inverse',
+					),
+					array(
+						'id' => 'cook_mode_style',
+						'value' => 'text',
+						'type' => 'inverse',
+					),
+				),
+			),
+			'cook_mode_vertical_padding' => array(
+				'label' => __( 'Vertical Padding', 'wp-recipe-maker' ),
+				'default' => '5px',
+				'type' => 'size',
+				'dependency' => array(
+					array(
+						'id' => 'cook_mode',
+						'value' => '',
+						'type' => 'inverse',
+					),
+					array(
+						'id' => 'cook_mode_style',
+						'value' => 'text',
+						'type' => 'inverse',
+					),
+				),
+			),
+			'cook_mode_button_color' => array(
+				'label' => __( 'Button Color', 'wp-recipe-maker' ),
+				'default' => '#ffffff',
+				'type' => 'color',
+				'dependency' => array(
+					array(
+						'id' => 'cook_mode',
+						'value' => '',
+						'type' => 'inverse',
+					),
+					array(
+						'id' => 'cook_mode_style',
+						'value' => 'text',
+						'type' => 'inverse',
+					),
+				),
+			),
+			'cook_mode_border_color' => array(
+				'label' => __( 'Border Color', 'wp-recipe-maker' ),
+				'default' => '#333333',
+				'type' => 'color',
+				'dependency' => array(
+					array(
+						'id' => 'cook_mode',
+						'value' => '',
+						'type' => 'inverse',
+					),
+					array(
+						'id' => 'cook_mode_style',
+						'value' => 'text',
+						'type' => 'inverse',
+					),
+				),
+			),
+			'cook_mode_border_radius' => array(
+				'label' => __( 'Border Radius', 'wp-recipe-maker' ),
+				'default' => '0px',
+				'type' => 'size',
+				'dependency' => array(
+					array(
+						'id' => 'cook_mode',
+						'value' => '',
+						'type' => 'inverse',
+					),
+					array(
+						'id' => 'cook_mode_style',
+						'value' => 'text',
+						'type' => 'inverse',
+					),
+				),
+			),
 			'before_container_header' => array(
 				'type' => 'header',
 				'default' => __( 'Before Instructions', 'wp-recipe-maker' ),
@@ -1021,6 +1209,20 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 			'description_style' => $atts['prevent_sleep_description_style'],
 		);
 
+		$cook_mode_atts = array(
+			'style' => $atts['cook_mode_style'],
+			'icon' => $atts['cook_mode_icon'],
+			'text' => $atts['cook_mode_text'],
+			'text_style' => $atts['cook_mode_text_style'],
+			'icon_color' => $atts['cook_mode_icon_color'],
+			'text_color' => $atts['cook_mode_text_color'],
+			'horizontal_padding' => $atts['cook_mode_horizontal_padding'],
+			'vertical_padding' => $atts['cook_mode_vertical_padding'],
+			'button_color' => $atts['cook_mode_button_color'],
+			'border_color' => $atts['cook_mode_border_color'],
+			'border_radius' => $atts['cook_mode_border_radius'],
+		);
+
 		// Custom style.
 		$css_variables = 'checkbox' === $atts['list_style'] ? parent::get_inline_css_variables( 'list', $atts, array( 'checkbox_size', 'checkbox_left_position', 'checkbox_top_position', 'checkbox_background', 'checkbox_border_width', 'checkbox_border_style', 'checkbox_border_color', 'checkbox_border_radius', 'checkbox_check_width', 'checkbox_check_color' ) ) : '';
 		$style = WPRM_Shortcode_Helper::get_inline_style( $css_variables );
@@ -1029,9 +1231,14 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 		$output .= WPRM_Shortcode_Helper::get_section_header( $atts, 'instructions', array(
 			'media_toggle_atts' => $media_toggle_atts,
 			'prevent_sleep_atts' => $prevent_sleep_atts,
+			'cook_mode_atts' => $cook_mode_atts,
 		) );
 
 		$output_before = '';
+
+		if ( 'before' === $atts['cook_mode'] ) {
+			$output_before .= WPRM_SC_Cook_Mode::shortcode( $cook_mode_atts );
+		}
 
 		if ( 'before' === $atts['prevent_sleep'] ) {
 			$output_before .= WPRM_SC_Prevent_Sleep::shortcode( $prevent_sleep_atts );
@@ -1092,13 +1299,14 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 					$style .= 'margin-left: ' . esc_attr( $atts['list_item_position'] ) . ';';	
 				}
 
-				$output .= '<li id="wprm-recipe-' . esc_attr( $recipe->id() ) . '-step-' . esc_attr( $group_index ) . '-' . esc_attr( $index ) . '" class="wprm-recipe-instruction" style="' . esc_attr( $style ) . '">';
+				// Build instruction content
+				$instruction_content = '';
 
 				if ( 'before' === $atts['ingredients_position'] ) {
-					$output .= self::instruction_ingredients( $recipe, $instruction, $atts );
+					$instruction_content .= self::instruction_ingredients( $recipe, $instruction, $atts );
 				}
 				if ( 'before' === $atts['image_position'] ) {
-					$output .= self::instruction_media( $recipe, $instruction, $atts );
+					$instruction_content .= self::instruction_media( $recipe, $instruction, $atts );
 				}
 				if ( $instruction['text'] ) {
 					$text = $instruction['text'];
@@ -1116,16 +1324,24 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 					if ( 'checkbox' === $atts['list_style'] ) {
 						$instruction_text = apply_filters( 'wprm_recipe_instructions_shortcode_checkbox', $instruction_text );
 					}
-					$output .= $instruction_text;
+					$instruction_content .= $instruction_text;
 				}
 				if ( 'after' === $atts['ingredients_position'] ) {
-					$output .= self::instruction_ingredients( $recipe, $instruction, $atts );
+					$instruction_content .= self::instruction_ingredients( $recipe, $instruction, $atts );
 				}
 				if ( 'after' === $atts['image_position'] ) {
-					$output .= self::instruction_media( $recipe, $instruction, $atts );
+					$instruction_content .= self::instruction_media( $recipe, $instruction, $atts );
 				}
 
-				$output .= '</li>';
+				// Build the complete <li>...</li> structure
+				$li_id = 'wprm-recipe-' . esc_attr( $recipe->id() ) . '-step-' . esc_attr( $group_index ) . '-' . esc_attr( $index );
+				$li_attributes = 'id="' . $li_id . '" class="wprm-recipe-instruction" style="' . esc_attr( $style ) . '"';
+				$instruction_line = '<li ' . $li_attributes . '>' . $instruction_content . '</li>';
+				
+				// Apply filter to the complete instruction line
+				$instruction_line = apply_filters( 'wprm_recipe_instructions_shortcode_instruction', $instruction_line, $atts, $instruction, $recipe );
+				
+				$output .= $instruction_line;
 			}
 
 			$output .= '</' . $list_tag . '>';
@@ -1138,6 +1354,10 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 
 		if ( 'after' === $atts['prevent_sleep'] ) {
 			$output .= WPRM_SC_Prevent_Sleep::shortcode( $prevent_sleep_atts );
+		}
+
+		if ( 'after' === $atts['cook_mode'] ) {
+			$output .= WPRM_SC_Cook_Mode::shortcode( $cook_mode_atts );
 		}
 
 		$output .= '</div>';
@@ -1195,16 +1415,86 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 			$ingredients_flat = $recipe->ingredients_flat();
 
 			foreach ( $instruction['ingredients'] as $ingredient ) {
-				$index = array_search( $ingredient, array_column( $ingredients_flat, 'uid' ) );
+				$ingredient_str = (string) $ingredient;
+				$is_split = false;
+				$parent_uid = null;
+				$split_id = null;
+				
+				// Check if this is a split (format: "uid:splitId")
+				if ( strpos( $ingredient_str, ':' ) !== false ) {
+					$is_split = true;
+					$parts = explode( ':', $ingredient_str, 2 );
+					if ( count( $parts ) === 2 && is_numeric( $parts[0] ) && is_numeric( $parts[1] ) ) {
+						$parent_uid = intval( $parts[0] );
+						$split_id = intval( $parts[1] );
+					} else {
+						// Invalid split format, skip
+						continue;
+					}
+				} else {
+					// Regular ingredient UID
+					$parent_uid = intval( $ingredient );
+				}
+				
+				// Find the parent ingredient
+				$index = array_search( $parent_uid, array_column( $ingredients_flat, 'uid' ) );
 				
 				if ( false !== $index && isset( $ingredients_flat[ $index ] ) ) {
 					$found_ingredient = $ingredients_flat[ $index ];
 
 					if ( 'ingredient' === $found_ingredient['type'] ) {
 						$parts = array();
-
-						if ( $found_ingredient['amount'] ) { $parts[] = $found_ingredient['amount']; };
-						if ( $found_ingredient['unit'] ) { $parts[] = $found_ingredient['unit']; };
+						$amount = '';
+						$unit = '';
+						$output_key = $found_ingredient['uid'];
+						$split_percentage = null;
+						
+						// If it's a split, calculate amount from percentage
+						if ( $is_split && isset( $found_ingredient['splits'] ) && is_array( $found_ingredient['splits'] ) ) {
+							$found_split = null;
+							foreach ( $found_ingredient['splits'] as $split ) {
+								if ( isset( $split['id'] ) && intval( $split['id'] ) === $split_id ) {
+									$found_split = $split;
+									break;
+								}
+							}
+							
+							if ( $found_split && isset( $found_split['percentage'] ) ) {
+								// Calculate split amount from parent amount and percentage
+								$parent_amount = isset( $found_ingredient['amount'] ) ? $found_ingredient['amount'] : '';
+								$parent_amount_parsed = WPRM_Recipe_Parser::parse_quantity( $parent_amount );
+								
+								if ( $parent_amount_parsed > 0 ) {
+									$split_percentage = floatval( $found_split['percentage'] );
+									$split_amount_parsed = ( $parent_amount_parsed * $split_percentage ) / 100;
+									$decimals = intval( WPRM_Settings::get( 'adjustable_servings_round_to_decimals' ) );
+									if ( $decimals < 0 ) {
+										$decimals = 0;
+									}
+									
+									// Format the calculated amount.
+									$amount = WPRM_Recipe_Parser::format_quantity( $split_amount_parsed, $decimals, WPRM_Settings::get( 'fractions_enabled' ), true );
+								} else {
+									$amount = '';
+								}
+								
+								// Use parent's unit
+								$unit = isset( $found_ingredient['unit'] ) ? $found_ingredient['unit'] : '';
+								// Use split value as key to avoid conflicts
+								$output_key = $ingredient_str;
+							} else {
+								// Split not found, fall back to parent ingredient
+								$amount = isset( $found_ingredient['amount'] ) ? $found_ingredient['amount'] : '';
+								$unit = isset( $found_ingredient['unit'] ) ? $found_ingredient['unit'] : '';
+							}
+						} else {
+							// Regular ingredient, use parent's amount and unit
+							$amount = isset( $found_ingredient['amount'] ) ? $found_ingredient['amount'] : '';
+							$unit = isset( $found_ingredient['unit'] ) ? $found_ingredient['unit'] : '';
+						}
+						
+						if ( $amount ) { $parts[] = $amount; };
+						if ( $unit ) { $parts[] = $unit; };
 
 						// Optionally add second unit system.
 						$show_both_units = (bool) $atts['ingredients_show_both_units'];
@@ -1212,8 +1502,31 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 							$atts['unit_conversion'] = 'both';
 							$atts['unit_conversion_both_style'] = $atts['both_units_style'];
 							$atts['unit_conversion_show_identical'] = $atts['both_units_show_if_identical'];
+							$ingredient_for_output = $found_ingredient;
 
-							$amount_unit = apply_filters( 'wprm_recipe_ingredients_shortcode_amount_unit', implode( ' ', $parts ), $atts, $found_ingredient );
+							if ( $is_split && null !== $split_percentage ) {
+								$ingredient_for_output['amount'] = $amount;
+								$ingredient_for_output['unit'] = $unit;
+
+								if ( isset( $ingredient_for_output['converted'] ) && is_array( $ingredient_for_output['converted'] ) ) {
+									foreach ( $ingredient_for_output['converted'] as $system => $converted ) {
+										if ( isset( $converted['amount'] ) && '' !== $converted['amount'] ) {
+											$converted_amount = WPRM_Recipe_Parser::parse_quantity( $converted['amount'] );
+
+											if ( $converted_amount > 0 ) {
+												$converted_split = ( $converted_amount * $split_percentage ) / 100;
+												// Check system-specific fraction setting, fall back to general setting.
+												$allow_fractions = WPRM_Settings::get( 'unit_conversion_system_' . $system . '_fractions' );
+												$ingredient_for_output['converted'][ $system ]['amount'] = WPRM_Recipe_Parser::format_quantity( $converted_split, $decimals, $allow_fractions, true );
+											} else {
+												$ingredient_for_output['converted'][ $system ]['amount'] = '';
+											}
+										}
+									}
+								}
+							}
+
+							$amount_unit = apply_filters( 'wprm_recipe_ingredients_shortcode_amount_unit', implode( ' ', $parts ), $atts, $ingredient_for_output );
 						}
 
 						// Ingredient name and maybe notes.
@@ -1245,7 +1558,7 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 							if ( $show_both_units ) {
 								$text_to_show = $amount_unit . ' ' . $found_ingredient['name'];
 							}
-							$ingredients_to_output[ $found_ingredient['uid'] ] = $text_to_show;
+							$ingredients_to_output[ $output_key ] = $text_to_show;
 						}
 					}
 				}
@@ -1267,10 +1580,40 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 				$output .= '<div class="'. esc_attr( implode( ' ', $classes ) ) . '"' . $style . '>';
 				$tag = 'inline' === $atts['ingredients_display'] ? 'span' : 'div';
 
-				foreach ( $ingredients_to_output as $uid => $text ) {
+				foreach ( $ingredients_to_output as $key => $text ) {
+					// For CSS class, use the UID part (for splits, extract the UID from "uid:splitId")
+					$uid_for_class = $key;
+					$is_split = false;
+					$split_data_attr = '';
+					
+					if ( is_string( $key ) && strpos( $key, ':' ) !== false ) {
+						$parts = explode( ':', $key, 2 );
+						$uid_for_class = isset( $parts[0] ) ? $parts[0] : $key;
+						$is_split = true;
+						
+						// Find the split percentage to store in data attribute for adjustable servings
+						$parent_uid = intval( $parts[0] );
+						$split_id = intval( $parts[1] );
+						$index = array_search( $parent_uid, array_column( $ingredients_flat, 'uid' ) );
+						
+						if ( false !== $index && isset( $ingredients_flat[ $index ] ) ) {
+							$found_ingredient = $ingredients_flat[ $index ];
+							if ( isset( $found_ingredient['splits'] ) && is_array( $found_ingredient['splits'] ) ) {
+								foreach ( $found_ingredient['splits'] as $split ) {
+									if ( isset( $split['id'] ) && intval( $split['id'] ) === $split_id && isset( $split['percentage'] ) ) {
+										// Store split percentage for adjustable servings calculation
+										$split_percentage = floatval( $split['percentage'] );
+										$split_data_attr = ' data-split-percentage="' . esc_attr( $split_percentage ) . '" data-split-id="' . esc_attr( $split_id ) . '"';
+										break;
+									}
+								}
+							}
+						}
+					}
+					
 					$classes = array(
 						'wprm-recipe-instruction-ingredient',
-						'wprm-recipe-instruction-ingredient-' . esc_attr( $recipe->id() ) . '-' . esc_attr( $uid ),
+						'wprm-recipe-instruction-ingredient-' . esc_attr( $recipe->id() ) . '-' . esc_attr( $uid_for_class ),
 					);
 
 					$style = '';
@@ -1294,7 +1637,7 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 					}
 
 					// Output.
-					$output .= '<' . $tag . ' class="'. esc_attr( implode( ' ', $classes ) ) . '" data-separator="' . esc_attr( $separator ) . '"' . $data_keep_notes . $style . '>';
+					$output .= '<' . $tag . ' class="'. esc_attr( implode( ' ', $classes ) ) . '" data-separator="' . esc_attr( $separator ) . '"' . $data_keep_notes . $split_data_attr . $style . '>';
 					$output .= wp_strip_all_tags( $text );
 					$output .= $separator;
 

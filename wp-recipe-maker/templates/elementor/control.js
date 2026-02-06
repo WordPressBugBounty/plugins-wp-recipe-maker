@@ -1,13 +1,25 @@
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import React, { Component } from 'react';
 import AsyncSelect from 'react-select/async';
 
 jQuery(document).ready(function($) {
+    // Store roots to reuse them for updates
+    const recipeRoots = new WeakMap();
+    const listRoots = new WeakMap();
+
     const renderSelectRecipe = function( panel, model, view ) {
         const $placeholder = panel.$el.find( '#wprm-recipe-select-placeholder' );
 
         if ( $placeholder.length ) {
-            ReactDOM.render(
+            const container = $placeholder[0];
+            let root = recipeRoots.get(container);
+
+            if ( !root ) {
+                root = createRoot(container);
+                recipeRoots.set(container, root);
+            }
+
+            root.render(
                 <SelectRecipe
                     value={ false }
                     onValueChange={(recipe) => {
@@ -24,8 +36,7 @@ jQuery(document).ready(function($) {
                         });
                     }}
                     options={[]}
-                />,
-                $placeholder[0]
+                />
             );            
         }
     }
@@ -34,7 +45,15 @@ jQuery(document).ready(function($) {
         const $placeholder = panel.$el.find( '#wprm-list-select-placeholder' );
 
         if ( $placeholder.length ) {
-            ReactDOM.render(
+            const container = $placeholder[0];
+            let root = listRoots.get(container);
+
+            if ( !root ) {
+                root = createRoot(container);
+                listRoots.set(container, root);
+            }
+
+            root.render(
                 <SelectList
                     value={ false }
                     onValueChange={(list) => {
@@ -51,8 +70,7 @@ jQuery(document).ready(function($) {
                         });
                     }}
                     options={[]}
-                />,
-                $placeholder[0]
+                />
             );            
         }
     }
@@ -88,7 +106,7 @@ class SelectRecipe extends Component {
     render() {
         return (
             <AsyncSelect
-                placeholder={ 'Select or search a recipe' }
+                placeholder={ 'Select or start typing to search for a recipe' }
                 value={this.props.value}
                 onChange={this.props.onValueChange}
                 getOptionValue={({id}) => id}
@@ -134,7 +152,7 @@ class SelectList extends Component {
     render() {
         return (
             <AsyncSelect
-                placeholder={ 'Select or search a list' }
+                placeholder={ 'Select or start typing to search for a list' }
                 value={this.props.value}
                 onChange={this.props.onValueChange}
                 getOptionValue={({id}) => id}

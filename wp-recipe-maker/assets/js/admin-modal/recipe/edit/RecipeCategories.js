@@ -1,5 +1,7 @@
 import React, { Component, Fragment } from 'react';
 
+import { __wprm } from 'Shared/Translations';
+import Button from 'Shared/Button';
 import FieldContainer from '../../fields/FieldContainer';
 import FieldCategory from '../../fields/FieldCategory';
 
@@ -44,6 +46,58 @@ export default class RecipeCategories extends Component {
                         )
                     })
                 }
+                <div className="wprm-admin-modal-field-category-actions">
+                    <Button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            this.props.openSecondaryModal('bulk-add-categories', {
+                                tags: this.props.tags,
+                                onBulkAdd: (newTags) => {
+                                    this.props.onRecipeChange({ tags: newTags });
+                                }
+                            });
+                        } }
+                    >{ __wprm( 'Bulk Add Categories' ) }</Button>
+                    <Button
+                        ai
+                        onClick={(e) => {
+                            e.preventDefault();
+                            
+                            // Check if ingredients and instructions are filled in
+                            const ingredients = (this.props.recipe.ingredients_flat || []).filter(
+                                (field) => 'ingredient' === field.type && field.name && field.name.trim() !== ''
+                            );
+                            const instructions = (this.props.recipe.instructions_flat || []).filter(
+                                (field) => 'instruction' === field.type && field.text && field.text.trim() !== ''
+                            );
+                            
+                            if (ingredients.length === 0 || instructions.length === 0) {
+                                const missingItems = [];
+                                if (ingredients.length === 0) {
+                                    missingItems.push('howto' === this.props.recipe.type ? __wprm( 'materials' ) : __wprm( 'ingredients' ));
+                                }
+                                if (instructions.length === 0) {
+                                    missingItems.push(__wprm( 'instructions' ));
+                                }
+                                
+                                alert(
+                                    __wprm( 'Please fill in the ' ) + 
+                                    missingItems.join( __wprm( ' and ' ) ) + 
+                                    __wprm( ' before using Suggest Tags. The AI needs this information to provide useful tag suggestions.' )
+                                );
+                                return;
+                            }
+                            
+                            this.props.openSecondaryModal('suggest-tags', {
+                                recipe: this.props.recipe,
+                                tags: this.props.tags,
+                                onSuggestTags: (newTags) => {
+                                    this.props.onRecipeChange({ tags: newTags });
+                                }
+                            });
+                        } }
+                    >{ __wprm( 'Suggest Tags' ) }</Button>
+                </div>
             </Fragment>
         );
     }

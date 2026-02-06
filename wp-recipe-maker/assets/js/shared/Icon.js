@@ -15,9 +15,17 @@ import IconCheckboxEmpty from '../../icons/admin/checkbox-empty.svg';
 import IconCheckmark from '../../icons/admin/checkmark.svg';
 import IconDuplicate from '../../icons/admin/duplicate.svg';
 import IconDrag from '../../icons/admin/drag.svg';
+import IconSplit from '../../icons/admin/split.svg';
+import IconSplitThick from '../../icons/admin/split-thick.svg';
 import IconEaflLink from '../../icons/admin/eafl-link.svg';
 import IconEaflUnlink from '../../icons/admin/eafl-unlink.svg';
 import IconEye from '../../icons/admin/eye.svg';
+import IconHeading1 from '../../icons/admin/heading-1.svg';
+import IconHeading2 from '../../icons/admin/heading-2.svg';
+import IconHeading3 from '../../icons/admin/heading-3.svg';
+import IconHeading4 from '../../icons/admin/heading-4.svg';
+import IconHeading5 from '../../icons/admin/heading-5.svg';
+import IconHeading6 from '../../icons/admin/heading-6.svg';
 import IconItalic from '../../icons/admin/italic.svg';
 import IconLink from '../../icons/admin/link.svg';
 import IconLock from '../../icons/admin/lock.svg';
@@ -33,6 +41,7 @@ import IconQuestion from '../../icons/admin/question.svg';
 import IconReload from '../../icons/admin/reload.svg';
 import IconRestore from '../../icons/admin/restore.svg';
 import IconSearch from '../../icons/admin/search.svg';
+import IconSparks from '../../icons/admin/sparks.svg';
 import IconStarEmpty from '../../icons/admin/star-empty.svg';
 import IconStarFull from '../../icons/admin/star-full.svg';
 import IconSubscript from '../../icons/admin/subscript.svg';
@@ -42,6 +51,7 @@ import IconTrash from '../../icons/admin/trash.svg';
 import IconUnderline from '../../icons/admin/underline.svg';
 import IconUnlink from '../../icons/admin/unlink.svg';
 import IconVideoplayer from '../../icons/admin/videoplayer.svg';
+import IconWarning from '../../icons/admin/warning.svg';
  
 const icons = {
     adjustable: IconAdjustable,
@@ -55,9 +65,17 @@ const icons = {
     checkmark: IconCheckmark,
     duplicate: IconDuplicate,
     drag: IconDrag,
+    split: IconSplit,
+    'split-thick': IconSplitThick,
     'eafl-link': IconEaflLink,
     'eafl-unlink': IconEaflUnlink,
     eye: IconEye,
+    'heading-1': IconHeading1,
+    'heading-2': IconHeading2,
+    'heading-3': IconHeading3,
+    'heading-4': IconHeading4,
+    'heading-5': IconHeading5,
+    'heading-6': IconHeading6,
     italic: IconItalic,
     link: IconLink,
     lock: IconLock,
@@ -73,6 +91,7 @@ const icons = {
     reload: IconReload,
     restore: IconRestore,
     search: IconSearch,
+    sparks: IconSparks,
     'star-empty': IconStarEmpty,
     'star-full': IconStarFull,
     subscript: IconSubscript,
@@ -82,6 +101,7 @@ const icons = {
     underline: IconUnderline,
     unlink: IconUnlink,
     videoplayer: IconVideoplayer,
+    warning: IconWarning,
 };
 
 const Icon = (props) => {
@@ -101,6 +121,12 @@ const Icon = (props) => {
         className += ' wprm-admin-icon-hidden';
     }
 
+    // Optional custom color.
+    let customColor = false;
+    if ( props.hasOwnProperty( 'color' ) && '#111111' !== props.color ) {
+        customColor = props.color;  
+    }
+
     return (
         <Tooltip content={ tooltip }>
             <span
@@ -109,6 +135,13 @@ const Icon = (props) => {
             >
                 <SVG
                     src={ icon }
+                    preProcessor={(code) => {
+                        if ( customColor && ( '#' === customColor.charAt(0) || 'currentColor' === customColor ) ) {
+                            code = code.replaceAll('#111111', customColor );
+                        }
+
+                        return code;
+                    }}
                 />
             </span>
         </Tooltip>
