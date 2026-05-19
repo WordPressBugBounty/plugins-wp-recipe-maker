@@ -43,6 +43,115 @@
     text-align: center;
 }
 
+#wp-admin-bar-wp-recipe-maker #wp-admin-bar-wprm-debug {
+	.ab-sub-wrapper {
+		max-height: calc(100vh - 48px);
+		overflow-y: auto;
+		overflow-x: hidden;
+	}
+}
+
+#wp-admin-bar-wp-recipe-maker #wp-admin-bar-wprm-debug .ab-item,
+#wp-admin-bar-wp-recipe-maker #wp-admin-bar-wprm-debug .ab-empty-item {
+	height: auto;
+	min-height: 30px;
+	white-space: normal;
+}
+
+#wp-admin-bar-wp-recipe-maker #wp-admin-bar-wprm-debug .wprm-admin-bar-debug-panel-node {
+	.ab-sub-wrapper {
+		position: fixed;
+		top: 32px;
+		left: 260px;
+		right: auto;
+		width: min(620px, calc(100vw - 276px));
+		max-width: calc(100vw - 32px);
+		max-height: calc(100vh - 48px);
+		overflow: auto;
+	}
+
+	.ab-item {
+		padding: 0;
+		height: auto;
+		min-height: 0;
+		white-space: normal;
+	}
+}
+
+#wp-admin-bar-wp-recipe-maker .wprm-admin-bar-debug-panel {
+	padding: 12px;
+}
+
+#wp-admin-bar-wp-recipe-maker .wprm-admin-bar-debug-entry-header {
+	font-weight: 600;
+	margin-bottom: 8px;
+	color: #fff;
+}
+
+#wp-admin-bar-wp-recipe-maker .wprm-admin-bar-debug-actions {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 8px;
+	margin-bottom: 10px;
+}
+
+#wp-admin-bar-wp-recipe-maker .wprm-admin-bar-debug-action {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	min-height: 36px;
+	margin: 0;
+	padding: 8px 12px;
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 1.2;
+	text-decoration: none;
+	background: rgba(255, 255, 255, 0.09);
+	color: #fff !important;
+	box-sizing: border-box;
+	white-space: nowrap;
+	text-align: center;
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+#wp-admin-bar-wp-recipe-maker .wprm-admin-bar-debug-action:hover {
+	background: rgba(255, 255, 255, 0.16);
+	border-color: rgba(255, 255, 255, 0.22);
+}
+
+#wp-admin-bar-wp-recipe-maker .wprm-admin-bar-debug-panel-node .ab-item .wprm-admin-bar-debug-action,
+#wp-admin-bar-wp-recipe-maker .wprm-admin-bar-debug-panel-node .ab-item .wprm-admin-bar-debug-action:visited,
+#wp-admin-bar-wp-recipe-maker .wprm-admin-bar-debug-panel-node .ab-item .wprm-admin-bar-debug-action:focus {
+	float: none;
+	height: auto;
+	line-height: 1.2;
+	padding: 8px 12px;
+	color: #fff !important;
+}
+
+#wp-admin-bar-wp-recipe-maker .wprm-admin-bar-debug-json {
+	max-width: 100%;
+	max-height: min(320px, calc(100vh - 180px));
+	overflow: auto;
+	padding: 10px 12px;
+	border-radius: 6px;
+	background: rgba(255, 255, 255, 0.04);
+	border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+#wp-admin-bar-wp-recipe-maker .wprm-admin-bar-debug-json pre {
+	margin: 0;
+	font-size: 11px;
+	line-height: 1.45;
+	font-family: Consolas, Monaco, monospace;
+	white-space: pre-wrap;
+	word-break: break-word;
+	overflow-wrap: anywhere;
+}
+
 @media (max-width: 782px) {
 	#wp-admin-bar-wp-recipe-maker .ab-icon {
 		margin-left: 4px;
@@ -50,5 +159,18 @@
 
 	#wp-admin-bar-wp-recipe-maker .ab-label {
 		display: none;
+	}
+
+	#wp-admin-bar-wp-recipe-maker #wp-admin-bar-wprm-debug .wprm-admin-bar-debug-panel-node .ab-sub-wrapper {
+		top: 46px;
+		left: 16px;
+		right: 16px;
+		width: auto;
+		max-width: none;
+		max-height: calc(100vh - 62px);
+	}
+
+	#wp-admin-bar-wp-recipe-maker .wprm-admin-bar-debug-json {
+		max-height: min(280px, calc(100vh - 220px));
 	}
 }

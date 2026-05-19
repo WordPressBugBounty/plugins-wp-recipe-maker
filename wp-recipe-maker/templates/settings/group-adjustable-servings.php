@@ -89,6 +89,17 @@ $adjustable_servings = array(
 					'default' => false,
 				),
 				array(
+					'id' => 'servings_display_fractions',
+					'name' => __( 'Display Servings as Fractions', 'wp-recipe-maker' ),
+					'description' => __( 'Display decimal serving values as fractions.', 'wp-recipe-maker' ),
+					'type' => 'toggle',
+					'default' => false,
+					'dependency' => array(
+						'id' => 'fractions_enabled',
+						'value' => true,
+					),
+				),
+				array(
 					'id' => 'fractions_use_mixed',
 					'name' => __( 'Use Mixed Fractions', 'wp-recipe-maker' ),
 					'description' => __( 'When enabled it will use 1 1/4 instead of 5/4.', 'wp-recipe-maker' ),

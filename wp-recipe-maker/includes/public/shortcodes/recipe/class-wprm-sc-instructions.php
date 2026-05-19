@@ -1324,7 +1324,7 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 
 				if ( 'tip' === $instruction_type ) {
 					$tip_text = isset( $instruction['text'] ) ? $instruction['text'] : '';
-					$tip_text = parent::clean_paragraphs( $tip_text );
+					$tip_text = WPRM_Shortcode_Helper::sanitize_html( parent::clean_paragraphs( $tip_text ) );
 
 					$tip_css = '';
 					if ( (bool) $atts['force_item_position'] ) {
@@ -1616,6 +1616,14 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 									}
 								}
 							}
+
+							if ( class_exists( 'WPRMPUC_Manager' ) && method_exists( 'WPRMPUC_Manager', 'get_ingredient_name_for_system' ) ) {
+								$ingredient_for_name = $found_ingredient;
+								$ingredient_for_name['name'] = $ingredient_name;
+								$ingredient_name = WPRMPUC_Manager::get_ingredient_name_for_system( $ingredient_for_name, intval( $recipe->unit_system() ), $split_amount_parsed_for_plural );
+							}
+
+							$ingredient_name = do_shortcode( $ingredient_name );
 						
 							if ( $amount ) { $parts[] = $amount; };
 							if ( $unit ) { $parts[] = $unit; };

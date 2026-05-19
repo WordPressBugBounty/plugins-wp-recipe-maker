@@ -76,13 +76,19 @@ const RichEditor = React.memo((props) => {
         };
     }, []);
 
-    const flushChange = (meta = {}) => {
+    const getSerializedValue = () => {
         let newValue = serialize( editor );
 
         if ( propsRef.current.singleLine ) {
             // Strip surrounding paragraph tags if present.
             newValue = newValue.replace(/^<p>(.*)<\/p>$/gm, '$1');
         }
+
+        return newValue;
+    };
+
+    const flushChange = (meta = {}) => {
+        const newValue = getSerializedValue();
 
         propsRef.current.onChange( newValue, meta );
         debounceRef.current = null;
@@ -128,15 +134,14 @@ const RichEditor = React.memo((props) => {
                 onBlur={() => {
                     if ( debounceRef.current ) {
                         clearTimeout( debounceRef.current );
-                        flushChange({
-                            historyBoundary: true,
-                        });
-                    } else if ( propsRef.current.onChange ) {
-                        // Even without pending debounced changes, notify blur boundary for history handling.
-                        propsRef.current.onChange( propsRef.current.value, {
-                            historyBoundary: true,
-                        } );
                     }
+
+                    // Always serialize the live editor content on blur.
+                    // Using props.value here can replay stale data when the debounced change
+                    // already fired but the parent prop hasn't caught up yet.
+                    flushChange({
+                        historyBoundary: true,
+                    });
                 }}
                 onFocus={() => {
                     // Firefox problems:

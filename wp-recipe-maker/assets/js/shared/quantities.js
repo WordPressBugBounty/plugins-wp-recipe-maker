@@ -8,9 +8,31 @@ const fractionSymbolsMap = {
 	'\u215D': '5/8', '\u215E': '7/8'
 };
 
+function getQuantitySettings() {
+	if ( 'undefined' === typeof window ) {
+		return {};
+	}
+
+	const settingsObjects = [
+		window.wprmp_public,
+		window.wprmprc_public,
+		window.wprm_public,
+		window.wprmp_admin,
+		window.wprm_admin,
+	];
+
+	for ( const settingsObject of settingsObjects ) {
+		if ( settingsObject && settingsObject.settings ) {
+			return settingsObject.settings;
+		}
+	}
+
+	return {};
+}
+
 export function formatQuantity( quantity, decimals = 2, allowFractions = false ) {
-	const adminSettings = typeof window.wprmp_admin !== 'undefined' ? wprmp_admin.settings : ( typeof window.wprm_admin !== 'undefined' ? wprm_admin.settings : {} );
-	const decimalSeparator = typeof window.wprmp_public !== 'undefined' ? wprmp_public.settings.decimal_separator : adminSettings.decimal_separator;
+	const settings = getQuantitySettings();
+	const decimalSeparator = settings.decimal_separator;
 	const decimalSymbol = 'comma' === decimalSeparator ? ',' : '.';
 	const thousandsSymbol = 'comma' === decimalSeparator ? '.' : ',';
 
@@ -19,15 +41,14 @@ export function formatQuantity( quantity, decimals = 2, allowFractions = false )
 
 	// Check if fractions are enabled.
 	if ( allowFractions ) {
-		const adminSettings = typeof window.wprmp_admin !== 'undefined' ? wprmp_admin.settings : ( typeof window.wprm_admin !== 'undefined' ? wprm_admin.settings : {} );
-		const fractionsEnabled = typeof window.wprmp_public !== 'undefined' ? wprmp_public.settings.fractions_enabled : adminSettings.fractions_enabled;
+		const fractionsEnabled = settings.fractions_enabled;
 
 		if ( fractionsEnabled ) {
-			const useMixed = typeof window.wprmp_public !== 'undefined' ? wprmp_public.settings.fractions_use_mixed : adminSettings.fractions_use_mixed;
-			const useSymbols = typeof window.wprmp_public !== 'undefined' ? wprmp_public.settings.fractions_use_symbols : adminSettings.fractions_use_symbols;
-			let maxDenominator = parseInt( typeof window.wprmp_public !== 'undefined' ? wprmp_public.settings.fractions_max_denominator : adminSettings.fractions_max_denominator );
+			const useMixed = settings.fractions_use_mixed;
+			const useSymbols = settings.fractions_use_symbols;
+			let maxDenominator = parseInt( settings.fractions_max_denominator );
 			maxDenominator = maxDenominator > 1 ? maxDenominator : 8;
-			
+
 			const fractionParts = frac( quantity, maxDenominator, useMixed );
 
 			if ( fractionParts && 3 === fractionParts.length && ! isNaN( fractionParts[0] ) && ! isNaN( fractionParts[1] ) && ! isNaN( fractionParts[2] ) ) {
@@ -115,8 +136,8 @@ export function parseQuantity(sQuantity) {
 
 	if ( ! ignoreDecimalSeparator ) {
 		// Ignore thousands seperators to make sure it's not interpreted as decimal separator.
-		const adminSettings = typeof window.wprmp_admin !== 'undefined' ? wprmp_admin.settings : ( typeof window.wprm_admin !== 'undefined' ? wprm_admin.settings : {} );
-		const decimalSeparator = typeof window.wprmp_public !== 'undefined' ? wprmp_public.settings.decimal_separator : adminSettings.decimal_separator;
+		const settings = getQuantitySettings();
+		const decimalSeparator = settings.decimal_separator;
 
 		if ( 'comma' === decimalSeparator ) {
 			// Find . and see if it's used as a thousands separator (more than 3 numbers after it).

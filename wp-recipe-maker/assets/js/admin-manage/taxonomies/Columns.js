@@ -15,6 +15,7 @@ import '../../../css/admin/manage/taxonomies.scss';
 export default {
     getColumns( datatable ) {
         const link_nofollow_options = wprm_admin_modal.options.hasOwnProperty( `${datatable.props.options.id}_link_nofollow` ) ? wprm_admin_modal.options[`${datatable.props.options.id}_link_nofollow`] : wprm_admin_modal.options.term_link_nofollow;
+        const unitConversion = wprm_admin_modal.hasOwnProperty( 'unit_conversion' ) ? wprm_admin_modal.unit_conversion : false;
 
         let columns = [];
         let shoppingListGroupDefaultOptions = false;
@@ -110,6 +111,43 @@ export default {
 
                         datatable.refreshData();
                     });
+                },
+            } );
+        };
+
+        const getUnitSystemName = ( names, system, field ) => {
+            if ( ! names ) {
+                return '';
+            }
+
+            const systemNames = names[ system ] || names[ `${ system }` ] || {};
+            return systemNames[ field ] ? systemNames[ field ] : '';
+        };
+
+        const openUnitSystemNamesModal = ( row ) => {
+            const names = row.original.unit_system_names || {};
+
+            WPRM_Modal.open( 'input-fields', {
+                header: __wprm( 'Change Converted Names' ),
+                fields: [
+                    {
+                        label: __wprm( 'Converted Singular' ),
+                        value: getUnitSystemName( names, 2, 'singular' ),
+                    },
+                    {
+                        label: __wprm( 'Converted Plural' ),
+                        value: getUnitSystemName( names, 2, 'plural' ),
+                    },
+                ],
+                insertCallback: ( args ) => {
+                    const unit_system_names = {
+                        2: {
+                            singular: args.fields[0].value ? args.fields[0].value.trim() : '',
+                            plural: args.fields[1].value ? args.fields[1].value.trim() : '',
+                        },
+                    };
+
+                    Api.manage.updateTaxonomyMeta( 'ingredient', row.original.term_id, { unit_system_names } ).then(() => datatable.refreshData());
                 },
             } );
         };
@@ -361,6 +399,47 @@ export default {
                                 row.value
                                 ?
                                 <span>{ row.value }</span>
+                                :
+                                null
+                            }
+                        </div>
+                    )
+                },
+            });
+        }
+
+        if ( 'ingredient' === datatable.props.options.id && unitConversion ) {
+            columns.push({
+                Header: __wprm( 'Converted Names' ),
+                id: 'unit_system_names',
+                accessor: 'unit_system_names',
+                exportValue: ( names ) => {
+                    const singular = getUnitSystemName( names, 2, 'singular' );
+                    const plural = getUnitSystemName( names, 2, 'plural' );
+
+                    return [ singular, plural ].filter( ( value ) => !! value ).join( ' / ' );
+                },
+                width: 240,
+                sortable: false,
+                filterable: false,
+                Cell: row => {
+                    const singular = getUnitSystemName( row.value, 2, 'singular' );
+                    const plural = getUnitSystemName( row.value, 2, 'plural' );
+                    const values = [ singular, plural ].filter( ( value ) => !! value );
+
+                    return (
+                        <div className="wprm-manage-ingredients-group-container">
+                            <Icon
+                                type="pencil"
+                                title={ __wprm( 'Change Converted Names' ) }
+                                onClick={() => {
+                                    openUnitSystemNamesModal( row );
+                                }}
+                            />
+                            {
+                                values.length
+                                ?
+                                <span>{ values.join( ' / ' ) }</span>
                                 :
                                 null
                             }
@@ -728,9 +807,10 @@ export default {
                                             selectCallback: ( product ) => {
                                                 // Always fetch full product details to get availability status.
                                                 Api.amazon.getProducts( [ product.asin ] ).then(( data ) => {
-                                                    let amazon_status = 'UNKNOWN';
+                                                    let amazon_status = 'NOT_FOUND';
                                                     
                                                     if ( data && data.products && data.products[ product.asin ] ) {
+                                                        amazon_status = 'UNKNOWN';
                                                         const fullProduct = data.products[ product.asin ];
                                                         if ( fullProduct.availability_type ) {
                                                             // Always save just the type as a string.
@@ -750,7 +830,7 @@ export default {
                                                         link: product.link,
                                                     } ).then(() => datatable.refreshData());
                                                 }).catch(() => {
-                                                    // On error, save with UNKNOWN status.
+                                                    // On error, save the selected product without a status.
                                                     Api.manage.updateTaxonomyMeta( 'equipment', row.original.term_id, {
                                                         amazon_updated: Date.now(),
                                                         amazon_image: product.image,
@@ -758,7 +838,7 @@ export default {
                                                         amazon_image_height: product.image_height,
                                                         amazon_name: product.name,
                                                         amazon_asin: product.asin,
-                                                        amazon_status: 'UNKNOWN',
+                                                        amazon_status: '',
                                                         link: product.link,
                                                     } ).then(() => datatable.refreshData());
                                                 });
@@ -785,9 +865,10 @@ export default {
                                         selectCallback: ( product ) => {
                                             // Always fetch full product details to get availability status.
                                             Api.amazon.getProducts( [ product.asin ] ).then(( data ) => {
-                                                let amazon_status = 'UNKNOWN';
+                                                let amazon_status = 'NOT_FOUND';
                                                 
                                                 if ( data && data.products && data.products[ product.asin ] ) {
+                                                    amazon_status = 'UNKNOWN';
                                                     const fullProduct = data.products[ product.asin ];
                                                     if ( fullProduct.availability_type ) {
                                                         // Always save just the type as a string.
@@ -807,7 +888,7 @@ export default {
                                                     link: product.link,
                                                 } ).then(() => datatable.refreshData());
                                             }).catch(() => {
-                                                // On error, save with UNKNOWN status.
+                                                // On error, save the selected product without a status.
                                                 Api.manage.updateTaxonomyMeta( 'equipment', row.original.term_id, {
                                                     amazon_updated: Date.now(),
                                                     amazon_image: product.image,
@@ -815,7 +896,7 @@ export default {
                                                     amazon_image_height: product.image_height,
                                                     amazon_name: product.name,
                                                     amazon_asin: product.asin,
-                                                    amazon_status: 'UNKNOWN',
+                                                    amazon_status: '',
                                                     link: product.link,
                                                 } ).then(() => datatable.refreshData());
                                             });
@@ -838,6 +919,7 @@ export default {
                                             amazon_image_height: '',
                                             amazon_name: '',
                                             amazon_asin: '',
+                                            amazon_status: '',
                                             link: '',
                                         } ).then(() => datatable.refreshData());
                                     }}
@@ -902,7 +984,7 @@ export default {
             });
 
             columns.push({
-                Header: __wprm( 'Amazon Status' ),
+                Header: __wprm( 'Amazon Product Status' ),
                 id: 'amazon_status',
                 accessor: row => {
                     // If no ASIN, return 'empty' for filtering.
@@ -932,6 +1014,7 @@ export default {
                         <option value="NOT_FOUND">{ __wprm( 'Not Found' ) }</option>
                         <option value="empty">{ __wprm( 'No ASIN' ) }</option>
                         <option value="">----------------</option>
+                        <option value="notification_statuses">{ __wprm( 'Notification statuses' ) }</option>
                         <option value="not_in_stock">{ __wprm( 'Any status except "In Stock"' ) }</option>
                     </select>
                 ),

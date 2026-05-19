@@ -32,12 +32,13 @@ export default class FieldListItem extends Component {
 
         this.state = {
             loading,
+            postLoadFailed: false,
         };
     }
 
     loadPost(postId) {
         if ( ! postId || 0 >= postId ) {
-            this.setState({ loading: false });
+            this.setState({ loading: false, postLoadFailed: false });
             return;
         }
 
@@ -49,6 +50,7 @@ export default class FieldListItem extends Component {
                 if ( post && post.id ) {
                     this.setState({
                         loading: false,
+                        postLoadFailed: false,
                     }, () => {
                         this.props.onLoadPost( post );
                     });
@@ -56,18 +58,33 @@ export default class FieldListItem extends Component {
                     // Invalid post data
                     this.setState({
                         loading: false,
+                        postLoadFailed: true,
+                    }, () => {
+                        if ( 'function' === typeof this.props.onLoadPostError ) {
+                            this.props.onLoadPostError( postId );
+                        }
                     });
                 }
             } else {
                 // Loading post failed or invalid response structure.
                 this.setState({
                     loading: false,
+                    postLoadFailed: true,
+                }, () => {
+                    if ( 'function' === typeof this.props.onLoadPostError ) {
+                        this.props.onLoadPostError( postId );
+                    }
                 });
             }
         }).catch(() => {
-            // Loading post failed.
+            // Loading post failed (e.g. post deleted, 404).
             this.setState({
                 loading: false,
+                postLoadFailed: true,
+            }, () => {
+                if ( 'function' === typeof this.props.onLoadPostError ) {
+                    this.props.onLoadPostError( postId );
+                }
             });
         });
     }
@@ -89,7 +106,7 @@ export default class FieldListItem extends Component {
                 if ( itemId !== prevItemId ) {
                     // Item ID changed - load new post if we don't have it
                     if ( ! post || post.id !== itemId ) {
-                        this.setState({ loading: true });
+                        this.setState({ loading: true, postLoadFailed: false });
                         this.loadPost( itemId );
                     }
                 } else if ( ! post && prevPost ) {
@@ -98,8 +115,9 @@ export default class FieldListItem extends Component {
                     if ( this.state.loading ) {
                         this.setState({ loading: false });
                     }
-                } else if ( ! post && ! this.state.loading ) {
+                } else if ( ! post && ! this.state.loading && ! this.state.postLoadFailed ) {
                     // Post is missing and we're not already loading - start loading
+                    // (Skip if a previous load failed, e.g. deleted post, to avoid an infinite retry loop.)
                     this.setState({ loading: true });
                     this.loadPost( itemId );
                 }
@@ -118,6 +136,10 @@ export default class FieldListItem extends Component {
 
         // Get name to use.
         let name = '?';
+
+        if ( this.state.postLoadFailed && ( 'internal' === item.data.type || 'post' === item.data.type ) ) {
+            name = __wprm( 'Post not found' );
+        }
         
         // First check if we have a post with a name (from API)
         if ( post && post.name && post.name.trim() ) {

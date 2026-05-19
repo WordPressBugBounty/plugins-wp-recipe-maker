@@ -184,6 +184,18 @@ $amazon_stores_dropdown = array_map( function( $store ) {
 	return $store['label'];
 }, $amazon_stores );
 
+$amazon_product_status_options = array(
+	'AVAILABLE_DATE' => __( 'Available Date', 'wp-recipe-maker' ),
+	'IN_STOCK' => __( 'In Stock', 'wp-recipe-maker' ),
+	'IN_STOCK_SCARCE' => __( 'In Stock (Scarce)', 'wp-recipe-maker' ),
+	'LEADTIME' => __( 'Leadtime', 'wp-recipe-maker' ),
+	'OUT_OF_STOCK' => __( 'Out of Stock', 'wp-recipe-maker' ),
+	'PREORDER' => __( 'Preorder', 'wp-recipe-maker' ),
+	'UNAVAILABLE' => __( 'Unavailable', 'wp-recipe-maker' ),
+	'UNKNOWN' => __( 'Unknown', 'wp-recipe-maker' ),
+	'NOT_FOUND' => __( 'Not Found', 'wp-recipe-maker' ),
+);
+
 $amazon = array(
 	'id' => 'amazon',
 	'icon' => 'basket',
@@ -221,6 +233,21 @@ $amazon = array(
 						'creators' => __( 'Creators API', 'wp-recipe-maker' ),
 					),
 					'default' => 'auto',
+				),
+				array(
+					'id' => 'amazon_api_request_timeout',
+					'name' => __( 'Amazon API Request Timeout', 'wp-recipe-maker' ),
+					'description' => __( 'Maximum number of seconds to wait for Amazon API responses, between 1 and 120 seconds. Lower this to prevent slow Amazon responses from tying up server workers.', 'wp-recipe-maker' ),
+					'type' => 'number',
+					'suffix' => 's',
+					'default' => '15',
+					'sanitize' => function( $value ) {
+						$value = intval( $value );
+						$value = max( 1, $value );
+						$value = min( 120, $value );
+
+						return (string) $value;
+					},
 				),
 			),
 		),
@@ -275,6 +302,72 @@ $amazon = array(
 				'id' => 'amazon_api_type',
 				'value' => 'paapi',
 				'type' => 'inverse',
+			),
+		),
+		array(
+			'name' => __( 'Product Status Notifications', 'wp-recipe-maker' ),
+			'description' => __( 'Receive an email when Amazon equipment products are no longer buyable.', 'wp-recipe-maker' ),
+			'settings' => array(
+				array(
+					'id' => 'amazon_status_notifications_enabled',
+					'name' => __( 'Enable Product Status Notifications', 'wp-recipe-maker' ),
+					'type' => 'toggle',
+					'default' => false,
+				),
+				array(
+					'id' => 'amazon_status_notification_emails',
+					'name' => __( 'Send email to', 'wp-recipe-maker' ),
+					'description' => __( 'Email addresses to notify. Separate multiple addresses with commas or new lines.', 'wp-recipe-maker' ),
+					'type' => 'textarea',
+					'rows' => 3,
+					'default' => '',
+					'sanitize' => function( $value ) {
+						if ( is_array( $value ) ) {
+							$value = implode( PHP_EOL, $value );
+						}
+
+						$emails = preg_split( '/[\s,;]+/', (string) $value );
+						$emails = array_filter( array_map( function( $email ) {
+							$email = sanitize_email( trim( $email ) );
+							return is_email( $email ) ? strtolower( $email ) : '';
+						}, $emails ) );
+						$emails = array_values( array_unique( $emails ) );
+
+						return implode( PHP_EOL, $emails );
+					},
+					'dependency' => array(
+						'id' => 'amazon_status_notifications_enabled',
+						'value' => true,
+					),
+				),
+				array(
+					'id' => 'amazon_status_notification_statuses',
+					'name' => __( 'Notification Statuses', 'wp-recipe-maker' ),
+					'description' => __( 'Amazon product statuses that should trigger an email notification.', 'wp-recipe-maker' ),
+					'type' => 'dropdownMultiselect',
+					'options' => $amazon_product_status_options,
+					'default' => array( 'OUT_OF_STOCK', 'UNAVAILABLE', 'NOT_FOUND' ),
+					'dependency' => array(
+						'id' => 'amazon_status_notifications_enabled',
+						'value' => true,
+					),
+				),
+				array(
+					'id' => 'amazon_status_notification_frequency',
+					'name' => __( 'Notification Frequency', 'wp-recipe-maker' ),
+					'description' => __( 'How often to send product status notification emails.', 'wp-recipe-maker' ),
+					'type' => 'dropdown',
+					'options' => array(
+						'batch' => __( 'As soon as noticed', 'wp-recipe-maker' ),
+						'daily' => __( 'Daily digest', 'wp-recipe-maker' ),
+						'weekly' => __( 'Weekly digest', 'wp-recipe-maker' ),
+					),
+					'default' => 'daily',
+					'dependency' => array(
+						'id' => 'amazon_status_notifications_enabled',
+						'value' => true,
+					),
+				),
 			),
 		),
 	),

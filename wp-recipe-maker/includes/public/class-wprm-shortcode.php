@@ -759,9 +759,19 @@ class WPRM_Shortcode {
 
 			if ( 'amp' === $type || 'single' === $type ) {
 				if ( 'recipe' === WPRM_Settings::get( 'metadata_location' ) && ! WPRM_Metadata::use_yoast_seo_integration() && WPRM_Metadata::should_output_metadata_for( $recipe->id() ) ) {
-					$metadata_output = WPRM_Metadata::get_metadata_output( $recipe );
+					$metadata = WPRM_Metadata::get_sanitized_metadata( $recipe );
+					$metadata_output = WPRM_Metadata::get_metadata_output( $recipe, $metadata );
 
 					if ( $metadata_output ) {
+						WPRM_Debug::track_metadata_output(
+							array(
+								'type' => isset( $metadata['@type'] ) ? $metadata['@type'] : 'Metadata',
+								'source' => 'recipe_shortcode',
+								'label' => sprintf( '%1$s #%2$d (recipe)', isset( $metadata['@type'] ) ? $metadata['@type'] : __( 'Metadata', 'wp-recipe-maker' ), $recipe->id() ),
+								'object_id' => $recipe->id(),
+								'payload' => $metadata,
+							)
+						);
 						$output .= $metadata_output;
 						WPRM_Metadata::outputted_metadata_for( $recipe->id() );
 					}

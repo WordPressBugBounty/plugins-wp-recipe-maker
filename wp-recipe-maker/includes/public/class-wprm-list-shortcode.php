@@ -49,7 +49,6 @@ class WPRM_List_Shortcode {
 		$list = WPRM_List_Manager::get_list( $list_id );
 
 		if ( $list ) {
-			$internal_post_ids = array();
 			$items = $list->items();
 
 			// In Gutenberg preview, calculate starting position for roundup items in this list.
@@ -61,11 +60,6 @@ class WPRM_List_Shortcode {
 			foreach ( $items as $item ) {
 				if ( 'roundup' === $item['type'] ) {
 					$data = $item['data'];
-
-					// Get ID for metadata if internal recipe.
-					if ( 'internal' === $data['type'] || 'post' === $data['type'] ) {
-						$internal_post_ids[] = $data['id'];
-					}
 
 					// Set template for roundup item.
 					if ( 'default' !== $list->template() ) {
@@ -96,19 +90,22 @@ class WPRM_List_Shortcode {
 
 			// Maybe output itemList metadata.
 			$metadata = '';
-			if ( is_singular() && ( ! WPRM_Metadata::has_outputted_metadata() || false === WPRM_Settings::get( 'recipe_roundup_no_metadata_when_recipe' ) ) ) {
-				$internal_post_ids = array_unique( $internal_post_ids );
-
-				if ( 1 < count( $internal_post_ids ) && $list->metadata_output() ) {
-					$url = get_permalink( get_the_ID() );
-					$name = $list->metadata_name();
-					$description = $list->metadata_description();
-
-					ob_start();
-					WPRM_Recipe_Roundup::output_itemlist_metadata( $url, $name, $description, $internal_post_ids );
-					$metadata = ob_get_contents();
-					ob_end_clean();
-				}
+			$metadata_payload = WPRM_Recipe_Roundup::get_itemlist_metadata_payload_for_list( $list );
+			if ( $metadata_payload ) {
+				ob_start();
+				WPRM_Recipe_Roundup::output_itemlist_metadata(
+					$metadata_payload['url'],
+					$metadata_payload['name'],
+					$metadata_payload['description'],
+					$metadata_payload['post_ids'],
+					array(
+						'source' => 'list_shortcode',
+						'label' => sprintf( 'ItemList List #%d (list)', $list->id() ),
+						'object_id' => $list->id(),
+					)
+				);
+				$metadata = ob_get_contents();
+				ob_end_clean();
 			}
 
 			// Optional align class.

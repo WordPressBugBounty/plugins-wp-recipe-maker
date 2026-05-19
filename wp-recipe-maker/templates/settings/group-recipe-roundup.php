@@ -34,10 +34,7 @@ $recipe_roundup = array(
 					'type' => 'dropdownTemplateModern',
 					'priority' => 'roundup',
 					'default' => 'roundup-clean',
-					'dependency' => array(
-						'id' => 'recipe_template_show_types',
-						'value' => true,
-					),
+					'dependency' => WPRM_Settings::get_recipe_type_template_dependency( 'howto' ),
 				),
 				array(
 					'id' => 'other_recipe_roundup_template',
@@ -46,10 +43,7 @@ $recipe_roundup = array(
 					'type' => 'dropdownTemplateModern',
 					'priority' => 'roundup',
 					'default' => 'roundup-clean',
-					'dependency' => array(
-						'id' => 'recipe_template_show_types',
-						'value' => true,
-					),
+					'dependency' => WPRM_Settings::get_recipe_type_template_dependency( 'other' ),
 				),
 				array(
 					'name' => __( 'Template Editor', 'wp-recipe-maker' ),
@@ -101,6 +95,18 @@ $recipe_roundup = array(
 					'description' => __( 'Do not output the ItemList metadata when there is already recipe metadata on the same page.', 'wp-recipe-maker' ),
 					'type' => 'toggle',
 					'default' => false,
+				),
+				array(
+					'id' => 'recipe_roundup_multiple_itemlist_metadata',
+					'name' => __( 'Multiple ItemList Metadata Outputs', 'wp-recipe-maker' ),
+					'description' => __( 'Control what should happen when multiple roundup ItemList metadata outputs could appear on the same singular page.', 'wp-recipe-maker' ),
+					'type' => 'dropdown',
+					'options' => array(
+						'combine_first' => __( 'Combine items in first Roundup List', 'wp-recipe-maker' ),
+						'first_only' => __( 'Only output ItemList metadata for the first list', 'wp-recipe-maker' ),
+						'multiple' => __( 'Output multiple ItemList metadata blocks (not recommended)', 'wp-recipe-maker' ),
+					),
+					'default' => 'combine_first',
 				),
 				array(
 					'id' => 'recipe_roundup_internal_new_tab',

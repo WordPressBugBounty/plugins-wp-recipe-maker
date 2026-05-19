@@ -84,6 +84,12 @@ class WPRM_Api_Equipment {
 	 * @param WP_Term	$term 	Term to update.
 	 */
 	public static function api_update_equipment_meta( $meta, $term ) {
+		$previous_amazon_status = get_term_meta( $term->term_id, 'wprmp_amazon_status', true );
+		$amazon_asin_updated = false;
+		$amazon_status_updated = false;
+		$amazon_asin = get_term_meta( $term->term_id, 'wprmp_amazon_asin', true );
+		$amazon_status = $previous_amazon_status;
+
 		if ( isset( $meta['eafl'] ) ) {
 			$eafl = intval( $meta['eafl'] );
 			if ( 0 === $eafl ) {
@@ -114,8 +120,13 @@ class WPRM_Api_Equipment {
 			update_term_meta( $term->term_id, 'wprmp_equipment_affiliate_html', $affiliate_html );
 		}
 		if ( isset( $meta['amazon_asin'] ) ) {
-			$amazon_asin = $meta['amazon_asin'];
-			update_term_meta( $term->term_id, 'wprmp_amazon_asin', $amazon_asin );
+			$amazon_asin_updated = true;
+			$amazon_asin = sanitize_text_field( $meta['amazon_asin'] );
+			if ( $amazon_asin ) {
+				update_term_meta( $term->term_id, 'wprmp_amazon_asin', $amazon_asin );
+			} else {
+				delete_term_meta( $term->term_id, 'wprmp_amazon_asin' );
+			}
 		}
 		if ( isset( $meta['amazon_updated'] ) ) {
 			$amazon_updated = intval( $meta['amazon_updated'] );
@@ -146,8 +157,13 @@ class WPRM_Api_Equipment {
 			update_term_meta( $term->term_id, 'wprmp_amazon_name', $amazon_name );
 		}
 		if ( isset( $meta['amazon_status'] ) ) {
-			$amazon_status = $meta['amazon_status'];
-			update_term_meta( $term->term_id, 'wprmp_amazon_status', $amazon_status );
+			$amazon_status_updated = true;
+			$amazon_status = sanitize_text_field( $meta['amazon_status'] );
+			if ( $amazon_status ) {
+				update_term_meta( $term->term_id, 'wprmp_amazon_status', $amazon_status );
+			} else {
+				delete_term_meta( $term->term_id, 'wprmp_amazon_status' );
+			}
 		}
 		if ( isset( $meta['wpupg_custom_link'] ) ) {
 			$link = trim( $meta['wpupg_custom_link'] );
@@ -159,6 +175,15 @@ class WPRM_Api_Equipment {
 				delete_term_meta( $term->term_id, 'wpupg_custom_image' );
 			} else {
 				update_term_meta( $term->term_id, 'wpupg_custom_image', $image );
+			}
+		}
+
+		if ( class_exists( 'WPRMP_Amazon_Status_Notifications' ) ) {
+			if ( $amazon_asin_updated && ! $amazon_asin ) {
+				WPRMP_Amazon_Status_Notifications::clear_term_notification_state( $term->term_id );
+			} elseif ( $amazon_status_updated ) {
+				WPRMP_Amazon_Status_Notifications::handle_status_update( $term->term_id, $previous_amazon_status, $amazon_status );
+				WPRMP_Amazon_Status_Notifications::maybe_send_batch_notifications();
 			}
 		}
 

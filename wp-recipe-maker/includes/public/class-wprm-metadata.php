@@ -104,9 +104,19 @@ class WPRM_Metadata {
 			foreach ( $recipe_ids_to_output_metadata_for as $recipe_id ) {
 				if ( self::should_output_metadata_for( $recipe_id ) ) {
 					$recipe = WPRM_Recipe_Manager::get_recipe( $recipe_id );
-					$output = self::get_metadata_output( $recipe );
+					$metadata = self::get_sanitized_metadata( $recipe );
+					$output = self::get_metadata_output( $recipe, $metadata );
 
 					if ( $output ) {
+						WPRM_Debug::track_metadata_output(
+							array(
+								'type' => isset( $metadata['@type'] ) ? $metadata['@type'] : 'Metadata',
+								'source' => 'head',
+								'label' => sprintf( '%1$s #%2$d (head)', isset( $metadata['@type'] ) ? $metadata['@type'] : __( 'Metadata', 'wp-recipe-maker' ), $recipe_id ),
+								'object_id' => $recipe_id,
+								'payload' => $metadata,
+							)
+						);
 						self::outputted_metadata_for( $recipe_id );
 						echo $output;
 					}
@@ -250,15 +260,28 @@ class WPRM_Metadata {
 	 * @since    1.0.0
 	 * @param		 object $recipe Recipe to get the metadata for.
 	 */
-	public static function get_metadata_output( $recipe ) {
+	public static function get_metadata_output( $recipe, $metadata = null ) {
 		$output = '';
 
-		$metadata = self::sanitize_metadata( self::get_metadata( $recipe ) );
+		if ( null === $metadata ) {
+			$metadata = self::get_sanitized_metadata( $recipe );
+		}
+
 		if ( $metadata ) {
 			$output = '<script type="application/ld+json">' . wp_json_encode( $metadata ) . '</script>';
 		}
 
 		return $output;
+	}
+
+	/**
+	 * Get sanitized metadata for a recipe.
+	 *
+	 * @since	10.3.0
+	 * @param	object $recipe Recipe to get the sanitized metadata for.
+	 */
+	public static function get_sanitized_metadata( $recipe ) {
+		return self::sanitize_metadata( self::get_metadata( $recipe ) );
 	}
 
 	/**

@@ -29,6 +29,7 @@ class WPRM_Shortcode_Reusable_Section_Header {
 			'header' => array(
 				'default' => '',
 				'type' => 'text',
+				'help' => __( 'Supports recipe placeholders like %recipe_name% and recipe-type text switches like %type{food=Ingredients|howto=Materials|default=Ingredients}%.', 'wp-recipe-maker' ),
 			),
 			'header_tag' => array(
 				'name' => 'Tag',

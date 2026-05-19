@@ -53,6 +53,11 @@ html body.wprm-popup-modal-open {
     border-radius: 4px;
     overflow-y: auto;
     box-sizing: border-box;
+
+    @media (min-width: 768px) {
+        max-height: calc(100vh - 40px);
+        max-height: calc(100dvh - 40px);
+    }
 }
 
 .wprm-popup-modal__header {

@@ -6,13 +6,10 @@ import Api from 'Shared/Api';
 export default class PreviewRecipe extends Component {
     getOptions(input) {
         if (!input) {
-			return Promise.resolve({ options: [] });
+			return Promise.resolve([]);
         }
 
-		return Api.template.searchRecipes(input)
-            .then((json) => {
-                return json.data.recipes_with_id;
-            });
+		return Api.template.searchRecipes(input);
     }
 
     render() {

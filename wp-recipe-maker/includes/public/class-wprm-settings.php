@@ -46,12 +46,28 @@ class WPRM_Settings {
 	private static $defaults = array();
 
 	/**
+	 * Cached recipe type usage.
+	 *
+	 * @since    10.5.0
+	 * @access   private
+	 * @var      array    $recipe_type_usage    Array containing whether a recipe type is used.
+	 */
+	private static $recipe_type_usage = array();
+
+	/**
 	 * Register actions and filters.
 	 *
 	 * @since    1.2.0
 	 */
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_submenu_page' ), 20 );
+
+		if ( defined( 'WPRM_POST_TYPE' ) ) {
+			add_action( 'save_post_' . WPRM_POST_TYPE, array( __CLASS__, 'clear_recipe_type_usage_cache' ), 10, 0 );
+			add_action( 'trashed_post', array( __CLASS__, 'clear_recipe_type_usage_cache_for_post' ), 10, 2 );
+			add_action( 'untrashed_post', array( __CLASS__, 'clear_recipe_type_usage_cache_for_post' ), 10, 2 );
+			add_action( 'deleted_post', array( __CLASS__, 'clear_recipe_type_usage_cache_for_post' ), 10, 2 );
+		}
 	}
 
 	/**
@@ -97,6 +113,152 @@ class WPRM_Settings {
 			}
 		} else {
 			return self::get_default( $setting );
+		}
+	}
+
+	/**
+	 * Get the dependency to use for recipe type template settings.
+	 *
+	 * @since    10.5.0
+	 * @param	 mixed  $type         Recipe type to get the dependency for.
+	 * @param	 array  $dependencies Optional dependencies that also need to be met.
+	 */
+	public static function get_recipe_type_template_dependency( $type, $dependencies = array() ) {
+		if ( empty( $dependencies ) ) {
+			$dependencies = array();
+		} elseif ( isset( $dependencies['id'] ) ) {
+			$dependencies = array( $dependencies );
+		}
+
+		if ( ! self::has_recipes_of_type( $type ) ) {
+			$dependencies[] = array(
+				'id' => 'recipe_template_show_types',
+				'value' => true,
+			);
+		}
+
+		if ( 1 === count( $dependencies ) ) {
+			return $dependencies[0];
+		}
+
+		return $dependencies;
+	}
+
+	/**
+	 * Whether to show the manual recipe type template setting.
+	 *
+	 * @since    10.5.0
+	 */
+	public static function show_recipe_type_template_toggle() {
+		return ! self::has_recipes_of_type( 'howto' ) || ! self::has_recipes_of_type( 'other' );
+	}
+
+	/**
+	 * Check whether recipes of a specific type exist.
+	 *
+	 * @since    10.5.0
+	 * @param	 mixed $type Recipe type to check.
+	 */
+	private static function has_recipes_of_type( $type ) {
+		if ( ! in_array( $type, array( 'howto', 'other' ), true ) ) {
+			return false;
+		}
+
+		if ( ! self::can_check_recipe_type_usage() ) {
+			return false;
+		}
+
+		if ( ! self::$recipe_type_usage ) {
+			self::$recipe_type_usage = get_transient( 'wprm_recipe_type_usage' );
+
+			if ( ! is_array( self::$recipe_type_usage ) || ! array_key_exists( 'howto', self::$recipe_type_usage ) || ! array_key_exists( 'other', self::$recipe_type_usage ) ) {
+				self::$recipe_type_usage = self::query_recipe_type_usage();
+				set_transient( 'wprm_recipe_type_usage', self::$recipe_type_usage, DAY_IN_SECONDS );
+			}
+		}
+
+		return ! empty( self::$recipe_type_usage[ $type ] );
+	}
+
+	/**
+	 * Check whether recipe type usage can be detected safely.
+	 *
+	 * @since    10.5.0
+	 */
+	private static function can_check_recipe_type_usage() {
+		global $wpdb;
+
+		return defined( 'WPRM_POST_TYPE' )
+			&& function_exists( 'get_transient' )
+			&& function_exists( 'set_transient' )
+			&& isset( $wpdb, $wpdb->posts, $wpdb->postmeta );
+	}
+
+	/**
+	 * Query whether recipes of non-food types exist.
+	 *
+	 * @since    10.5.0
+	 */
+	private static function query_recipe_type_usage() {
+		global $wpdb;
+
+		$usage = array(
+			'howto' => false,
+			'other' => false,
+		);
+
+		$recipe_types = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT DISTINCT pm.meta_value
+				FROM {$wpdb->postmeta} pm
+				INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+				WHERE p.post_type = %s
+				AND p.post_status NOT IN ( 'auto-draft', 'inherit', 'trash' )
+				AND pm.meta_key = 'wprm_type'
+				AND pm.meta_value IN ( 'howto', 'other', 'non-food' )
+				LIMIT 3",
+				WPRM_POST_TYPE
+			)
+		);
+
+		foreach ( $recipe_types as $recipe_type ) {
+			if ( 'howto' === $recipe_type ) {
+				$usage['howto'] = true;
+			} elseif ( in_array( $recipe_type, array( 'other', 'non-food' ), true ) ) {
+				$usage['other'] = true;
+			}
+		}
+
+		return $usage;
+	}
+
+	/**
+	 * Clear cached recipe type usage.
+	 *
+	 * @since    10.5.0
+	 */
+	public static function clear_recipe_type_usage_cache() {
+		self::$recipe_type_usage = array();
+
+		if ( function_exists( 'delete_transient' ) ) {
+			delete_transient( 'wprm_recipe_type_usage' );
+		}
+	}
+
+	/**
+	 * Clear cached recipe type usage for recipe post changes.
+	 *
+	 * @since    10.5.0
+	 * @param	 mixed $post_id Post ID.
+	 * @param	 mixed $post    Post object.
+	 */
+	public static function clear_recipe_type_usage_cache_for_post( $post_id, $post = false ) {
+		if ( ! $post instanceof WP_Post ) {
+			$post = get_post( $post_id );
+		}
+
+		if ( $post && WPRM_POST_TYPE === $post->post_type ) {
+			self::clear_recipe_type_usage_cache();
 		}
 	}
 

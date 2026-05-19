@@ -15,7 +15,9 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 // @codingStandardsIgnoreStart
 ?>
 <div class="wprm-recipe wprm-recipe-clean">
+	<?php if ( WPRM_Print::has_access() ) : ?>
 	<a href="<?php echo $recipe->print_url(); ?>" class="wprm-recipe-print" target="_blank" rel="nofollow"><span class="wprm-recipe-details-icon"><?php include( WPRM_DIR . 'assets/icons/printer.svg' ); ?></span> <?php echo WPRM_Template_Helper::label( 'print_button' ); ?></a>
+	<?php endif; ?>
 	<div class="wprm-recipe-image"><?php echo WPRM_Template_Helper::recipe_image( $recipe, 'thumbnail' ); ?></div>
 	<h2 class="wprm-recipe-name"><?php echo $recipe->name(); ?></h2>
 	<?php echo $recipe->rating_stars(); ?>

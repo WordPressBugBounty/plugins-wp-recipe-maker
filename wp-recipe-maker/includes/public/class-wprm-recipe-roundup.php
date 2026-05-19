@@ -29,6 +29,24 @@ class WPRM_Recipe_Roundup {
 	private static $roundup_overrides = array();
 
 	/**
+	 * Cached ItemList metadata resolution per post.
+	 *
+	 * @since	10.3.0
+	 * @access	private
+	 * @var		array $itemlist_metadata_cache Cached ItemList sources and payloads.
+	 */
+	private static $itemlist_metadata_cache = array();
+
+	/**
+	 * Track rendered list occurrences per post.
+	 *
+	 * @since	10.3.0
+	 * @access	private
+	 * @var		array $list_render_counts Count of rendered list instances.
+	 */
+	private static $list_render_counts = array();
+
+	/**
 	 * Register actions and filters.
 	 *
 	 * @since    1.0.0
@@ -46,16 +64,22 @@ class WPRM_Recipe_Roundup {
 	 * @since    4.3.0
 	 */
 	public static function metadata_in_head() {
-		if ( is_singular() && ( ! WPRM_Metadata::has_outputted_metadata() || false === WPRM_Settings::get( 'recipe_roundup_no_metadata_when_recipe' ) ) ) {
-			$post = get_post();
-			$recipe_ids = self::get_items_from_content( $post->post_content );
+		if ( self::can_output_singular_itemlist_metadata() ) {
+			$post = self::get_current_singular_post();
 
-			// Need at least 2 items before outputting a list.
-			if ( 1 < count( $recipe_ids ) ) {
-				$name = get_post_meta( get_the_ID(), 'wprm-recipe-roundup-name', true );
-				$description = get_post_meta( get_the_ID(), 'wprm-recipe-roundup-description', true );
+			if ( $post ) {
+				$payloads = self::get_resolved_itemlist_metadata_payloads( $post );
 
-				self::output_itemlist_metadata( get_permalink( $post ), $name, $description, $recipe_ids );
+				foreach ( $payloads as $payload ) {
+					if ( 'head' === $payload['location'] ) {
+						$debug_context = array(
+							'source' => 'head',
+							'label' => isset( $payload['list_id'] ) ? sprintf( 'ItemList List #%d (head)', $payload['list_id'] ) : 'ItemList (head)',
+							'object_id' => isset( $payload['list_id'] ) ? intval( $payload['list_id'] ) : $post->ID,
+						);
+						self::output_itemlist_metadata( $payload['url'], $payload['name'], $payload['description'], $payload['post_ids'], $debug_context );
+					}
+				}
 			}
 		}
 
@@ -104,7 +128,17 @@ class WPRM_Recipe_Roundup {
 			$http_host = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
 			$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
 			$url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . '://' . $http_host . $request_uri;
-			self::output_itemlist_metadata( $url, '', '', $recipe_ids );
+			self::output_itemlist_metadata(
+				$url,
+				'',
+				'',
+				$recipe_ids,
+				array(
+					'source' => 'archive',
+					'label' => 'ItemList (archive)',
+					'object_id' => get_queried_object_id(),
+				)
+			);
 		}
 	}
 
@@ -116,8 +150,40 @@ class WPRM_Recipe_Roundup {
 	 * @param	mixed $name			Name for the ItemList.
 	 * @param	mixed $description	Description for the ItemList.
 	 * @param	mixed $post_ids 	IDs of the posts to get the ItemList metadata for.
+	 * @param	array $debug_context Optional context for debug tracking.
 	 */
-	public static function output_itemlist_metadata( $url, $name, $description, $post_ids ) {
+	public static function output_itemlist_metadata( $url, $name, $description, $post_ids, $debug_context = array() ) {
+		$metadata = self::get_itemlist_metadata( $url, $name, $description, $post_ids );
+
+		if ( $metadata ) {
+			$source = isset( $debug_context['source'] ) ? $debug_context['source'] : 'head';
+			$label = isset( $debug_context['label'] ) && $debug_context['label'] ? $debug_context['label'] : sprintf( 'ItemList (%s)', str_replace( '_shortcode', '', $source ) );
+			$object_id = isset( $debug_context['object_id'] ) ? intval( $debug_context['object_id'] ) : 0;
+
+			WPRM_Debug::track_metadata_output(
+				array(
+					'type' => 'ItemList',
+					'source' => $source,
+					'label' => $label,
+					'object_id' => $object_id,
+					'payload' => $metadata,
+				)
+			);
+
+			echo '<script type="application/ld+json">' . wp_json_encode( $metadata ) . '</script>';
+		}
+	}
+
+	/**
+	 * Build ItemList metadata for a set of recipe ids.
+	 *
+	 * @since	10.3.0
+	 * @param	mixed $url			URL of the roundup page.
+	 * @param	mixed $name			Name for the ItemList.
+	 * @param	mixed $description	Description for the ItemList.
+	 * @param	mixed $post_ids 	IDs of the posts to get the ItemList metadata for.
+	 */
+	private static function get_itemlist_metadata( $url, $name, $description, $post_ids ) {
 		$metadata = array(
 			'@context' => 'http://schema.org',
 			'@type' => 'ItemList',
@@ -160,8 +226,441 @@ class WPRM_Recipe_Roundup {
 		$metadata['numberOfItems'] = $item_list_counter;
 
 		if ( 1 < $item_list_counter ) {
-			echo '<script type="application/ld+json">' . wp_json_encode( $metadata ) . '</script>';
+			return $metadata;
 		}
+
+		return false;
+	}
+
+	/**
+	 * Check if singular roundup ItemList metadata can be output.
+	 *
+	 * @since	10.3.0
+	 */
+	private static function can_output_singular_itemlist_metadata() {
+		return is_singular() && ( ! WPRM_Metadata::has_outputted_metadata() || false === WPRM_Settings::get( 'recipe_roundup_no_metadata_when_recipe' ) );
+	}
+
+	/**
+	 * Get the current singular post.
+	 *
+	 * @since	10.3.0
+	 */
+	private static function get_current_singular_post() {
+		$post = get_post();
+
+		if ( $post instanceof WP_Post ) {
+			return $post;
+		}
+
+		$post_id = get_the_ID();
+
+		if ( $post_id ) {
+			$post = get_post( $post_id );
+			if ( $post instanceof WP_Post ) {
+				return $post;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get the ItemList metadata payload for the current list render instance.
+	 *
+	 * @since	10.3.0
+	 * @param	mixed $list List object to get metadata payload for.
+	 */
+	public static function get_itemlist_metadata_payload_for_list( $list ) {
+		if ( ! $list || ! method_exists( $list, 'id' ) ) {
+			return false;
+		}
+
+		if ( ! self::can_output_singular_itemlist_metadata() ) {
+			return false;
+		}
+
+		$post = self::get_current_singular_post();
+		if ( ! $post ) {
+			return self::get_fallback_itemlist_metadata_payload_for_list( $list );
+		}
+
+		$post_id = $post->ID;
+		$list_id = intval( $list->id() );
+
+		if ( ! isset( self::$list_render_counts[ $post_id ] ) ) {
+			self::$list_render_counts[ $post_id ] = array();
+		}
+		if ( ! isset( self::$list_render_counts[ $post_id ][ $list_id ] ) ) {
+			self::$list_render_counts[ $post_id ][ $list_id ] = 0;
+		}
+
+		$instance_index = self::$list_render_counts[ $post_id ][ $list_id ];
+		self::$list_render_counts[ $post_id ][ $list_id ]++;
+
+		$resolved = self::get_resolved_itemlist_metadata_payloads( $post );
+		foreach ( $resolved as $payload ) {
+			if ( 'list' === $payload['location'] && $list_id === $payload['list_id'] && $instance_index === $payload['instance_index'] ) {
+				return $payload;
+			}
+		}
+
+		$sources = self::get_itemlist_metadata_sources_for_post( $post );
+		foreach ( $sources as $source ) {
+			if ( 'list' === $source['type'] && $list_id === $source['list_id'] && $instance_index === $source['instance_index'] ) {
+				return false;
+			}
+		}
+
+		return self::get_fallback_itemlist_metadata_payload_for_list( $list );
+	}
+
+	/**
+	 * Get fallback ItemList metadata payload for a list render that is not discoverable from post content.
+	 *
+	 * @since	10.3.0
+	 * @param	mixed $list List object to get metadata payload for.
+	 */
+	private static function get_fallback_itemlist_metadata_payload_for_list( $list ) {
+		if ( ! $list || ! $list->metadata_output() ) {
+			return false;
+		}
+
+		$post = self::get_current_singular_post();
+		$url = $post ? get_permalink( $post ) : '';
+
+		return array(
+			'location' => 'list',
+			'list_id' => intval( $list->id() ),
+			'instance_index' => 0,
+			'url' => $url,
+			'name' => $list->metadata_name(),
+			'description' => $list->metadata_description(),
+			'post_ids' => self::get_deduplicated_itemlist_post_ids( self::get_internal_post_ids_for_list( $list ) ),
+		);
+	}
+
+	/**
+	 * Get resolved ItemList metadata payloads for a singular post.
+	 *
+	 * @since	10.3.0
+	 * @param	mixed $post Post to resolve metadata for.
+	 */
+	private static function get_resolved_itemlist_metadata_payloads( $post ) {
+		$post = $post instanceof WP_Post ? $post : get_post( $post );
+
+		if ( ! $post instanceof WP_Post ) {
+			return array();
+		}
+
+		$post_id = $post->ID;
+		if ( ! isset( self::$itemlist_metadata_cache[ $post_id ]['payloads'] ) ) {
+			$sources = self::get_itemlist_metadata_sources_for_post( $post );
+			$payloads = array();
+			$mode = WPRM_Settings::get( 'recipe_roundup_multiple_itemlist_metadata' );
+
+			if ( ! in_array( $mode, array( 'combine_first', 'first_only', 'multiple' ), true ) ) {
+				$mode = 'combine_first';
+			}
+
+			if ( 'multiple' === $mode ) {
+				foreach ( $sources as $source ) {
+					$payloads[] = self::get_itemlist_metadata_payload_from_source( $source );
+				}
+			} elseif ( ! empty( $sources ) ) {
+				$first_source = $sources[0];
+
+				if ( 'first_only' === $mode ) {
+					$payloads[] = self::get_itemlist_metadata_payload_from_source(
+						$first_source,
+						self::get_deduplicated_itemlist_post_ids( $first_source['post_ids'] )
+					);
+				} else {
+					$combined_post_ids = array();
+					foreach ( $sources as $source ) {
+						$combined_post_ids = array_merge( $combined_post_ids, $source['post_ids'] );
+					}
+
+					$payloads[] = self::get_itemlist_metadata_payload_from_source(
+						$first_source,
+						self::get_deduplicated_itemlist_post_ids( $combined_post_ids )
+					);
+				}
+			}
+
+			if ( ! isset( self::$itemlist_metadata_cache[ $post_id ] ) ) {
+				self::$itemlist_metadata_cache[ $post_id ] = array();
+			}
+			self::$itemlist_metadata_cache[ $post_id ]['sources'] = $sources;
+			self::$itemlist_metadata_cache[ $post_id ]['payloads'] = $payloads;
+		}
+
+		return self::$itemlist_metadata_cache[ $post_id ]['payloads'];
+	}
+
+	/**
+	 * Get collected ItemList metadata sources for a post.
+	 *
+	 * @since	10.3.0
+	 * @param	mixed $post Post to collect sources for.
+	 */
+	private static function get_itemlist_metadata_sources_for_post( $post ) {
+		$post = $post instanceof WP_Post ? $post : get_post( $post );
+
+		if ( ! $post instanceof WP_Post ) {
+			return array();
+		}
+
+		$post_id = $post->ID;
+		if ( ! isset( self::$itemlist_metadata_cache[ $post_id ]['sources'] ) ) {
+			$sources = array();
+			$occurrences = self::get_itemlist_source_occurrences_from_content( $post->post_content );
+			$list_instance_counts = array();
+			$roundup_source = false;
+
+			foreach ( $occurrences as $occurrence ) {
+				if ( 'roundup' === $occurrence['type'] ) {
+					if ( ! $roundup_source ) {
+						$roundup_source = array(
+							'type' => 'roundup',
+							'order' => $occurrence['offset'],
+							'location' => 'head',
+							'url' => get_permalink( $post ),
+							'name' => get_post_meta( $post_id, 'wprm-recipe-roundup-name', true ),
+							'description' => get_post_meta( $post_id, 'wprm-recipe-roundup-description', true ),
+							'post_ids' => array(),
+						);
+					}
+
+					if ( ! empty( $occurrence['post_id'] ) ) {
+						$roundup_source['post_ids'][] = $occurrence['post_id'];
+					}
+
+					continue;
+				}
+
+				if ( 'list' === $occurrence['type'] && ! empty( $occurrence['list_id'] ) ) {
+					$list_id = $occurrence['list_id'];
+					if ( ! isset( $list_instance_counts[ $list_id ] ) ) {
+						$list_instance_counts[ $list_id ] = 0;
+					}
+					$instance_index = $list_instance_counts[ $list_id ];
+					$list_instance_counts[ $list_id ]++;
+
+					$list = WPRM_List_Manager::get_list( $list_id );
+					if ( ! $list || ! $list->metadata_output() ) {
+						continue;
+					}
+
+					$post_ids = self::get_internal_post_ids_for_list( $list );
+					if ( empty( $post_ids ) ) {
+						continue;
+					}
+
+					$sources[] = array(
+						'type' => 'list',
+						'order' => $occurrence['offset'],
+						'location' => 'list',
+						'list_id' => $list_id,
+						'instance_index' => $instance_index,
+						'url' => get_permalink( $post ),
+						'name' => $list->metadata_name(),
+						'description' => $list->metadata_description(),
+						'post_ids' => $post_ids,
+					);
+				}
+			}
+
+			if ( $roundup_source && ! empty( $roundup_source['post_ids'] ) ) {
+				$sources[] = $roundup_source;
+			}
+
+			usort(
+				$sources,
+				function( $a, $b ) {
+					if ( $a['order'] === $b['order'] ) {
+						return 0;
+					}
+
+					return $a['order'] < $b['order'] ? -1 : 1;
+				}
+			);
+
+			if ( ! isset( self::$itemlist_metadata_cache[ $post_id ] ) ) {
+				self::$itemlist_metadata_cache[ $post_id ] = array();
+			}
+			self::$itemlist_metadata_cache[ $post_id ]['sources'] = $sources;
+		}
+
+		return self::$itemlist_metadata_cache[ $post_id ]['sources'];
+	}
+
+	/**
+	 * Convert a source to a metadata payload.
+	 *
+	 * @since	10.3.0
+	 * @param	array $source Source to convert.
+	 * @param	array $post_ids Optional list of post ids to use for the payload.
+	 */
+	private static function get_itemlist_metadata_payload_from_source( $source, $post_ids = false ) {
+		$payload = array(
+			'location' => $source['location'],
+			'url' => $source['url'],
+			'name' => $source['name'],
+			'description' => $source['description'],
+			'post_ids' => false === $post_ids ? $source['post_ids'] : $post_ids,
+		);
+
+		if ( 'list' === $source['type'] ) {
+			$payload['list_id'] = $source['list_id'];
+			$payload['instance_index'] = $source['instance_index'];
+		}
+
+		return $payload;
+	}
+
+	/**
+	 * Get ordered ItemList source occurrences from content.
+	 *
+	 * @since	10.3.0
+	 * @param	string $content Post content to scan.
+	 */
+	private static function get_itemlist_source_occurrences_from_content( $content ) {
+		$occurrences = array();
+
+		$shortcode_pattern = get_shortcode_regex( array( 'wprm-list', 'wprm-recipe-roundup-item' ) );
+		if ( preg_match_all( '/' . $shortcode_pattern . '/s', $content, $matches, PREG_OFFSET_CAPTURE ) && isset( $matches[2] ) ) {
+			foreach ( $matches[2] as $key => $match ) {
+				$tag = $match[0];
+				$offset = $matches[0][ $key ][1];
+				$attributes = shortcode_parse_atts( stripslashes( $matches[3][ $key ][0] ) );
+				$attributes = is_array( $attributes ) ? $attributes : array();
+
+				if ( 'wprm-list' === $tag ) {
+					$list_id = isset( $attributes['id'] ) ? intval( $attributes['id'] ) : 0;
+					if ( $list_id ) {
+						$occurrences[] = array(
+							'type' => 'list',
+							'offset' => $offset,
+							'list_id' => $list_id,
+						);
+					}
+				}
+
+				if ( 'wprm-recipe-roundup-item' === $tag ) {
+					$post_id = isset( $attributes['id'] ) ? intval( $attributes['id'] ) : 0;
+					if ( $post_id ) {
+						$occurrences[] = array(
+							'type' => 'roundup',
+							'offset' => $offset,
+							'post_id' => $post_id,
+						);
+					}
+				}
+			}
+		}
+
+		$block_pattern = '/<!--\s+wp:(wp\-recipe\-maker\/list|wp\-recipe\-maker\/recipe-roundup-item)(\s+(\{.*?\}))?\s+(\/)?-->/';
+		if ( preg_match_all( $block_pattern, $content, $matches, PREG_OFFSET_CAPTURE ) && isset( $matches[1] ) ) {
+			foreach ( $matches[1] as $key => $match ) {
+				$block_name = $match[0];
+				$offset = $matches[0][ $key ][1];
+				$attributes_json = isset( $matches[3][ $key ][0] ) ? $matches[3][ $key ][0] : '';
+				$attributes = $attributes_json ? json_decode( $attributes_json, true ) : array();
+				$attributes = is_array( $attributes ) ? $attributes : array();
+
+				if ( 'wp-recipe-maker/list' === $block_name ) {
+					$list_id = isset( $attributes['id'] ) ? intval( $attributes['id'] ) : 0;
+					if ( $list_id ) {
+						$occurrences[] = array(
+							'type' => 'list',
+							'offset' => $offset,
+							'list_id' => $list_id,
+						);
+					}
+				}
+
+				if ( 'wp-recipe-maker/recipe-roundup-item' === $block_name ) {
+					$post_id = isset( $attributes['id'] ) ? intval( $attributes['id'] ) : 0;
+					if ( $post_id ) {
+						$occurrences[] = array(
+							'type' => 'roundup',
+							'offset' => $offset,
+							'post_id' => $post_id,
+						);
+					}
+				}
+			}
+		}
+
+		usort(
+			$occurrences,
+			function( $a, $b ) {
+				if ( $a['offset'] === $b['offset'] ) {
+					return 0;
+				}
+
+				return $a['offset'] < $b['offset'] ? -1 : 1;
+			}
+		);
+
+		return $occurrences;
+	}
+
+	/**
+	 * Get internal post ids from a roundup list.
+	 *
+	 * @since	10.3.0
+	 * @param	mixed $list List object to get ids for.
+	 */
+	private static function get_internal_post_ids_for_list( $list ) {
+		$post_ids = array();
+
+		if ( ! $list || ! method_exists( $list, 'items' ) ) {
+			return $post_ids;
+		}
+
+		$items = $list->items();
+		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) || ! isset( $item['type'] ) || 'roundup' !== $item['type'] ) {
+				continue;
+			}
+
+			$data = isset( $item['data'] ) ? $item['data'] : array();
+			if ( ! is_array( $data ) || ! isset( $data['type'] ) ) {
+				continue;
+			}
+
+			if ( ( 'internal' === $data['type'] || 'post' === $data['type'] ) && ! empty( $data['id'] ) ) {
+				$post_ids[] = intval( $data['id'] );
+			}
+		}
+
+		return $post_ids;
+	}
+
+	/**
+	 * Deduplicate post ids while preserving their first occurrence.
+	 *
+	 * @since	10.3.0
+	 * @param	array $post_ids Post ids to deduplicate.
+	 */
+	private static function get_deduplicated_itemlist_post_ids( $post_ids ) {
+		$deduplicated = array();
+		$seen = array();
+
+		foreach ( $post_ids as $post_id ) {
+			$post_id = intval( $post_id );
+
+			if ( ! $post_id || isset( $seen[ $post_id ] ) ) {
+				continue;
+			}
+
+			$seen[ $post_id ] = true;
+			$deduplicated[] = $post_id;
+		}
+
+		return $deduplicated;
 	}
 
 	/**

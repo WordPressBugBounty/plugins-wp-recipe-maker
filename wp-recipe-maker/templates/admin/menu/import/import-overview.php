@@ -28,7 +28,7 @@
 	<div class="wprm-tools-hero">
 		<div>
 			<h1><?php esc_html_e( 'Import Recipes', 'wp-recipe-maker' ); ?></h1>
-			<p><?php esc_html_e( 'Import recipes from other plugins, JSON files, Paprika, or convert text to recipes using the AI Assistant.', 'wp-recipe-maker' ); ?></p>
+			<p><?php esc_html_e( 'Import recipes from other plugins, CSV files, JSON files, Paprika, or convert text to recipes using the AI Assistant.', 'wp-recipe-maker' ); ?></p>
 		</div>
 	</div>
 
@@ -42,6 +42,16 @@
 			<p><?php esc_html_e( 'Import recipes by uploading a JSON file.', 'wp-recipe-maker' ); ?></p>
 			<div class="wprm-tools-actions">
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=wprm_import_json' ) ); ?>" class="button button-secondary button-compact"><?php esc_html_e( 'Import from JSON', 'wp-recipe-maker' ); ?></a>
+			</div>
+		</div>
+
+		<div class="wprm-tools-panel">
+			<?php $render_docs_link( 'https://help.bootstrapped.ventures/docs/wp-recipe-maker/import-recipes-from-csv/' ); ?>
+			<span class="wprm-tools-tag"><?php esc_html_e( 'Premium', 'wp-recipe-maker' ); ?></span>
+			<h2><?php esc_html_e( 'Import Recipes from CSV', 'wp-recipe-maker' ); ?></h2>
+			<p><?php esc_html_e( 'Import recipes by uploading a CSV file and matching columns to recipe fields.', 'wp-recipe-maker' ); ?></p>
+			<div class="wprm-tools-actions">
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=wprm_import_csv' ) ); ?>" class="button button-secondary button-compact"><?php esc_html_e( 'Import from CSV', 'wp-recipe-maker' ); ?></a>
 			</div>
 		</div>
 
@@ -68,8 +78,8 @@
 		<div class="wprm-tools-panel">
 			<?php $render_docs_link( 'https://help.bootstrapped.ventures/docs/wp-recipe-maker/import-recipes-from-json/' ); ?>
 			<span class="wprm-tools-tag"><?php esc_html_e( 'Premium', 'wp-recipe-maker' ); ?></span>
-			<h2><?php esc_html_e( 'JSON & Paprika Import', 'wp-recipe-maker' ); ?></h2>
-			<p><?php esc_html_e( 'Import recipes from JSON files, taxonomy terms from JSON, or recipes from Paprika.', 'wp-recipe-maker' ); ?></p>
+			<h2><?php esc_html_e( 'CSV, JSON & Paprika Import', 'wp-recipe-maker' ); ?></h2>
+			<p><?php esc_html_e( 'Import recipes from CSV files, JSON files, taxonomy terms from JSON, or recipes from Paprika.', 'wp-recipe-maker' ); ?></p>
 			<div class="wprm-tools-actions">
 				<a href="https://bootstrapped.ventures/wp-recipe-maker/get-the-plugin/" target="_blank" class="button button-secondary button-compact"><?php esc_html_e( 'Get WP Recipe Maker Premium', 'wp-recipe-maker' ); ?></a>
 			</div>

@@ -68,12 +68,23 @@ $ai_assistant = array(
 			'name' => __( 'General', 'wp-recipe-maker' ),
 			'settings' => array(
 				array(
+					'id' => 'ai_assistant_enabled',
+					'name' => __( 'Enable AI Assistant', 'wp-recipe-maker' ),
+					'description' => __( 'Show AI Assistant tools and AI related buttons throughout the plugin.', 'wp-recipe-maker' ),
+					'type' => 'toggle',
+					'default' => true,
+				),
+				array(
 					'id' => 'ai_assistant_default_language',
 					'name' => __( 'Default Language', 'wp-recipe-maker' ),
 					'description' => __( 'The default language to use when the AI Assistant processes recipes. Choose "Auto" to let the AI detect the language automatically, or select a specific language to help the AI understand the recipe content if it cannot detect the language.', 'wp-recipe-maker' ),
 					'type' => 'dropdown',
 					'options' => $language_options,
 					'default' => $default_language,
+					'dependency' => array(
+						'id' => 'ai_assistant_enabled',
+						'value' => true,
+					),
 				),
 			),
 		),

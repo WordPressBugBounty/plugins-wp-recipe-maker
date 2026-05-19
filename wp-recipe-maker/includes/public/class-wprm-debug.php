@@ -25,6 +25,7 @@ class WPRM_Debug {
 
 	// Internal variables.
 	private static $log = array();
+	private static $metadata_outputs = array();
 
 	/**
 	 * Use for debugging something in the footer of the page, after everything is loaded.
@@ -100,6 +101,69 @@ class WPRM_Debug {
 		}
 
 		self::$log[] = $log;
+	}
+
+	/**
+	 * Track metadata output for this request.
+	 *
+	 * @since	10.3.0
+	 * @param	array $entry Metadata output details.
+	 */
+	public static function track_metadata_output( $entry ) {
+		if ( ! self::debugging() || ! is_array( $entry ) || ! isset( $entry['payload'] ) || ! is_array( $entry['payload'] ) ) {
+			return false;
+		}
+
+		$payload = $entry['payload'];
+		$type = isset( $entry['type'] ) && $entry['type'] ? $entry['type'] : ( isset( $payload['@type'] ) ? $payload['@type'] : 'Metadata' );
+		$source = isset( $entry['source'] ) ? sanitize_key( $entry['source'] ) : '';
+		$object_id = isset( $entry['object_id'] ) ? intval( $entry['object_id'] ) : 0;
+
+		self::$metadata_outputs[] = array(
+			'type' => is_string( $type ) ? $type : 'Metadata',
+			'source' => $source,
+			'label' => isset( $entry['label'] ) && $entry['label'] ? wp_strip_all_tags( $entry['label'] ) : self::get_metadata_output_label( $type, $source, $object_id ),
+			'object_id' => $object_id,
+			'payload' => $payload,
+		);
+
+		return true;
+	}
+
+	/**
+	 * Get metadata outputs tracked for this request.
+	 *
+	 * @since	10.3.0
+	 */
+	public static function get_tracked_metadata_outputs() {
+		return self::$metadata_outputs;
+	}
+
+	/**
+	 * Get a default label for tracked metadata output.
+	 *
+	 * @since	10.3.0
+	 * @param	mixed $type Metadata type.
+	 * @param	string $source Metadata source.
+	 * @param	int    $object_id Associated object ID.
+	 */
+	private static function get_metadata_output_label( $type, $source, $object_id ) {
+		$type = is_string( $type ) && $type ? $type : 'Metadata';
+		$source_label = $source ? str_replace( '_shortcode', '', $source ) : 'output';
+
+		if ( 'Recipe' === $type || 'HowTo' === $type ) {
+			if ( $object_id ) {
+				return sprintf( '%1$s #%2$d (%3$s)', $type, $object_id, $source_label );
+			}
+
+			return sprintf( '%1$s (%2$s)', $type, $source_label );
+		}
+
+		if ( $object_id ) {
+			return sprintf( '%1$s #%2$d (%3$s)', $type, $object_id, $source_label );
+		}
+
+		return sprintf( '%1$s (%2$s)', $type, $source_label );
 	}
 
 	/**

@@ -383,6 +383,14 @@ export default class DataTable extends Component {
     getExportCellValue( row, column, domValue = '' ) {
         const rawValue = this.getRawColumnValue( row, column );
 
+        if ( 'function' === typeof column.exportValue ) {
+            try {
+                return this.getFormattedExportValue( column.exportValue( rawValue, row, column ) );
+            } catch ( error ) {
+                return '';
+            }
+        }
+
         if ( 'rating_count' === column.id ) {
             const totalRatings = this.getRatingsCount( rawValue );
             return totalRatings ? `${ totalRatings }` : '';

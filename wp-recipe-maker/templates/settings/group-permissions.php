@@ -23,6 +23,11 @@ $permissions = array(
 					'description' => __( 'Redirect visitors to the homepage when trying to print a recipe that has not been published yet. Can cause problems if the parent post is not set correctly.', 'wp-recipe-maker' ),
 					'type' => 'toggle',
 					'default' => false,
+					'dependency' => array(
+						'id' => 'print_access',
+						'value' => 'disabled',
+						'type' => 'inverse',
+					),
 				),
 				array(
 					'id' => 'print_recipes_in_parent_content_only',
@@ -30,6 +35,11 @@ $permissions = array(
 					'description' => __( 'Checks if a recipe is in the post content of its parent post. Can be used in combination with membership plugins.', 'wp-recipe-maker' ),
 					'type' => 'toggle',
 					'default' => false,
+					'dependency' => array(
+						'id' => 'print_access',
+						'value' => 'disabled',
+						'type' => 'inverse',
+					),
 				),
 				array(
 					'id' => 'api_allow_published_only',

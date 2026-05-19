@@ -114,6 +114,8 @@ class WPRM_Assets {
 					'video_force_ratio' => WPRM_Settings::get( 'video_force_ratio' ),
 					'analytics_enabled' => WPRM_Settings::get( 'analytics_enabled' ),
 					'google_analytics_enabled' => WPRM_Settings::get( 'google_analytics_enabled' ),
+					'print_access' => WPRM_Print::access(),
+					'print_access_allowed' => WPRM_Print::has_access(),
 					'print_new_tab' => WPRM_Settings::get( 'print_new_tab' ),
 					'print_recipe_identifier' => WPRM_Settings::get( 'print_recipe_identifier' ),
 					'pdf_download_enabled' => WPRM_Settings::get( 'pdf_download_enabled' ),
@@ -238,6 +240,7 @@ class WPRM_Assets {
 				'elite' => WPRM_Addons::is_active( 'elite' ),
 			),
 			'settings' => array(
+				'ai_assistant_enabled' => WPRM_Settings::get( 'ai_assistant_enabled' ),
 				'nutrition_default_serving_unit' => WPRM_Settings::get( 'nutrition_default_serving_unit' ),
 				'metadata_instruction_name' => WPRM_Settings::get( 'metadata_instruction_name' ),
 				'pinterest_use_for_image' => WPRM_Settings::get( 'pinterest_use_for_image' ),
@@ -246,6 +249,8 @@ class WPRM_Assets {
 				'recipe_use_author' => WPRM_Settings::get( 'recipe_use_author' ),
 				'recipe_times_use_days' => WPRM_Settings::get( 'recipe_times_use_days' ),
 				'recipe_modal_undo_redo_history' => WPRM_Settings::get( 'recipe_modal_undo_redo_history' ),
+				'print_access' => WPRM_Print::access(),
+				'print_access_allowed' => WPRM_Print::has_access(),
 				'default_print_template_admin' => WPRM_Settings::get( 'default_print_template_admin' ),
 				'post_type_structure' => WPRM_Settings::get( 'post_type_structure' ),
 				'microlink_api_key' => WPRM_Settings::get( 'microlink_api_key' ),
@@ -256,6 +261,7 @@ class WPRM_Assets {
 				'fractions_use_mixed' => WPRM_Settings::get( 'fractions_use_mixed' ),
 				'fractions_use_symbols' => WPRM_Settings::get( 'fractions_use_symbols' ),
 				'fractions_max_denominator' => WPRM_Settings::get( 'fractions_max_denominator' ),
+				'servings_display_fractions' => WPRM_Settings::get( 'servings_display_fractions' ),
 				'decimal_separator' => WPRM_Settings::get( 'decimal_separator' ),
 			),
 			'manage' => array(

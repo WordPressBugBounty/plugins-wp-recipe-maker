@@ -180,7 +180,7 @@ class WPRM_Shortcode_Other {
 				$tooltip = $term->description;
 				$data_tooltip = '';
 
-				if ( $tooltip ) { 
+				if ( $tooltip ) {
 					$classes[] = 'wprm-tooltip';
 					$data_tooltip = WPRM_Tooltip::get_tooltip_data( $tooltip );
 				}
@@ -223,7 +223,7 @@ class WPRM_Shortcode_Other {
 			$parent_uid = null;
 			$split_id = null;
 			$split_percentage = null;
-			
+
 			// Check if this is a split (format: "uid:splitId")
 			if ( strpos( $uid_str, ':' ) !== false ) {
 				$is_split = true;
@@ -281,24 +281,24 @@ class WPRM_Shortcode_Other {
 								}
 							}
 						}
-						
+
 						if ( ! $found_split ) {
 							// Split not found, fall back to text
 							return $output;
 						}
-						
+
 						// Calculate split amount from parent amount and percentage
 						$parent_amount = isset( $found_ingredient['amount'] ) ? $found_ingredient['amount'] : '';
 						$parent_amount_parsed = WPRM_Recipe_Parser::parse_quantity( $parent_amount );
-						
+
 							$split_amount = '';
 							if ( $parent_amount_parsed > 0 ) {
 								$split_amount_parsed = ( $parent_amount_parsed * $split_percentage ) / 100;
-								
+
 								// Format the calculated amount.
 								$split_amount = WPRM_Recipe_Parser::format_quantity( $split_amount_parsed, $decimals, WPRM_Settings::get( 'fractions_enabled' ), true );
 							}
-						
+
 						// Use parent's unit
 						$unit = isset( $found_ingredient['unit'] ) ? $found_ingredient['unit'] : '';
 						} else {
@@ -331,7 +331,15 @@ class WPRM_Shortcode_Other {
 								}
 							}
 						}
-					
+
+						if ( class_exists( 'WPRMPUC_Manager' ) && method_exists( 'WPRMPUC_Manager', 'get_ingredient_name_for_system' ) ) {
+							$ingredient_for_name = $found_ingredient;
+							$ingredient_for_name['name'] = $ingredient_name;
+							$ingredient_name = WPRMPUC_Manager::get_ingredient_name_for_system( $ingredient_for_name, intval( $recipe->unit_system() ), $split_amount_parsed_for_plural );
+						}
+
+						$ingredient_name = do_shortcode( $ingredient_name );
+
 						$parts = array();
 
 					if ( $split_amount ) { $parts[] = $split_amount; };
@@ -403,7 +411,7 @@ class WPRM_Shortcode_Other {
 						// Use the full UID (including split ID) for the class
 						// Replace colon with dash in class name to avoid CSS selector issues
 						$uid_for_class = $is_split ? str_replace( ':', '-', $uid_str ) : $parent_uid;
-						
+
 						$classes = array(
 							'wprm-inline-ingredient',
 							'wprm-inline-ingredient-' . $recipe->id() . '-' . $uid_for_class,
@@ -439,7 +447,7 @@ class WPRM_Shortcode_Other {
 								$both_units_show_identical = ! empty( $atts['unit_conversion_show_identical'] );
 								$both_units_data_attr .= ' data-both-units-style="' . esc_attr( $both_units_style ) . '" data-both-units-show-identical="' . ( $both_units_show_identical ? '1' : '0' ) . '"';
 							}
-							
+
 							// Add split data attributes for adjustable servings
 							$split_data_attr = '';
 							if ( $is_split && $split_percentage !== null ) {
@@ -471,7 +479,7 @@ class WPRM_Shortcode_Other {
 				if ( isset( $match[1] ) ) {
 					$file = $match[0];
 					$name = $match[1];
-					
+
 					$icons[ $name ] = array(
 						'file' => WPRM_DIR . 'assets/icons/temperature/' . $file,
 						'url' => WPRM_URL . 'assets/icons/temperature/' . $file,
@@ -501,21 +509,21 @@ nn	 * Set the count and total for the recipe counter shortcode.
 			// processed by other plugins that filter the_content and run do_shortcode
 			// without outputting the result.
 			$total_count = 0;
-			
+
 			// Count roundup items by looking for the class in the rendered HTML.
 			// Handle both single and double quotes for the class attribute.
 			if ( preg_match_all( '/class=["\'][^"\']*\bwprm-recipe-roundup-item\b[^"\']*["\']/', $content, $matches ) ) {
 				$total_count = count( $matches[0] );
 			}
-			
+
 			// Fallback to 1 if no items found (shouldn't happen, but be safe).
 			if ( 0 === $total_count ) {
 				$total_count = 1;
 			}
-			
+
 			// Replace %total% placeholders with the actual total count.
 			$content = str_replace( '<span class="wprm-recipe-counter-total">1</span>', $total_count, $content );
-			
+
 			// Replace %count% placeholders with individual counts.
 			// Find all count placeholders and replace them sequentially.
 			$count = 0;
@@ -554,6 +562,7 @@ nn	 * Set the count and total for the recipe counter shortcode.
 			'max_width' => '',
 			'user' => '',
 			'rating' => '',
+			'rating_count' => '',
 			'taxonomy' => '',
 			'term_ids' => '',
 			'term_slugs' => '',
@@ -730,6 +739,32 @@ nn	 * Set the count and total for the recipe counter shortcode.
 			}
 		}
 
+		// Rating count conditions.
+		if ( '' !== $atts['rating_count'] ) {
+			$recipe = WPRM_Template_Shortcodes::get_recipe( $atts['id'] );
+
+			if ( $recipe ) {
+				$rating_count_condition = trim( $atts['rating_count'] );
+
+				if ( preg_match( '/^\d+$/', $rating_count_condition ) ) {
+					$lower_bound = intval( $rating_count_condition );
+					$rating = $recipe->rating();
+					$rating_count = isset( $rating['count'] ) ? intval( $rating['count'] ) : 0;
+
+					$matches_conditions[] = $lower_bound <= $rating_count;
+				} elseif ( preg_match( '/^(\d+)\s*-\s*(\d+)$/', $rating_count_condition, $match ) ) {
+					$lower_bound = intval( $match[1] );
+					$upper_bound = intval( $match[2] );
+					$rating = $recipe->rating();
+					$rating_count = isset( $rating['count'] ) ? intval( $rating['count'] ) : 0;
+
+					$matches_conditions[] = $lower_bound <= $upper_bound && $lower_bound <= $rating_count && $rating_count <= $upper_bound;
+				} else {
+					$matches_conditions[] = false;
+				}
+			}
+		}
+
 		// Combine conditions.
 		if ( 0 < count( $matches_conditions ) ) {
 			$match = true;
@@ -739,7 +774,7 @@ nn	 * Set the count and total for the recipe counter shortcode.
 		} else {
 			$match = false;
 		}
-		
+
 		// Optional inverse match.
 		if ( (bool) $atts['inverse'] ) {
 			$classes[] = 'wprm-condition-inverse';

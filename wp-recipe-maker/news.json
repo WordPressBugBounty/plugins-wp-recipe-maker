@@ -1,6 +1,30 @@
 {
     "news": [
         {
+            "date": "2026-05-19",
+            "label": "Release",
+            "title": "WP Recipe Maker 10.6.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-10-6-0/"
+        },
+        {
+            "date": "2026-05-05",
+            "label": "Blog",
+            "title": "How to Measure Flour, Sugar, and Liquids the Right Way",
+            "url": "https://bootstrapped.ventures/measuring-ingredients/"
+        },
+        {
+            "date": "2026-04-28",
+            "label": "Blog",
+            "title": "Which Recipe Nutrition Calculator Is Most Accurate for Your Recipes",
+            "url": "https://bootstrapped.ventures/best-recipe-nutrition-calculator/"
+        },
+        {
+            "date": "2026-04-15",
+            "label": "Blog",
+            "title": "Best Divi Recipe Plugins Tested for Features and Compatibility",
+            "url": "https://bootstrapped.ventures/divi-recipe-plugin/"
+        },
+        {
             "date": "2026-04-02",
             "label": "Release",
             "title": "WP Recipe Maker 10.5.0",

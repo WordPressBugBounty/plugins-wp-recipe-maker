@@ -51,6 +51,15 @@ class WPRM_Metadata_Rank_Math {
 				$metadata = self::get_recipe_metadata( $data );
 
 				if ( $metadata ) {
+					WPRM_Debug::track_metadata_output(
+						array(
+							'type' => isset( $metadata['@type'] ) ? $metadata['@type'] : 'Metadata',
+							'source' => 'rank_math',
+							'label' => sprintf( '%1$s #%2$d (rank_math)', isset( $metadata['@type'] ) ? $metadata['@type'] : __( 'Metadata', 'wp-recipe-maker' ), $recipe->id() ),
+							'object_id' => $recipe->id(),
+							'payload' => $metadata,
+						)
+					);
 					WPRM_Metadata::outputted_metadata_for( $recipe->id() );
 					$data['recipe'] = $metadata;
 				}
@@ -102,7 +111,7 @@ class WPRM_Metadata_Rank_Math {
 		$metadata = false;
 
 		if ( $recipe ) {
-			$metadata = WPRM_Metadata::sanitize_metadata( WPRM_Metadata::get_metadata( $recipe ) );
+			$metadata = WPRM_Metadata::get_sanitized_metadata( $recipe );
 
 			if ( $metadata ) {
 				// Context is already set by Rank Math.

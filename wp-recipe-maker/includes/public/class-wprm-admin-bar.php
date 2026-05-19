@@ -27,6 +27,7 @@ class WPRM_Admin_Bar {
 	 */
 	public static function init() {
 		add_action( 'admin_bar_menu', array( __CLASS__, 'admin_bar_menu' ), 80 );
+		add_action( 'wp_before_admin_bar_render', array( __CLASS__, 'admin_bar_debug_menu' ) );
 		add_action( 'wp', array( __CLASS__, 'load_modal' ) );
 	}
 
@@ -121,6 +122,10 @@ class WPRM_Admin_Bar {
 			$main_menu['meta'] = array(
 				'onclick' => self::get_edit_recipe( $recipes[0]->id() ),
 			);
+		}
+
+		if ( WPRM_Debug::debugging() ) {
+			$should_output_menu = true;
 		}
 
 		// Shortcuts
@@ -236,6 +241,130 @@ class WPRM_Admin_Bar {
 	 */
 	public static function get_edit_recipe( $recipe_id ) {
 		return 'WPRM_Modal.open( "recipe", { recipeId: ' . $recipe_id . ', saveCallback: function() { location.reload(); } } ); return false;';
+	}
+
+	/**
+	 * Add debug information to the admin bar.
+	 *
+	 * @since	10.3.0
+	 */
+	public static function admin_bar_debug_menu() {
+		if ( ! self::should_load_admin_bar() || ! WPRM_Debug::debugging() ) {
+			return;
+		}
+
+		global $wp_admin_bar;
+
+		if ( ! $wp_admin_bar || ! $wp_admin_bar->get_node( 'wp-recipe-maker' ) ) {
+			return;
+		}
+
+		$metadata_outputs = WPRM_Debug::get_tracked_metadata_outputs();
+
+		$wp_admin_bar->add_group(
+			array(
+				'parent' => 'wp-recipe-maker',
+				'id'     => 'wprm-debug',
+			)
+		);
+
+		$wp_admin_bar->add_node(
+			array(
+				'parent' => 'wprm-debug',
+				'id'     => 'wprm-debug-header',
+				'title'  => __( 'Debug', 'wp-recipe-maker' ),
+			)
+		);
+
+		$wp_admin_bar->add_node(
+			array(
+				'parent' => 'wprm-debug',
+				'id'     => 'wprm-debug-summary',
+				'title'  => sprintf( _n( '%s metadata output', '%s metadata outputs', count( $metadata_outputs ), 'wp-recipe-maker' ), number_format_i18n( count( $metadata_outputs ) ) ),
+			)
+		);
+
+		if ( empty( $metadata_outputs ) ) {
+			$wp_admin_bar->add_node(
+				array(
+					'parent' => 'wprm-debug',
+					'id'     => 'wprm-debug-empty',
+					'title'  => __( 'No WPRM metadata output on this page', 'wp-recipe-maker' ),
+				)
+			);
+
+			return;
+		}
+
+		foreach ( $metadata_outputs as $index => $metadata_output ) {
+			$entry_id = 'wprm-debug-entry-' . $index;
+			$panel_id = $entry_id . '-panel';
+			$payload = wp_json_encode( $metadata_output['payload'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+			$payload = $payload ? $payload : '{}';
+
+			$actions = array(
+				sprintf(
+					'<a href="#" class="wprm-admin-bar-debug-action wprm-admin-bar-debug-action-copy" onclick="%s">%s</a>',
+					esc_attr( self::get_copy_metadata_action( $index ) ),
+					esc_html__( 'Copy JSON', 'wp-recipe-maker' )
+				),
+				sprintf(
+					'<a href="%1$s" class="wprm-admin-bar-debug-action wprm-admin-bar-debug-action-validator" onclick="%2$s" target="_blank" rel="noopener noreferrer">%3$s</a>',
+					esc_url( 'https://search.google.com/test/rich-results' ),
+					esc_attr( self::get_validator_action( $index, 'rich-results' ) ),
+					esc_html__( 'Rich Results', 'wp-recipe-maker' )
+				),
+				sprintf(
+					'<a href="%1$s" class="wprm-admin-bar-debug-action wprm-admin-bar-debug-action-validator" onclick="%2$s" target="_blank" rel="noopener noreferrer">%3$s</a>',
+					esc_url( 'https://validator.schema.org/' ),
+					esc_attr( self::get_validator_action( $index, 'schema-validator' ) ),
+					esc_html__( 'Schema Validator', 'wp-recipe-maker' )
+				),
+			);
+
+			$wp_admin_bar->add_node(
+				array(
+					'parent' => 'wprm-debug',
+					'id'     => $entry_id,
+					'title'  => esc_html( $metadata_output['label'] ),
+					'meta'   => array(
+						'class' => 'wprm-admin-bar-debug-entry-node',
+					),
+				)
+			);
+
+			$wp_admin_bar->add_node(
+				array(
+					'parent' => $entry_id,
+					'id'     => $panel_id,
+					'title'  => '<div class="wprm-admin-bar-debug-panel"><div class="wprm-admin-bar-debug-entry-header">' . esc_html( $metadata_output['label'] ) . '</div><div class="wprm-admin-bar-debug-actions">' . implode( '', $actions ) . '</div><div class="wprm-admin-bar-debug-json"><pre>' . esc_html( $payload ) . '</pre></div></div>',
+					'meta'   => array(
+						'class' => 'wprm-admin-bar-debug-panel-node',
+					),
+				)
+			);
+		}
+	}
+
+	/**
+	 * Get onclick action for validating metadata code.
+	 *
+	 * @since	10.3.0
+	 * @param	int    $index Index of the metadata entry.
+	 * @param	string $validator Validator to open.
+	 */
+	private static function get_validator_action( $index, $validator ) {
+		return 'if ( window.WPRecipeMaker && window.WPRecipeMaker.debug ) { window.WPRecipeMaker.debug.prepareAdminBarValidator(' . intval( $index ) . ', ' . wp_json_encode( $validator ) . ', this); }';
+	}
+
+	/**
+	 * Get onclick action for copying metadata JSON.
+	 *
+	 * @since	10.3.0
+	 * @param	int $index Index of the metadata entry.
+	 */
+	private static function get_copy_metadata_action( $index ) {
+		return 'return window.WPRecipeMaker && window.WPRecipeMaker.debug ? window.WPRecipeMaker.debug.copyAdminBarMetadata(' . intval( $index ) . ', this) : false;';
 	}
 }
 

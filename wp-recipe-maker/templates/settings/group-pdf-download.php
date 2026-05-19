@@ -17,8 +17,15 @@ $pdf_download = array(
 	'description' => __( 'Allow visitors to download a PDF version of the recipe with one click.', 'wp-recipe-maker' ),
 	'documentation' => 'https://help.bootstrapped.ventures/docs/wp-recipe-maker/download-pdf-button/',
 	'dependency' => array(
-		'id' => 'recipe_template_mode',
-		'value' => 'modern',
+		array(
+			'id' => 'print_access',
+			'value' => 'disabled',
+			'type' => 'inverse',
+		),
+		array(
+			'id' => 'recipe_template_mode',
+			'value' => 'modern',
+		),
 	),
 	'subGroups' => array(
 		array(
@@ -60,10 +67,7 @@ $pdf_download = array(
 						'default_print_template' => __( 'Use same as Default Print Template', 'wp-recipe-maker' ),
 					),
 					'default' => 'default_print_template',
-					'dependency' => array(
-						'id' => 'recipe_template_show_types',
-						'value' => true,
-					),
+					'dependency' => WPRM_Settings::get_recipe_type_template_dependency( 'howto' ),
 				),
 				array(
 					'id' => 'default_other_pdf_template_modern',
@@ -74,10 +78,7 @@ $pdf_download = array(
 						'default_print_template' => __( 'Use same as Default Print Template', 'wp-recipe-maker' ),
 					),
 					'default' => 'default_print_template',
-					'dependency' => array(
-						'id' => 'recipe_template_show_types',
-						'value' => true,
-					),
+					'dependency' => WPRM_Settings::get_recipe_type_template_dependency( 'other' ),
 				),
 			),
 		),

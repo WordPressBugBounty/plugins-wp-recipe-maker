@@ -117,6 +117,8 @@ class WPRM_SC_Url extends WPRM_Template_Shortcode {
 			$rel = $rel ? ' rel="' . trim( $rel ) . '"' : '';
 
 			$text = '<a href="' . esc_url( $url ) . '"' . $target . $rel . '>' . WPRM_Shortcode_Helper::sanitize_html( $text ) . '</a>';
+		} else {
+			$text = WPRM_Shortcode_Helper::sanitize_html( $text );
 		}
 
 		$output = '<' . $tag . ' class="' . esc_attr( implode( ' ', $classes ) ) . '">' . $text . '</' . $tag . '>';

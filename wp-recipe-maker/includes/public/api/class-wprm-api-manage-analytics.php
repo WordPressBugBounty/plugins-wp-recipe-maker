@@ -64,6 +64,8 @@ class WPRM_Api_Manage_Analytics {
 	 * @param    WP_REST_Request $request Current request.
 	 */
 	public static function api_manage_analytics( $request ) {
+		global $wpdb;
+
 		// Parameters.
 		$params = $request->get_params();
 
@@ -120,6 +122,9 @@ class WPRM_Api_Manage_Analytics {
 						break;
 					case 'post_id':
 						$args['filter'][] = 'post_id LIKE "%' . esc_sql( $wpdb->esc_like( intval( $value ) ) ). '%"';
+						break;
+					case 'visitor_id':
+						$args['filter'][] = 'visitor_id LIKE "%' . esc_sql( $wpdb->esc_like( $value ) ) . '%"';
 						break;
 				}
 			}

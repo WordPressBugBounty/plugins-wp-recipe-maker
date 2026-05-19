@@ -51,6 +51,7 @@ class WPRM_i18n {
 		$predefined_translations = array(
 			'Equipment' => __( 'Equipment', 'wp-recipe-maker' ),
 			'Ingredients' => __( 'Ingredients', 'wp-recipe-maker' ),
+			'Materials' => __( 'Materials', 'wp-recipe-maker' ),
 			'Instructions' => __( 'Instructions', 'wp-recipe-maker' ),
 			'Video' => __( 'Video', 'wp-recipe-maker' ),
 			'Notes' => __( 'Notes', 'wp-recipe-maker' ),

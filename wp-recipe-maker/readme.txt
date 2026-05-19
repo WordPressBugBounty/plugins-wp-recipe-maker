@@ -5,7 +5,7 @@ Tags: recipe, recipes, food, cooking, schema
 Requires at least: 4.4
 Tested up to: 7.0
 Requires PHP: 7.2
-Stable tag: 10.5.0
+Stable tag: 10.6.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -141,6 +141,20 @@ Please report security bugs found in the source code of the WP Recipe Maker plug
 7. Our Template Editor allows you to completely customize the look and feel.
 
 == Changelog ==
+= 10.6.0 =
+* Feature: Condition based on rating count
+* Feature: Type based recipe placeholder
+* Improvement: Setting to combine multiple ItemList metadata outputs
+* Improvement: Setting to disable printing or restrict access
+* Improvement: Bulk restore option on the Trash Manage page
+* Improvement: Divi 5 compatibility for recipes created in the classic editor
+* Improvement: Setting to display serving size as fractions
+* Fix: CSV Export for nutrients in database table
+* Fix: PHP 8.5 deprecation warning
+* Fix: Searching recipes in Template Editor dropdown
+* Fix: Terms filter on manage page when there are lots of terms
+* Fix: Editing roundup lists when included items got deleted
+
 = 10.5.0 =
 * Feature: Cookpal integration
 * Feature: Tracking of individual changes on the settings page
@@ -538,6 +552,9 @@ Please report security bugs found in the source code of the WP Recipe Maker plug
 For earlier versions, please refer to [our full changelog](https://help.bootstrapped.ventures/article/124-wp-recipe-maker-changelog).
 
 == Upgrade notice ==
+= 10.6.0 =
+Some great new features and improvements
+
 = 10.5.0 =
 Some great new features and improvements
 

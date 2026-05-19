@@ -17,7 +17,10 @@ export default {
         return ApiWrapper.call( `${utilitiesEndpoint}/feedback`, 'POST', data );
     },
     getPostSummary(id) {
-        return ApiWrapper.call( `${utilitiesEndpoint}/post_summary/${id}` );
+        return ApiWrapper.call( `${utilitiesEndpoint}/post_summary/${id}`, 'GET', false, {
+            // Missing/deleted posts are handled in the roundup item UI.
+            suppressErrorCodes: [ 'wprm_post_not_found' ],
+        } );
     },
     previewRecipe(json) {
         const data = {

@@ -99,7 +99,7 @@ class WPRM_Metadata_Yoast_Seo extends \Yoast\WP\SEO\Generators\Schema\Abstract_S
 	 * @return array|bool $graph A graph piece on success, false on failure.
 	 */
 	public function generate() {
-		$metadata = WPRM_Metadata::sanitize_metadata( WPRM_Metadata::get_metadata( $this->recipe ) );
+		$metadata = WPRM_Metadata::get_sanitized_metadata( $this->recipe );
 
 		// Prevent errors if Schema_IDs are suddenly gone.
 		$article_hash = defined( 'Schema_IDs::ARTICLE_HASH' ) ? Schema_IDs::ARTICLE_HASH : '#article';
@@ -125,6 +125,16 @@ class WPRM_Metadata_Yoast_Seo extends \Yoast\WP\SEO\Generators\Schema\Abstract_S
 			if ( $person && $person['piece'] ) {
 				$metadata['author_reference'] = array( '@id' => $person['piece'] );
 			}
+
+			WPRM_Debug::track_metadata_output(
+				array(
+					'type' => isset( $metadata['@type'] ) ? $metadata['@type'] : 'Metadata',
+					'source' => 'yoast',
+					'label' => sprintf( '%1$s #%2$d (yoast)', isset( $metadata['@type'] ) ? $metadata['@type'] : __( 'Metadata', 'wp-recipe-maker' ), $this->recipe->id() ),
+					'object_id' => $this->recipe->id(),
+					'payload' => $metadata,
+				)
+			);
 
 			return $metadata;
 		}

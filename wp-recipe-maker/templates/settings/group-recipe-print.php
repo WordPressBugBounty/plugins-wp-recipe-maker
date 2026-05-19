@@ -15,11 +15,36 @@ $recipe_print = array(
 	'name' => __( 'Print Version', 'wp-recipe-maker' ),
 	'subGroups' => array(
 		array(
+			'name' => __( 'Printing', 'wp-recipe-maker' ),
+			'settings' => array(
+				array(
+					'id' => 'print_access',
+					'name' => __( 'Printing', 'wp-recipe-maker' ),
+					'description' => __( 'Control who can access recipe print pages and print buttons. Disabling printing also disables the PDF Download feature.', 'wp-recipe-maker' ),
+					'type' => 'dropdown',
+					'options' => array(
+						'everyone' => __( 'Enabled for everyone', 'wp-recipe-maker' ),
+						'logged_in' => __( 'Enabled for logged-in users only', 'wp-recipe-maker' ),
+						'administrators' => __( 'Enabled for administrators only', 'wp-recipe-maker' ),
+						'disabled' => __( 'Disabled', 'wp-recipe-maker' ),
+					),
+					'default' => 'everyone',
+				),
+			),
+		),
+		array(
 			'name' => __( 'Default Print Template', 'wp-recipe-maker' ),
 			'description' => __( 'Fully customize these templates in the Template Editor.', 'wp-recipe-maker' ),
 			'dependency' => array(
-				'id' => 'recipe_template_mode',
-				'value' => 'modern',
+				array(
+					'id' => 'print_access',
+					'value' => 'disabled',
+					'type' => 'inverse',
+				),
+				array(
+					'id' => 'recipe_template_mode',
+					'value' => 'modern',
+				),
 			),
 			'settings' => array(
 				array(
@@ -41,10 +66,7 @@ $recipe_print = array(
 						'default_recipe_template' => __( 'Use same as Default Recipe Template', 'wp-recipe-maker' ),
 					),
 					'default' => 'default_recipe_template',
-					'dependency' => array(
-						'id' => 'recipe_template_show_types',
-						'value' => true,
-					),
+					'dependency' => WPRM_Settings::get_recipe_type_template_dependency( 'howto' ),
 				),
 				array(
 					'id' => 'default_other_print_template_modern',
@@ -55,10 +77,7 @@ $recipe_print = array(
 						'default_recipe_template' => __( 'Use same as Default Recipe Template', 'wp-recipe-maker' ),
 					),
 					'default' => 'default_recipe_template',
-					'dependency' => array(
-						'id' => 'recipe_template_show_types',
-						'value' => true,
-					),
+					'dependency' => WPRM_Settings::get_recipe_type_template_dependency( 'other' ),
 				),
 				array(
 					'id' => 'default_print_template_admin',
@@ -74,6 +93,11 @@ $recipe_print = array(
 		),
 		array(
 			'name' => __( 'Appearance', 'wp-recipe-maker' ),
+			'dependency' => array(
+				'id' => 'print_access',
+				'value' => 'disabled',
+				'type' => 'inverse',
+			),
 			'settings' => array(
 				array(
 					'id' => 'default_print_template',
@@ -177,6 +201,11 @@ $recipe_print = array(
 		),
 		array(
 			'name' => __( 'Functionality', 'wp-recipe-maker' ),
+			'dependency' => array(
+				'id' => 'print_access',
+				'value' => 'disabled',
+				'type' => 'inverse',
+			),
 			'settings' => array(
 				array(
 					'id' => 'print_email_link_button',
@@ -265,6 +294,11 @@ $recipe_print = array(
 		),
 		array(
 			'name' => __( 'Advanced', 'wp-recipe-maker' ),
+			'dependency' => array(
+				'id' => 'print_access',
+				'value' => 'disabled',
+				'type' => 'inverse',
+			),
 			'settings' => array(
 				array(
 					'id' => 'print_new_tab',

@@ -45,6 +45,11 @@ $custom_style = array(
 						'type' => 'code',
 						'code' => 'css',
 						'default' => '',
+						'dependency' => array(
+							'id' => 'print_access',
+							'value' => 'disabled',
+							'type' => 'inverse',
+						),
 					),
 					array(
 						'id' => 'pdf_download_css',
@@ -53,6 +58,11 @@ $custom_style = array(
 						'type' => 'code',
 						'code' => 'css',
 						'default' => '',
+						'dependency' => array(
+							'id' => 'print_access',
+							'value' => 'disabled',
+							'type' => 'inverse',
+						),
 					),
 				),
 			),

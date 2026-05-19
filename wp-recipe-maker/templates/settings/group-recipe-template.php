@@ -9,6 +9,26 @@
  * @subpackage WP_Recipe_Maker/templates/settings
  */
 
+$recipe_template_type_settings = array();
+
+if ( WPRM_Settings::show_recipe_type_template_toggle() ) {
+	$recipe_template_type_settings[] = array(
+		'id' => 'recipe_template_show_types',
+		'name' => __( 'Show unused non-food template settings', 'wp-recipe-maker' ),
+		'description' => __( 'Enable to choose templates for how-to instructions and other recipes before you have created those recipe types. Once a recipe type exists, its template settings show automatically.', 'wp-recipe-maker' ),
+		'type' => 'toggle',
+		'default' => false,
+	);
+}
+
+$recipe_template_type_settings[] = array(
+	'id' => 'recipe_template_show_advanced',
+	'name' => __( 'Show advanced options', 'wp-recipe-maker' ),
+	'description' => __( 'Enable to change the templates for archive, AMP or RSS feed pages.', 'wp-recipe-maker' ),
+	'type' => 'toggle',
+	'default' => false,
+);
+
 $recipe_template = array(
 	'id' => 'recipeTemplate',
 	'icon' => 'doc',
@@ -19,22 +39,7 @@ $recipe_template = array(
 	),
 	'subGroups' => array(
 		array(
-			'settings' => array(
-				array(
-					'id' => 'recipe_template_show_types',
-					'name' => __( 'Show non-food recipe types', 'wp-recipe-maker' ),
-					'description' => __( 'Enable to change the templates for how-to instruction and other recipes as well as food recipes.', 'wp-recipe-maker' ),
-					'type' => 'toggle',
-					'default' => false,
-				),
-				array(
-					'id' => 'recipe_template_show_advanced',
-					'name' => __( 'Show advanced options', 'wp-recipe-maker' ),
-					'description' => __( 'Enable to change the templates for archive, AMP or RSS feed pages.', 'wp-recipe-maker' ),
-					'type' => 'toggle',
-					'default' => false,
-				),
-			),
+			'settings' => $recipe_template_type_settings,
 		),
 		array(
 			'name' => __( 'Default Recipe Template', 'wp-recipe-maker' ),
@@ -53,10 +58,7 @@ $recipe_template = array(
 					'description' => __( 'Default template to use for the how-to instructions on your website.', 'wp-recipe-maker' ),
 					'type' => 'dropdownTemplateModern',
 					'default' => 'compact-howto',
-					'dependency' => array(
-						'id' => 'recipe_template_show_types',
-						'value' => true,
-					),
+					'dependency' => WPRM_Settings::get_recipe_type_template_dependency( 'howto' ),
 				),
 				array(
 					'id' => 'default_other_recipe_template_modern',
@@ -64,10 +66,7 @@ $recipe_template = array(
 					'description' => __( 'Default template to use for the "other (no metadata)" recipes on your website.', 'wp-recipe-maker' ),
 					'type' => 'dropdownTemplateModern',
 					'default' => 'meadow',
-					'dependency' => array(
-						'id' => 'recipe_template_show_types',
-						'value' => true,
-					),
+					'dependency' => WPRM_Settings::get_recipe_type_template_dependency( 'other' ),
 				),
 			),
 		),

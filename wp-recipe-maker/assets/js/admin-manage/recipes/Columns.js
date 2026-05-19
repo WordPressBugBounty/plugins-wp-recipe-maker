@@ -2,6 +2,7 @@ import React, { Fragment } from 'react';
 import he from 'he';
  
 import bulkEditCheckbox from '../general/bulkEditCheckbox';
+import TaxonomyFilter from '../general/TaxonomyFilter';
 import TextFilter from '../general/TextFilter';
 import Api from 'Shared/Api';
 import Icon from 'Shared/Icon';
@@ -100,35 +101,39 @@ export default {
                                 title={ __wprm( 'You do not have the correct permissions to edit this recipe' ) }
                             />
                         }
-                        <Icon
-                            type="print"
-                            title={ __wprm( 'Print Recipe' ) }
-                            onClick={() => {
-                                const urlParts = wprm_admin.home_url.split(/\?(.+)/);
-                                let printUrl = urlParts[0];
+                        {
+                            wprm_admin.settings.print_access_allowed
+                            &&
+                            <Icon
+                                type="print"
+                                title={ __wprm( 'Print Recipe' ) }
+                                onClick={() => {
+                                    const urlParts = wprm_admin.home_url.split(/\?(.+)/);
+                                    let printUrl = urlParts[0];
 
-                                // Maybe use customt template.
-                                let customTemplate = '';
-                                if ( 'default_recipe_template' !== wprm_admin.settings.default_print_template_admin ) {
-                                    customTemplate = '/' + wprm_admin.settings.default_print_template_admin;
-                                }
-
-                                if ( wprm_admin.permalinks ) {
-                                    printUrl += wprm_admin.print_slug + '/' + row.original.id + customTemplate;
-
-                                    if ( urlParts[1] ) {
-                                        printUrl += '?' + urlParts[1];
+                                    // Maybe use customt template.
+                                    let customTemplate = '';
+                                    if ( 'default_recipe_template' !== wprm_admin.settings.default_print_template_admin ) {
+                                        customTemplate = '/' + wprm_admin.settings.default_print_template_admin;
                                     }
-                                } else {
-                                    printUrl += '?' + wprm_admin.print_slug + '=' + row.original.id + customTemplate;
 
-                                    if ( urlParts[1] ) {
-                                        printUrl += '&' + urlParts[1];
+                                    if ( wprm_admin.permalinks ) {
+                                        printUrl += wprm_admin.print_slug + '/' + row.original.id + customTemplate;
+
+                                        if ( urlParts[1] ) {
+                                            printUrl += '?' + urlParts[1];
+                                        }
+                                    } else {
+                                        printUrl += '?' + wprm_admin.print_slug + '=' + row.original.id + customTemplate;
+
+                                        if ( urlParts[1] ) {
+                                            printUrl += '&' + urlParts[1];
+                                        }
                                     }
-                                }
-                                window.open( printUrl, '_blank' );
-                            }}
-                        />
+                                    window.open( printUrl, '_blank' );
+                                }}
+                            />
+                        }
                         {
                             true === wprm_admin.addons.premium
                             &&
@@ -806,26 +811,39 @@ export default {
                 accessor: d => d.tags[key],
                 width: 300,
                 sortable: false,
-                Filter: ({ filter, onChange }) => (
-                    <select
-                        onChange={event => onChange(event.target.value)}
-                        style={{ width: '100%', fontSize: '1em' }}
-                        value={filter ? filter.value : 'all'}
-                    >
-                        <optgroup label={ __wprm( 'General' ) }>
-                            <option value="all">{ `${ __wprm( 'All' ) } ${ taxonomy.label }` }</option>
-                            <option value="none">{ `${ __wprm( 'No' ) } ${ taxonomy.label }` }</option>
-                            <option value="any">{ `${ __wprm( 'Any' ) } ${ taxonomy.label }` }</option>
-                        </optgroup>
-                        <optgroup label={ __wprm( 'Terms' ) }>
-                            {
-                                taxonomy.terms.map((term, index) => (
-                                    <option value={term.term_id} key={index}>{ he.decode( term.name ) }{ term.count ? ` (${ term.count })` : '' }</option>
-                                ))
-                            }
-                        </optgroup>
-                    </select>
-                ),
+                Filter: ({ filter, onChange }) => {
+                    if ( false === taxonomy.all_terms_loaded ) {
+                        return (
+                            <TaxonomyFilter
+                                filter={ filter }
+                                onChange={ onChange }
+                                taxonomy={ taxonomy }
+                                taxonomyKey={ key }
+                            />
+                        );
+                    }
+
+                    return (
+                        <select
+                            onChange={event => onChange(event.target.value)}
+                            style={{ width: '100%', fontSize: '1em' }}
+                            value={filter ? filter.value : 'all'}
+                        >
+                            <optgroup label={ __wprm( 'General' ) }>
+                                <option value="all">{ `${ __wprm( 'All' ) } ${ taxonomy.label }` }</option>
+                                <option value="none">{ `${ __wprm( 'No' ) } ${ taxonomy.label }` }</option>
+                                <option value="any">{ `${ __wprm( 'Any' ) } ${ taxonomy.label }` }</option>
+                            </optgroup>
+                            <optgroup label={ __wprm( 'Terms' ) }>
+                                {
+                                    taxonomy.terms.map((term, index) => (
+                                        <option value={term.term_id} key={index}>{ he.decode( term.name ) }{ term.count ? ` (${ term.count })` : '' }</option>
+                                    ))
+                                }
+                            </optgroup>
+                        </select>
+                    );
+                },
                 Cell: row => {
                     const names = row.value.map(t => t.name);
                     const joined = names.join(', ');

@@ -19,7 +19,9 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 		<?php echo $recipe->rating_stars( true ); ?>
 		<div class="wprm-recipe-image"><?php echo WPRM_Template_Helper::recipe_image( $recipe, 'thumbnail' ); ?></div>
 		<div class="wprm-recipe-buttons">
+			<?php if ( WPRM_Print::has_access() ) : ?>
 			<a href="<?php echo $recipe->print_url(); ?>" class="wprm-recipe-print wprm-color-accent" target="_blank" rel="nofollow"><?php echo WPRM_Template_Helper::label( 'print_button' ); ?></a>
+			<?php endif; ?>
 		</div>
 	</div>
 	<div class="wprm-recipe-name wprm-color-header"><?php echo $recipe->name(); ?></div>

@@ -1,5 +1,5 @@
 export default {
-    call( endpoint, method = 'GET', body = false ) {
+    call( endpoint, method = 'GET', body = false, options = {} ) {
         let nonce = wprm_admin.api_nonce;
 
         if ( 'object' === typeof window.wpApiSettings && window.wpApiSettings.nonce ) {
@@ -43,12 +43,33 @@ export default {
             if ( response.ok ) {
                 return response.json();
             } else {
-                showErrorMessage( endpoint, args, response );
-                return false;
+                return shouldSuppressErrorDialog( response, options ).then((suppressErrorDialog) => {
+                    if ( ! suppressErrorDialog ) {
+                        showErrorMessage( endpoint, args, response );
+                    }
+                    return false;
+                });
             }
         });
     },
 };
+
+function shouldSuppressErrorDialog( response, options = {} ) {
+    const suppressErrorCodes = Array.isArray( options.suppressErrorCodes ) ? options.suppressErrorCodes.filter((code) => !! code ) : [];
+
+    if ( ! suppressErrorCodes.length ) {
+        return Promise.resolve( false );
+    }
+
+    const codeRegexes = suppressErrorCodes.map((code) => {
+        const escapedCode = String( code ).replace( /[.*+?^${}()|[\]\\]/g, '\\$&' );
+        return new RegExp( `"code"\\s*:\\s*"${escapedCode}"` );
+    });
+
+    return response.clone().text().then((text) => {
+        return codeRegexes.some((regex) => regex.test( text ) );
+    }).catch(() => false );
+}
 
 async function showErrorMessage( endpoint, args, response ) {
     // Log errors in console and try to get as much debug information as possible.

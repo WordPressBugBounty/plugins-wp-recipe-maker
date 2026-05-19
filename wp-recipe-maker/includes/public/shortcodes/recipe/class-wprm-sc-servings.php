@@ -86,7 +86,7 @@ class WPRM_SC_Servings extends WPRM_Template_Shortcode {
 		// Add custom class if set.
 		if ( $atts['class'] ) { $classes[] = esc_attr( $atts['class'] ); }
 
-		$output = '<span class="' . esc_attr( implode( ' ', $classes ) ) . '">' . $recipe->servings() . '</span>';
+		$output = '<span class="' . esc_attr( implode( ' ', $classes ) ) . '">' . self::format_servings( $recipe->servings() ) . '</span>';
 
 		if ( (bool) $atts['label_container'] ) {
 			$unit = WPRM_SC_Servings_Unit::shortcode( $atts );
@@ -98,6 +98,24 @@ class WPRM_SC_Servings extends WPRM_Template_Shortcode {
 		}
 
 		return apply_filters( parent::get_hook(), $output, $atts, $recipe );
+	}
+
+	/**
+	 * Format servings for display.
+	 *
+	 * @since	10.5.0
+	 * @param	mixed $servings Servings value to format.
+	 */
+	public static function format_servings( $servings ) {
+		if ( WPRM_Settings::get( 'servings_display_fractions' ) ) {
+			$formatted_servings = WPRM_Recipe_Parser::format_quantity( $servings, WPRM_Settings::get( 'adjustable_servings_round_to_decimals' ), true, true );
+
+			if ( $formatted_servings ) {
+				return $formatted_servings;
+			}
+		}
+
+		return $servings;
 	}
 }
 

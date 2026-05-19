@@ -71,10 +71,7 @@ $recipe_snippets = array(
 					'type' => 'dropdownTemplateModern',
 					'priority' => 'snippet',
 					'default' => 'snippet-basic-buttons',
-					'dependency' => array(
-						'id' => 'recipe_template_show_types',
-						'value' => true,
-					),
+					'dependency' => WPRM_Settings::get_recipe_type_template_dependency( 'howto' ),
 				),
 				array(
 					'id' => 'other_recipe_snippets_template',
@@ -83,10 +80,7 @@ $recipe_snippets = array(
 					'type' => 'dropdownTemplateModern',
 					'priority' => 'snippet',
 					'default' => 'snippet-basic-buttons',
-					'dependency' => array(
-						'id' => 'recipe_template_show_types',
-						'value' => true,
-					),
+					'dependency' => WPRM_Settings::get_recipe_type_template_dependency( 'other' ),
 				),
 			),
 		),

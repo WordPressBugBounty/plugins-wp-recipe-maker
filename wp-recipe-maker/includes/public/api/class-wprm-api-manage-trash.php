@@ -18,6 +18,43 @@
  * @author     Brecht Vandersmissen <brecht@bootstrapped.ventures>
  */
 class WPRM_Api_Manage_Trash {
+	/**
+	 * Restore a trashed recipe.
+	 *
+	 * @param    int $id Recipe post ID.
+	 */
+	public static function restore_recipe( $id ) {
+		$post = get_post( $id );
+
+		if ( ! $post || WPRM_POST_TYPE !== $post->post_type || 'trash' !== $post->post_status || ! current_user_can( 'edit_post', $id ) ) {
+			return false;
+		}
+
+		$previous_status = get_post_meta( $id, '_wp_trash_meta_status', true );
+
+		if ( $previous_status ) {
+			add_filter( 'wp_untrash_post_status', array( __CLASS__, 'restore_previous_status' ), 10, 3 );
+		}
+
+		$restored = wp_untrash_post( $id );
+
+		if ( $previous_status ) {
+			remove_filter( 'wp_untrash_post_status', array( __CLASS__, 'restore_previous_status' ), 10 );
+		}
+
+		return $restored;
+	}
+
+	/**
+	 * Restore a post to its previous status when available.
+	 *
+	 * @param    string $new_status      New status selected by WordPress.
+	 * @param    int    $post_id         Post being restored.
+	 * @param    string $previous_status Status before it was trashed.
+	 */
+	public static function restore_previous_status( $new_status, $post_id, $previous_status ) {
+		return $previous_status ? wp_untrash_post_set_previous_status( $new_status, $post_id, $previous_status ) : $new_status;
+	}
 
 	/**
 	 * Register actions and filters.
@@ -186,10 +223,13 @@ class WPRM_Api_Manage_Trash {
 		if ( $ids && $action && $action['type'] ) {
 			foreach ( $ids as $id ) {
 				switch ( $action['type'] ) {
+					case 'restore':
+						self::restore_recipe( $id );
+						break;
 					case 'delete':
 						$post = get_post( $id );
 
-						if ( WPRM_POST_TYPE === $post->post_type && current_user_can( 'delete_post', $id ) ) {
+						if ( $post && WPRM_POST_TYPE === $post->post_type && current_user_can( 'delete_post', $id ) ) {
 							wp_delete_post( $id, true );
 						}
 						break;

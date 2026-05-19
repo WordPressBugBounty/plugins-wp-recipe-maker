@@ -58,6 +58,7 @@ class WPRM_Api_Ingredients {
 
 		$data = apply_filters( 'wprm_get_term_meta', array(
 			'plural' => isset( $meta['wprm_ingredient_plural'] ) ? $meta['wprm_ingredient_plural'] : '',
+			'unit_system_names' => self::get_unit_system_names_from_meta( $meta ),
 			'group' => isset( $meta['wprmp_ingredient_group'] ) ? $meta['wprmp_ingredient_group'] : '',
 			'image_id' => isset( $meta['wprmp_ingredient_image_id'] ) ? $meta['wprmp_ingredient_image_id'] : '',
 			'eafl' => isset( $meta['wprmp_ingredient_eafl'] ) ? $meta['wprmp_ingredient_eafl'] : '',
@@ -81,6 +82,9 @@ class WPRM_Api_Ingredients {
 		if ( isset( $meta['plural'] ) ) {
 			$plural = sanitize_text_field( $meta['plural'] );
 			update_term_meta( $term->term_id, 'wprm_ingredient_plural', $plural );
+		}
+		if ( isset( $meta['unit_system_names'] ) && is_array( $meta['unit_system_names'] ) ) {
+			self::update_unit_system_names( $term->term_id, $meta['unit_system_names'] );
 		}
 		if ( isset( $meta['group'] ) ) {
 			$group = sanitize_text_field( $meta['group'] );
@@ -125,6 +129,77 @@ class WPRM_Api_Ingredients {
 		}
 
 		do_action( 'wprm_update_term_meta', $term, $meta );
+	}
+
+	/**
+	 * Get unit-system ingredient name aliases from raw term meta.
+	 *
+	 * @since	10.2.0
+	 * @param	array $meta Term meta.
+	 */
+	private static function get_unit_system_names_from_meta( $meta ) {
+		$names = array();
+
+		foreach ( array( 1, 2 ) as $system ) {
+			$names[ $system ] = array(
+				'singular' => self::get_meta_value( $meta, self::get_unit_system_name_meta_key( $system, 'singular' ) ),
+				'plural' => self::get_meta_value( $meta, self::get_unit_system_name_meta_key( $system, 'plural' ) ),
+			);
+		}
+
+		return $names;
+	}
+
+	/**
+	 * Update unit-system ingredient name aliases.
+	 *
+	 * @since	10.2.0
+	 * @param	int   $term_id Term ID.
+	 * @param	array $names   Unit-system names.
+	 */
+	private static function update_unit_system_names( $term_id, $names ) {
+		foreach ( array( 1, 2 ) as $system ) {
+			if ( ! isset( $names[ $system ] ) && ! isset( $names[ (string) $system ] ) ) {
+				continue;
+			}
+
+			$system_names = isset( $names[ $system ] ) ? $names[ $system ] : $names[ (string) $system ];
+			$system_names = is_array( $system_names ) ? $system_names : array();
+
+			foreach ( array( 'singular', 'plural' ) as $field ) {
+				$key = self::get_unit_system_name_meta_key( $system, $field );
+				$value = isset( $system_names[ $field ] ) ? sanitize_text_field( $system_names[ $field ] ) : '';
+				$value = trim( $value );
+
+				if ( '' === $value ) {
+					delete_term_meta( $term_id, $key );
+				} else {
+					update_term_meta( $term_id, $key, $value );
+				}
+			}
+		}
+	}
+
+	/**
+	 * Get a unit-system name meta key.
+	 *
+	 * @since	10.2.0
+	 * @param	int    $system Unit system.
+	 * @param	string $field  Field.
+	 */
+	private static function get_unit_system_name_meta_key( $system, $field ) {
+		return 'wprm_ingredient_unit_system_' . intval( $system ) . '_' . sanitize_key( $field );
+	}
+
+	/**
+	 * Get a single meta value from raw get_term_meta output.
+	 *
+	 * @since	10.2.0
+	 * @param	array  $meta Raw term meta.
+	 * @param	string $key  Meta key.
+	 */
+	private static function get_meta_value( $meta, $key ) {
+		return isset( $meta[ $key ][0] ) ? $meta[ $key ][0] : '';
 	}
 
 	/**

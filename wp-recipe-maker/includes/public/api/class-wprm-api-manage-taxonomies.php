@@ -127,6 +127,15 @@ class WPRM_Api_Manage_Taxonomies {
 		$page_size = isset( $params['pageSize'] ) ? intval( $params['pageSize'] ) : 25;
 		$sorted = isset( $params['sorted'] ) ? $params['sorted'] : array( array( 'id' => 'id', 'desc' => true ) );
 		$filtered = isset( $params['filtered'] ) ? $params['filtered'] : array();
+		$filtered = is_array( $filtered ) ? $filtered : array();
+		$fixed_filter = isset( $params['filter'] ) && is_array( $params['filter'] ) && 2 === count( $params['filter'] ) ? $params['filter'] : false;
+
+		if ( $fixed_filter ) {
+			$filtered[] = array(
+				'id' => sanitize_key( $fixed_filter[0] ),
+				'value' => sanitize_text_field( $fixed_filter[1] ),
+			);
+		}
 
 		// Starting query args.
 		$args = array(
@@ -308,6 +317,32 @@ class WPRM_Api_Manage_Taxonomies {
 									'key' => 'wprmp_amazon_status',
 									'compare' => 'EXISTS',
 								);
+							} else if ( 'notification_statuses' === $value ) {
+								$notification_statuses = class_exists( 'WPRMP_Amazon_Status_Notifications' ) ? WPRMP_Amazon_Status_Notifications::get_notification_statuses() : array();
+
+								if ( ! empty( $notification_statuses ) ) {
+									$args['meta_query'][] = array(
+										'key' => 'wprmp_amazon_status',
+										'compare' => 'IN',
+										'value' => $notification_statuses,
+									);
+									// Also ensure ASIN exists (status only makes sense if ASIN is set).
+									$args['meta_query'][] = array(
+										'key' => 'wprmp_amazon_asin',
+										'compare' => 'EXISTS',
+									);
+									$args['meta_query'][] = array(
+										'key' => 'wprmp_amazon_asin',
+										'compare' => '!=',
+										'value' => '',
+									);
+								} else {
+									$args['meta_query'][] = array(
+										'key' => 'wprmp_amazon_status',
+										'compare' => '=',
+										'value' => '__wprm_no_notification_status__',
+									);
+								}
 							} else {
 								// Filter by status type (stored as plain string).
 								$args['meta_query'][] = array(
@@ -499,6 +534,16 @@ class WPRM_Api_Manage_Taxonomies {
 				switch ( $type ) {
 					case 'ingredient':
 						$row->plural = get_term_meta( $row->term_id, 'wprm_ingredient_plural', true );
+						$row->unit_system_names = array(
+							1 => array(
+								'singular' => get_term_meta( $row->term_id, 'wprm_ingredient_unit_system_1_singular', true ),
+								'plural' => get_term_meta( $row->term_id, 'wprm_ingredient_unit_system_1_plural', true ),
+							),
+							2 => array(
+								'singular' => get_term_meta( $row->term_id, 'wprm_ingredient_unit_system_2_singular', true ),
+								'plural' => get_term_meta( $row->term_id, 'wprm_ingredient_unit_system_2_plural', true ),
+							),
+						);
 						$row->group = get_term_meta( $row->term_id, 'wprmp_ingredient_group', true );
 						$row->product = class_exists( 'WPRMPP_Meta' ) ? WPRMPP_Meta::get_product_from_term_id( $row->term_id ) : false;
 						break;

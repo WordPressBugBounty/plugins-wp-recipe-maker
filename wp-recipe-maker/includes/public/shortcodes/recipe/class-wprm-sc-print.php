@@ -134,6 +134,10 @@ class WPRM_SC_Print extends WPRM_Template_Shortcode {
 			return apply_filters( parent::get_hook(), '', $atts, $recipe );
 		}
 
+		if ( ! WPRM_Print::has_access() ) {
+			return apply_filters( parent::get_hook(), '', $atts, $recipe );
+		}
+
 		// Get optional icon.
 		$icon = '';
 		if ( $atts['icon'] ) {
@@ -189,7 +193,12 @@ class WPRM_SC_Print extends WPRM_Template_Shortcode {
 			$aria_label = ' aria-label="' . __( 'Print Recipe', 'wp-recipe-maker' ) . '"';
 		}
 
-		$output = '<a href="' . esc_attr( $recipe->print_url( $template ) ) . '" style="' . esc_attr( $style ) . '" class="' . esc_attr( implode( ' ', $classes ) ) . '" data-recipe-id="' . esc_attr( $recipe->id() ) . '" data-template="' . esc_attr( $template ) . '"' . $target . ' rel="nofollow"' . $aria_label . '>' . $icon . WPRM_Shortcode_Helper::sanitize_html( $text ) . '</a>';
+		$print_url = $recipe->print_url( $template );
+		if ( ! $print_url ) {
+			return apply_filters( parent::get_hook(), '', $atts, $recipe );
+		}
+
+		$output = '<a href="' . esc_attr( $print_url ) . '" style="' . esc_attr( $style ) . '" class="' . esc_attr( implode( ' ', $classes ) ) . '" data-recipe-id="' . esc_attr( $recipe->id() ) . '" data-template="' . esc_attr( $template ) . '"' . $target . ' rel="nofollow"' . $aria_label . '>' . $icon . WPRM_Shortcode_Helper::sanitize_html( $text ) . '</a>';
 		return apply_filters( parent::get_hook(), $output, $atts, $recipe );
 	}
 }

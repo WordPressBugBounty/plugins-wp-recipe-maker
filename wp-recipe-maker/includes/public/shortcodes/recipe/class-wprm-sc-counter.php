@@ -132,6 +132,8 @@ class WPRM_SC_Counter extends WPRM_Template_Shortcode {
 			$rel = $rel ? ' rel="' . trim( $rel ) . '"' : '';
 
 			$text = '<a href="' . esc_url( $recipe->permalink() ) . '"' . $target . $rel . '>' . WPRM_Shortcode_Helper::sanitize_html( $text ) . '</a>';
+		} else {
+			$text = WPRM_Shortcode_Helper::sanitize_html( $text );
 		}
 
 		$tag = WPRM_Shortcode_Helper::sanitize_html_element( $atts['tag'] );

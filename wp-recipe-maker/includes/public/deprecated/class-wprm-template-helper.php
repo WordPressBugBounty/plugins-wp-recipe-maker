@@ -69,7 +69,12 @@ class WPRM_Template_Helper {
 	 * @param		 boolean $show_link  Whether to display the ingredient link if present.
 	 */
 	public static function ingredient_name( $ingredient, $show_link = false, $recipe = false ) {
-		$name = $ingredient['name'];
+		$ingredient_display_name = $ingredient['name'];
+		if ( $recipe && class_exists( 'WPRMPUC_Manager' ) && method_exists( 'WPRMPUC_Manager', 'get_ingredient_name_for_system' ) ) {
+			$ingredient_display_name = WPRMPUC_Manager::get_ingredient_name_for_system( $ingredient, intval( $recipe->unit_system() ), isset( $ingredient['amount'] ) ? $ingredient['amount'] : false );
+		}
+
+		$name = do_shortcode( $ingredient_display_name );
 		$show_link = WPRM_Addons::is_active( 'premium' ) && WPRM_Settings::get( 'ingredient_links_enabled' ) ? $show_link : false;
 
 		$link = array();
@@ -372,6 +377,16 @@ class WPRM_Template_Helper {
 				if ( isset( $ingredient['converted'] ) ) {
 					foreach ( $ingredient['converted'] as $system => $values ) {
 						if ( $values['amount'] || $values['unit'] ) {
+							$unit_systems[ $system ] = true;
+						}
+					}
+				}
+
+				if ( class_exists( 'WPRMPUC_Manager' ) && method_exists( 'WPRMPUC_Manager', 'get_ingredient_name_forms_for_system' ) ) {
+					foreach ( array( 1, 2 ) as $system ) {
+						$name_forms = WPRMPUC_Manager::get_ingredient_name_forms_for_system( $ingredient, $system );
+
+						if ( ! empty( $name_forms['has_alias'] ) ) {
 							$unit_systems[ $system ] = true;
 						}
 					}

@@ -233,16 +233,25 @@ class WPRM_Modal {
 	public static function get_categories() {
 		$categories = array();
 		$wprm_taxonomies = WPRM_Taxonomies::get_taxonomies();
+		$preload_limit = 50;
 
 		foreach ( $wprm_taxonomies as $wprm_taxonomy => $options ) {
 			$wprm_key = substr( $wprm_taxonomy, 5 );
+			$total_terms = wp_count_terms( array(
+				'taxonomy' => $wprm_taxonomy,
+				'hide_empty' => false,
+			) );
+
+			if ( is_wp_error( $total_terms ) ) {
+				$total_terms = 0;
+			}
 
 			// Load top 50 most frequently used terms for quick access.
 			// Additional terms are loaded on-demand via API to prevent performance issues.
 			$terms = get_terms( array(
 				'taxonomy' => $wprm_taxonomy,
 				'hide_empty' => false,
-				'number' => 50, // Limit to 50 most popular terms.
+				'number' => $preload_limit, // Limit to 50 most popular terms.
 				'orderby' => 'count',
 				'order' => 'DESC',
 				'count' => true,
@@ -255,6 +264,8 @@ class WPRM_Modal {
 			$categories[ $wprm_key ] = array(
 				'label' => $options['name'],
 				'terms' => array_values( (array) $terms ),
+				'total_terms' => intval( $total_terms ),
+				'all_terms_loaded' => intval( $total_terms ) <= $preload_limit,
 				'creatable' => true,
 			);
 

@@ -70,9 +70,14 @@ const ActionsRecipe = (props) => {
     if ( wprm_admin.addons.premium ) {
         actionOptions.push(      
             { value: 'custom-nutrition-ingredient', label: __wprm( 'Create Custom Nutrition Ingredient' ), default: false },
-            { value: 'ai-nutrition-review', label: __wprm( 'Run AI Nutrition Review' ), default: false, required: 'elite' },
-            { value: 'ai-unit-conversion-review', label: __wprm( 'Run AI Unit Conversion Review' ), default: false, required: 'elite' },
         );
+
+        if ( wprm_admin.settings.ai_assistant_enabled ) {
+            actionOptions.push(
+                { value: 'ai-nutrition-review', label: __wprm( 'Run AI Nutrition Review' ), default: false, required: 'elite' },
+                { value: 'ai-unit-conversion-review', label: __wprm( 'Run AI Unit Conversion Review' ), default: false, required: 'elite' },
+            );
+        }
     }
     if ( wprm_admin.addons.pro ) {
         actionOptions.push(      
@@ -84,10 +89,13 @@ const ActionsRecipe = (props) => {
     // Default options (part 2).
     actionOptions.push(
         { value: 'add-to-list', label: __wprm( 'Add to Roundup List' ), default: '' },
-        { value: 'print', label: __wprm( 'Print Recipes' ), default: false },
         { value: 'export', label: __wprm( 'Export Recipes' ), default: { type: 'recipe', user_ratings: false }, required: 'premium' },
         { value: 'delete', label: __wprm( 'Delete Recipes' ), default: false },
     );
+
+    if ( wprm_admin.settings.print_access_allowed ) {
+        actionOptions.splice( actionOptions.length - 2, 0, { value: 'print', label: __wprm( 'Print Recipes' ), default: false } );
+    }
 
     return (
         <form>

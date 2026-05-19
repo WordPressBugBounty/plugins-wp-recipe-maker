@@ -87,7 +87,7 @@ class WPRM_Api_Manage_Recipes {
 	 * @return   boolean
 	 */
 	private static function has_elite_ai_access() {
-		return class_exists( 'WPRM_Addons' ) && WPRM_Addons::is_active( 'elite' );
+		return WPRM_Settings::get( 'ai_assistant_enabled' ) && class_exists( 'WPRM_Addons' ) && WPRM_Addons::is_active( 'elite' );
 	}
 
 	/**

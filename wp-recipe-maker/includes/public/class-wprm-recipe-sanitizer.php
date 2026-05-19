@@ -508,6 +508,34 @@ class WPRM_Recipe_Sanitizer {
 			return $terms[0];
 		}
 
+		// Check if this is a unit-system alias of another ingredient.
+		$alias_keys = array(
+			'wprm_ingredient_unit_system_1_singular',
+			'wprm_ingredient_unit_system_1_plural',
+			'wprm_ingredient_unit_system_2_singular',
+			'wprm_ingredient_unit_system_2_plural',
+		);
+
+		foreach ( $alias_keys as $alias_key ) {
+			$args = array(
+				'hide_empty' => false,
+				'meta_query' => array(
+					array(
+						'key' => $alias_key,
+						'value' => $name,
+						'compare' => '=',
+					),
+				),
+				'taxonomy' => 'wprm_ingredient',
+				'fields' => 'ids',
+			);
+			$terms = get_terms( $args );
+
+			if ( ! is_wp_error( $terms ) && isset( $terms[0] ) && $terms[0] ) {
+				return $terms[0];
+			}
+		}
+
 		return self::get_term_id_by_name( 'wprm_ingredient', $name );
 	}
 

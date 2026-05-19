@@ -1413,7 +1413,11 @@ class WPRM_SC_Ingredients extends WPRM_Template_Shortcode {
 						}
 
 						// Ingredient link.
-						$name = apply_filters( 'wprm_recipe_ingredients_shortcode_link', $ingredient['name'], $ingredient, $recipe );
+						$ingredient_display_name = $ingredient['name'];
+						if ( class_exists( 'WPRMPUC_Manager' ) && method_exists( 'WPRMPUC_Manager', 'get_ingredient_name_for_system' ) && $recipe ) {
+							$ingredient_display_name = WPRMPUC_Manager::get_ingredient_name_for_system( $ingredient, intval( $recipe->unit_system() ), isset( $ingredient['amount'] ) ? $ingredient['amount'] : false );
+						}
+						$name = apply_filters( 'wprm_recipe_ingredients_shortcode_link', do_shortcode( $ingredient_display_name ), $ingredient, $recipe );
 					}
 
 					if ( $name || ! in_array( $atts['ingredients_style'], array( 'regular', 'grouped' ) ) ) {

@@ -128,7 +128,7 @@ class WPRM_Api_Modal {
 					),
 				),
 			);
-	
+
 			$query = new WP_Term_Query( $args );
 			$plural_terms = $query->get_terms();
 
@@ -141,6 +141,50 @@ class WPRM_Api_Modal {
 							'name' => $plural,
 							'count' => $plural_term->count,
 						);
+					}
+				}
+			}
+
+			if ( 'wprm_ingredient' === $taxonomy ) {
+				$alias_keys = array(
+					'wprm_ingredient_unit_system_1_singular',
+					'wprm_ingredient_unit_system_1_plural',
+					'wprm_ingredient_unit_system_2_singular',
+					'wprm_ingredient_unit_system_2_plural',
+				);
+
+				foreach ( $alias_keys as $alias_key ) {
+					$args = array(
+						'taxonomy' => $taxonomy,
+						'hide_empty' => false,
+						'number' => 10,
+						'offset' => 0,
+						'count' => true,
+						'orderby' => 'count',
+						'order' => 'DESC',
+						'meta_query' => array(
+							array(
+								'key' => $alias_key,
+								'compare' => 'LIKE',
+								'value' => $search,
+							),
+						),
+					);
+
+					$query = new WP_Term_Query( $args );
+					$alias_terms = $query->get_terms();
+
+					if ( $alias_terms && is_array( $alias_terms ) ) {
+						foreach ( $alias_terms as $alias_term ) {
+							$alias = get_term_meta( $alias_term->term_id, $alias_key, true );
+
+							if ( $alias && ! array_key_exists( $alias, $suggestions ) ) {
+								$suggestions[ $alias ] = array(
+									'name' => $alias,
+									'count' => $alias_term->count,
+								);
+							}
+						}
 					}
 				}
 			}
@@ -211,7 +255,7 @@ class WPRM_Api_Modal {
 
 		$taxonomy_key = isset( $params['taxonomy'] ) ? sanitize_text_field( $params['taxonomy'] ) : '';
 		$search = isset( $params['search'] ) ? sanitize_text_field( $params['search'] ) : '';
-		
+
 		// Limit search string length to prevent abuse.
 		if ( strlen( $search ) > 100 ) {
 			$search = substr( $search, 0, 100 );

@@ -27,7 +27,7 @@ export default {
                         type="restore"
                         title={ __wprm( 'Restore Recipe' ) }
                         onClick={() => {
-                            Api.recipe.updateStatus(row.original.id, 'draft').then(() => recipes.refreshData());
+                            Api.manage.bulkEdit( 'trash', 'trash', [ row.original.id ], { type: 'restore', options: false } ).then(() => recipes.refreshData());
                         }}
                     />
                     <Icon

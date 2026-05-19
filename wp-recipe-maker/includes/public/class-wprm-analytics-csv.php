@@ -183,7 +183,7 @@ class WPRM_Analytics_CSV {
 		// Generate CSV.
 		$csv = fopen( 'php://temp', 'r+' );
 		foreach ( $csv_data as $row ) {
-			fputcsv( $csv, $row );
+			fputcsv( $csv, $row, ',', '"', '\\' );
 		}
 		rewind( $csv );
 		$content = stream_get_contents( $csv );

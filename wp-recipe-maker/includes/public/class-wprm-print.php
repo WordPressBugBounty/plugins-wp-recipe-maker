@@ -47,6 +47,41 @@ class WPRM_Print {
 	}
 
 	/**
+	 * Get the global print access setting.
+	 *
+	 * @since	10.6.0
+	 */
+	public static function access() {
+		$access = WPRM_Settings::get( 'print_access' );
+
+		if ( ! in_array( $access, array( 'everyone', 'logged_in', 'administrators', 'disabled' ), true ) ) {
+			$access = WPRM_Settings::get_default( 'print_access' );
+		}
+
+		return $access ? $access : 'everyone';
+	}
+
+	/**
+	 * Check if the current visitor can access print functionality.
+	 *
+	 * @since	10.6.0
+	 */
+	public static function has_access() {
+		$access = self::access();
+		$has_access = true;
+
+		if ( 'disabled' === $access ) {
+			$has_access = false;
+		} elseif ( 'logged_in' === $access && ! is_user_logged_in() ) {
+			$has_access = false;
+		} elseif ( 'administrators' === $access && ! current_user_can( 'administrator' ) ) {
+			$has_access = false;
+		}
+
+		return apply_filters( 'wprm_print_has_access', $has_access, $access );
+	}
+
+	/**
 	 * Check if someone is trying to reach the print page.
 	 *
 	 * @since    1.3.0
@@ -79,6 +114,11 @@ class WPRM_Print {
 		}
 
 		if ( $print_args && 1 <= count( $print_args ) && $print_args[0] ) {
+			if ( ! self::has_access() ) {
+				wp_redirect( home_url() );
+				exit();
+			}
+
 			WPRM_Context::set( 'print' );
 
 			// Convert slug to ID if we're printing a single recipe.
@@ -553,6 +593,10 @@ class WPRM_Print {
 	 * @param	array $recipe_ids IDs of the recipes to print.
 	 */
 	public static function bulk_print_url( $recipe_ids ) {
+		if ( ! self::has_access() ) {
+			return false;
+		}
+
 		$ids_to_encode = array();
 		foreach( $recipe_ids as $id ) {
 			$ids_to_encode[] = $id;
@@ -627,6 +671,10 @@ class WPRM_Print {
 	 * @param	mixed $recipe Recipe to print.
 	 */
 	public static function has_permission( $recipe ) {
+		if ( ! self::has_access() ) {
+			return false;
+		}
+
 		// Admin always has permission.
 		if ( current_user_can( 'administrator' ) ) {
 			return true;

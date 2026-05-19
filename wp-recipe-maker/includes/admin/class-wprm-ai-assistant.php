@@ -33,6 +33,10 @@ class WPRM_AI_Assistant {
 	 * @since    10.4.1
 	 */
 	public static function add_submenu_page() {
+		if ( ! self::is_enabled() ) {
+			return;
+		}
+
 		add_submenu_page(
 			'wprecipemaker',
 			__( 'AI Assistant', 'wp-recipe-maker' ),
@@ -41,6 +45,17 @@ class WPRM_AI_Assistant {
 			'wprm_ai_assistant',
 			array( __CLASS__, 'page_template' )
 		);
+	}
+
+	/**
+	 * Check whether the AI Assistant is enabled.
+	 *
+	 * @since    10.5.1
+	 *
+	 * @return	boolean
+	 */
+	public static function is_enabled() {
+		return (bool) WPRM_Settings::get( 'ai_assistant_enabled' );
 	}
 
 	/**
@@ -143,6 +158,10 @@ class WPRM_AI_Assistant {
 	 * @since    10.4.1
 	 */
 	public static function page_template() {
+		if ( ! self::is_enabled() ) {
+			wp_die( esc_html__( 'The AI Assistant is disabled.', 'wp-recipe-maker' ) );
+		}
+
 		$tool = self::get_current_tool();
 
 		if ( $tool ) {

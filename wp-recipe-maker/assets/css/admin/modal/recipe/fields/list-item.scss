@@ -43,6 +43,27 @@
     counter-reset: item;
 }
 
+.wprm-admin-modal-field-items-unavailable {
+    margin: 0 26px 12px 26px !important;
+    padding: 10px 14px;
+    background-color: #fcf9e8;
+    border-left: 4px solid #dba617;
+    border-radius: 2px;
+
+    p {
+        margin: 0 0 8px 0;
+    }
+
+    ul {
+        margin: 0 0 10px 18px;
+        list-style: disc;
+    }
+
+    li {
+        margin: 0 0 4px 0;
+    }
+}
+
 .wprm-admin-modal-field-item {    
     .wprm-admin-modal-field-item-container {
         display: flex;

@@ -5,6 +5,7 @@ import { __wprm } from 'Shared/Translations';
 const ActionsTrash = (props) => {
     const selectedAction = props.action ? props.action.type : false;
     const actionOptions = [
+        { value: 'restore', label: __wprm( 'Restore Recipes' ), default: false },
         { value: 'delete', label: __wprm( 'Permanently Delete Recipes' ), default: false },
     ];
 

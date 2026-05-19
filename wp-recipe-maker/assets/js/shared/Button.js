@@ -6,6 +6,10 @@ import Tooltip from './Tooltip';
 import '../../css/admin/shared/button.scss';
 
 const Button = (props) => {
+    if ( props.ai && wprm_admin.settings && false === wprm_admin.settings.ai_assistant_enabled ) {
+        return null;
+    }
+
     let buttonDisabled = false;
     let tooltipContent = props.help ? props.help : false;
     let className = 'button button-compact';

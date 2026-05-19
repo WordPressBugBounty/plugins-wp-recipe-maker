@@ -1,6 +1,22 @@
 window.WPRecipeMaker = typeof window.WPRecipeMaker === "undefined" ? {} : window.WPRecipeMaker;
 
 window.WPRecipeMaker.print = {
+	hasAccess: () => {
+		if ( wprm_public.settings.hasOwnProperty( 'print_access_allowed' ) ) {
+			return !! wprm_public.settings.print_access_allowed;
+		}
+
+		const access = wprm_public.settings.hasOwnProperty( 'print_access' ) ? wprm_public.settings.print_access : 'everyone';
+
+		if ( 'disabled' === access ) {
+			return false;
+		}
+		if ( 'logged_in' === access && 0 >= parseInt( wprm_public.user ) ) {
+			return false;
+		}
+
+		return true;
+	},
 	init: () => {
 		document.addEventListener( 'click', function(e) {
 			for ( var target = e.target; target && target != this; target = target.parentNode ) {
@@ -12,6 +28,11 @@ window.WPRecipeMaker.print = {
 		}, false );
 	},
 	onClick: ( el, e ) => {
+		if ( ! WPRecipeMaker.print.hasAccess() ) {
+			e.preventDefault();
+			return;
+		}
+
 		let recipeId = el.dataset.recipeId;
 
 		// Backwards compatibility.
@@ -99,6 +120,10 @@ window.WPRecipeMaker.print = {
 		}
 
 		const url = WPRecipeMaker.print.getUrl( urlArgs );
+		if ( ! url ) {
+			return;
+		}
+
 		const target = wprm_public.settings.print_new_tab ? '_blank' : '_self';
 
 		// Pass along data to print window before opening it.
@@ -125,6 +150,10 @@ window.WPRecipeMaker.print = {
 		}
 	},
 	getUrl: ( args ) => {
+		if ( ! WPRecipeMaker.print.hasAccess() ) {
+			return false;
+		}
+
 		const urlParts = wprm_public.home_url.split(/\?(.+)/);
 		
 		// Ensure base URL always has a trailing slash before appending the slug.

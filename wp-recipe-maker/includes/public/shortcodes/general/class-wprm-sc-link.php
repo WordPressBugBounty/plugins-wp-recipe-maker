@@ -200,7 +200,7 @@ class WPRM_SC_Link extends WPRM_Template_Shortcode {
 
 		$style = WPRM_Shortcode_Helper::get_inline_style( $css );
 		$nofollow = 'nofollow' === $atts['link_nofollow'] ? ' rel="nofollow"' : '';
-		$output = '<a href="' . $link . '" target="' . esc_attr( $atts['link_target'] ) . '" class="' . esc_attr( implode( ' ', $classes ) ). '"' . $nofollow . $style . '>' . $icon . WPRM_Shortcode_Helper::sanitize_html( $text ) . '</a>';
+		$output = '<a href="' . esc_url( $link ) . '" target="' . esc_attr( $atts['link_target'] ) . '" class="' . esc_attr( implode( ' ', $classes ) ). '"' . $nofollow . $style . '>' . $icon . WPRM_Shortcode_Helper::sanitize_html( $text ) . '</a>';
 		return apply_filters( parent::get_hook(), $output, $atts );
 	}
 }

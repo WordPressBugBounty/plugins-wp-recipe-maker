@@ -127,7 +127,7 @@ class WPRM_SC_Tip extends WPRM_Template_Shortcode {
 			$text = $atts['text'];
 		}
 
-		$text = parent::clean_paragraphs( $text );
+		$text = WPRM_Shortcode_Helper::sanitize_html( parent::clean_paragraphs( $text ) );
 
 		if ( ! $text ) {
 			return apply_filters( parent::get_hook(), '', $atts, $content );
