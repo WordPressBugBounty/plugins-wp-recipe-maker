@@ -395,10 +395,10 @@ class WPRM_Taxonomies {
 
 			// Check settings if we should add a link.
 			switch ( $taxonomy ) {
-				case 'wprm_ingredient';
+				case 'wprm_ingredient':
 					$should_add_link = WPRM_Settings::get( 'ingredient_links_archive_pages' );
 					break;
-				case 'wprm_equipment';
+				case 'wprm_equipment':
 					$should_add_link = WPRM_Settings::get( 'equipment_links_archive_pages' );
 					break;
 				default:

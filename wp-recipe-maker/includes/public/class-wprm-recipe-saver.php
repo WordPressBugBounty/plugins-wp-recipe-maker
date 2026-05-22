@@ -748,6 +748,12 @@ class WPRM_Recipe_Saver {
 		} else {
 			// Parent got deleted, set as draft and remove parent post relation.
 			foreach ( $recipe_ids as $recipe_id ) {
+				$current_parent_id = intval( get_post_meta( $recipe_id, 'wprm_parent_post_id', true ) );
+
+				if ( $current_parent_id && intval( $post_id ) !== $current_parent_id ) {
+					continue;
+				}
+
 				$recipe = array(
 					'ID'          => $recipe_id,
 					'post_status' => 'draft',

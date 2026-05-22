@@ -108,6 +108,7 @@ export default class DataTable extends Component {
         this.fetchRowsForExport = this.fetchRowsForExport.bind(this);
         this.getExportCellValue = this.getExportCellValue.bind(this);
         this.getRawColumnValue = this.getRawColumnValue.bind(this);
+        this.getNestedColumnValue = this.getNestedColumnValue.bind(this);
         this.getFormattedExportValue = this.getFormattedExportValue.bind(this);
         this.getDomRowMap = this.getDomRowMap.bind(this);
         this.getCellTextFromDom = this.getCellTextFromDom.bind(this);
@@ -276,7 +277,14 @@ export default class DataTable extends Component {
         }
 
         if ( 'string' === typeof column.accessor && row.hasOwnProperty( column.accessor ) ) {
-            return row[ column.accessor ];
+            const accessorValue = row[ column.accessor ];
+            const nestedValue = this.getNestedColumnValue( column, accessorValue );
+
+            if ( false !== nestedValue ) {
+                return nestedValue;
+            }
+
+            return accessorValue;
         }
 
         if ( column.id && row.hasOwnProperty( column.id ) ) {
@@ -284,6 +292,24 @@ export default class DataTable extends Component {
         }
 
         return '';
+    }
+
+    getNestedColumnValue( column, accessorValue ) {
+        if ( ! column || ! column.id || ! accessorValue || 'object' !== typeof accessorValue || Array.isArray( accessorValue ) ) {
+            return false;
+        }
+
+        if ( 'nutrition' === column.accessor && 0 === column.id.indexOf( 'nutrition_' ) ) {
+            const nutrient = column.id.slice( 10 );
+            return accessorValue.hasOwnProperty( nutrient ) ? accessorValue[ nutrient ] : '';
+        }
+
+        if ( 'custom_fields' === column.accessor && 0 === column.id.indexOf( 'custom_field_' ) ) {
+            const customFieldKey = column.id.slice( 13 );
+            return accessorValue.hasOwnProperty( customFieldKey ) ? accessorValue[ customFieldKey ] : '';
+        }
+
+        return false;
     }
 
     isRatingsObject( value ) {

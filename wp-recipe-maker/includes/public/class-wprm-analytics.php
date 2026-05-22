@@ -66,6 +66,8 @@ class WPRM_Analytics {
 
 			'add-to-collections-button' => __( 'Add to Recipe Collections', 'wp-recipe-maker' ),
 			'add-to-shopping-list-button' => __( 'Add to Quick Access Shopping List', 'wp-recipe-maker' ),
+			'product-add-to-cart' => __( 'Product Add to Cart', 'wp-recipe-maker' ),
+			'add-products-to-cart' => __( 'Add Products to Cart', 'wp-recipe-maker' ),
 		);
 	}
 
@@ -161,6 +163,20 @@ class WPRM_Analytics {
 					break;
 				case 'generate-shopping-list':
 					$sanitized_meta['collection'] = isset( $meta['collection'] ) ? sanitize_text_field( $meta['collection'] ) : 'unknown';
+					break;
+				case 'product-add-to-cart':
+					$item_type = isset( $meta['item_type'] ) ? sanitize_key( $meta['item_type'] ) : 'unknown';
+					$item_type = in_array( $item_type, array( 'ingredient', 'equipment' ), true ) ? $item_type : 'unknown';
+
+					$sanitized_meta['product_id'] = isset( $meta['product_id'] ) ? intval( $meta['product_id'] ) : 0;
+					$sanitized_meta['product_name'] = isset( $meta['product_name'] ) ? sanitize_text_field( $meta['product_name'] ) : 'unknown';
+					$sanitized_meta['item_type'] = $item_type;
+					$sanitized_meta['item_name'] = isset( $meta['item_name'] ) ? sanitize_text_field( $meta['item_name'] ) : 'unknown';
+					$sanitized_meta['quantity'] = isset( $meta['quantity'] ) ? max( 1, intval( $meta['quantity'] ) ) : 1;
+
+					if ( isset( $meta['variation_id'] ) && intval( $meta['variation_id'] ) ) {
+						$sanitized_meta['variation_id'] = intval( $meta['variation_id'] );
+					}
 					break;
 			}
 

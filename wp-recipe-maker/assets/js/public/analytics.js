@@ -257,12 +257,12 @@ window.WPRecipeMaker.analytics = {
 			}
 
 			// Pass along other meta.
-			if ( 0 < meta.length ) {
-				for ( let key in Object.keys( meta ) ) {
-					if ( meta[key] ) {
+			if ( meta && 'object' === typeof meta ) {
+				Object.keys( meta ).forEach( ( key ) => {
+					if ( '' !== meta[key] && null !== meta[key] && typeof meta[key] !== 'undefined' ) {
 						eventData[`wprm_event_${key}`] = '' + meta[key];
 					}
-				}
+				} );
 			}
 
 			window.gtag( 'event', event, eventData );

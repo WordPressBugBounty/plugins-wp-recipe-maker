@@ -344,6 +344,12 @@ class WPRM_List_Saver {
 		} else {
 			// Parent got deleted, set as draft and remove parent post relation.
 			foreach ( $list_ids as $list_id ) {
+				$current_parent_id = intval( get_post_meta( $list_id, 'wprm_parent_post_id', true ) );
+
+				if ( $current_parent_id && intval( $post_id ) !== $current_parent_id ) {
+					continue;
+				}
+
 				$list = array(
 					'ID'          => $list_id,
 					'post_status' => 'draft',

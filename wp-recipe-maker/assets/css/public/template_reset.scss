@@ -62,6 +62,13 @@
     }
 }
 
+// Prevents extra borders when bottom border is set.
+.wprm-recipe-ingredient,
+.wprm-recipe-equipment-item,
+.wprm-nutrition-label-text-nutrition-container {
+    border: 0;
+}
+
 body:not(.wprm-print) .wprm-recipe {
     p:first-letter {
         font-size: inherit;

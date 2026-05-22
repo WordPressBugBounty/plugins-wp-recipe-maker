@@ -1,6 +1,12 @@
 {
     "news": [
         {
+            "date": "2026-05-21",
+            "label": "Blog",
+            "title": "Why You Should Weigh Ingredients Instead of Using Cups",
+            "url": "https://bootstrapped.ventures/why-weigh-ingredients-instead-of-cups/"
+        },
+        {
             "date": "2026-05-19",
             "label": "Release",
             "title": "WP Recipe Maker 10.6.0",
