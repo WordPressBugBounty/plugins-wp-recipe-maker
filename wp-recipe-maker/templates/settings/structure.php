@@ -55,6 +55,7 @@ require_once( 'group-recipe-collections.php' );
 // Backend.
 require_once( 'group-recipe-defaults.php' );
 require_once( 'group-ai-assistant.php' );
+require_once( 'group-app.php' );
 require_once( 'group-analytics.php' );
 require_once( 'group-import.php' );
 require_once( 'group-changelog.php' );
@@ -107,6 +108,7 @@ $settings_structure = array(
 	array( 'header' => __( 'Backend', 'wp-recipe-maker' ) ),
 	$recipe_defaults,
 	$ai_assistant,
+	$app,
 	$analytics,
 	$import,
 	$changelog,

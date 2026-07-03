@@ -58,17 +58,72 @@
         flex-wrap: wrap;
         align-items: center;
 
-        .wprm-admin-modal-field-richtext,
-        .wprm-admin-modal-field-richtext-legacy {
-            &:nth-of-type(1),
-            &:nth-of-type(2) {
-                flex: 0 0 50%;
-            }
+        .wprm-admin-modal-field-ingredient-amount,
+        .wprm-admin-modal-field-ingredient-unit {
+            flex: 0 0 50%;
+        }
 
-            &:nth-of-type(3),
-            &:nth-of-type(4) {
-                flex: 0 0 100%;
+        .wprm-admin-modal-field-ingredient-name-container,
+        .wprm-admin-modal-field-ingredient-notes {
+            flex: 0 0 100%;
+        }
+
+        .wprm-admin-modal-field-ingredient-name-container {
+            display: flex;
+            align-items: center;
+            min-width: 0;
+
+            .wprm-admin-modal-field-ingredient-name {
+                flex: 1 1 auto;
+                min-width: 0;
             }
+        }
+    }
+
+    .wprm-admin-modal-field-ingredient-connector-container {
+        display: inline-flex;
+        flex: 0 0 auto;
+        margin: 5px 5px 5px 0;
+    }
+
+    .wprm-admin-modal-field-ingredient-connector-tooltip {
+        display: inline-flex;
+        max-width: 70px;
+    }
+
+    .wprm-admin-modal-field-ingredient-connector {
+        min-width: 26px;
+        max-width: 70px;
+        height: 26px;
+        padding: 0 7px;
+        overflow: hidden;
+        border: 1px solid #ccd0d4;
+        border-radius: 3px;
+        background: #f6f7f7;
+        color: #50575e;
+        cursor: pointer;
+        font-size: 12px;
+        line-height: 24px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+
+        &:hover,
+        &:focus {
+            border-color: #2271b1;
+            color: #1d2327;
+        }
+
+        &.wprm-admin-modal-field-ingredient-connector-has-value {
+            border-color: #2271b1;
+            background: #f0f6fc;
+            color: #135e96;
+        }
+
+        &:disabled {
+            color: #8c8f94;
+            cursor: not-allowed;
+            opacity: 0.65;
+            pointer-events: none;
         }
     }
 }
@@ -119,16 +174,13 @@
 
     .wprm-admin-modal-field-ingredient {    
         .wprm-admin-modal-field-ingredient-text-container {
-            .wprm-admin-modal-field-richtext,
-            .wprm-admin-modal-field-richtext-legacy {
-                &:nth-of-type(1),
-                &:nth-of-type(2) {
-                    flex: 0 0 25%;
-                }
-    
-                &:nth-of-type(3) {
-                    flex: 0 0 50%;
-                }
+            .wprm-admin-modal-field-ingredient-amount,
+            .wprm-admin-modal-field-ingredient-unit {
+                flex: 0 0 25%;
+            }
+
+            .wprm-admin-modal-field-ingredient-name-container {
+                flex: 0 0 50%;
             }
         }
     }
@@ -168,23 +220,20 @@
         .wprm-admin-modal-field-ingredient-text-container {
             flex-wrap: nowrap;
 
-            .wprm-admin-modal-field-richtext,
-            .wprm-admin-modal-field-richtext-legacy {
-                &:nth-of-type(1) {
-                    flex: 0 0 75px;
-                    margin-right: 5px;
-                }
-                &:nth-of-type(2) {
-                    flex: 0 0 90px;
-                    margin-right: 5px;
-                }    
-                &:nth-of-type(3) {
-                    flex: 0 0 250px;
-                    margin-right: 5px;
-                }
-                &:nth-of-type(4) {
-                    flex: auto;
-                }
+            .wprm-admin-modal-field-ingredient-amount {
+                flex: 0 0 75px;
+                margin-right: 5px;
+            }
+            .wprm-admin-modal-field-ingredient-unit {
+                flex: 0 0 90px;
+                margin-right: 5px;
+            }
+            .wprm-admin-modal-field-ingredient-name-container {
+                flex: 0 0 250px;
+                margin-right: 5px;
+            }
+            .wprm-admin-modal-field-ingredient-notes {
+                flex: auto;
             }
         }
     }
@@ -201,11 +250,8 @@
 
     .wprm-admin-modal-field-ingredient {
         .wprm-admin-modal-field-ingredient-text-container {
-            .wprm-admin-modal-field-richtext,
-            .wprm-admin-modal-field-richtext-legacy {
-                &:nth-of-type(3) {
-                    flex: 0 0 300px;
-                };
+            .wprm-admin-modal-field-ingredient-name-container {
+                flex: 0 0 300px;
             }
         }
     }
@@ -223,11 +269,8 @@
     .wprm-admin-modal-field-ingredient {
         .wprm-admin-modal-field-ingredient-text-container {
 
-            .wprm-admin-modal-field-richtext,
-            .wprm-admin-modal-field-richtext-legacy {
-                &:nth-of-type(3) {
-                    flex: 0 0 350px;
-                };
+            .wprm-admin-modal-field-ingredient-name-container {
+                flex: 0 0 350px;
             }
         }
     }

@@ -123,9 +123,33 @@ class WPRM_Api_Manage_Recipes {
 	 * @param    WP_REST_Request $request Current request.
 	 */
 	public static function api_manage_recipes( $request ) {
-		// Parameters.
 		$params = $request->get_params();
+		$result = self::query_recipes( $params );
 
+		$rows = array();
+		foreach ( $result['recipes'] as $recipe ) {
+			$rows[] = $recipe->get_data_manage();
+		}
+
+		$data = array(
+			'rows' => $rows,
+			'total' => $result['total'],
+			'filtered' => $result['filtered'],
+			'pages' => $result['pages'],
+		);
+
+		return rest_ensure_response( $data );
+	}
+
+	/**
+	 * Query recipes using the manage page parameters. Returns recipe objects
+	 * so callers can decide on the serialization format themselves.
+	 *
+	 * @since    10.7.0
+	 * @param    array   $params Manage page parameters (page, pageSize, sorted, filtered, filter).
+	 * @param    boolean $check_edit_permission Whether to filter out recipes the current user can't edit.
+	 */
+	public static function query_recipes( $params, $check_edit_permission = true ) {
 		$page = isset( $params['page'] ) ? intval( $params['page'] ) : 0;
 		$page_size = isset( $params['pageSize'] ) ? intval( $params['pageSize'] ) : 25;
 		$sorted = isset( $params['sorted'] ) ? $params['sorted'] : array( array( 'id' => 'id', 'desc' => true ) );
@@ -282,6 +306,8 @@ class WPRM_Api_Manage_Recipes {
 		$posts = $query->posts;
 		$no_permission_total = 0;
 
+		self::prime_recipe_manage_caches( $posts );
+
 		foreach ( $posts as $post ) {
 			$recipe = WPRM_Recipe_Manager::get_recipe( $post );
 
@@ -289,12 +315,12 @@ class WPRM_Api_Manage_Recipes {
 				continue;
 			}
 
-			if ( false === WPRM_Settings::get( 'manage_page_show_uneditable' ) && ! current_user_can( 'edit_post', $recipe->id() ) ) {
+			if ( $check_edit_permission && false === WPRM_Settings::get( 'manage_page_show_uneditable' ) && ! current_user_can( 'edit_post', $recipe->id() ) ) {
 				$no_permission_total++;
 				continue;
 			}
 
-			$recipes[] = $recipe->get_data_manage();
+			$recipes[] = $recipe;
 		}
 
 		// Got total number of recipes.
@@ -310,14 +336,106 @@ class WPRM_Api_Manage_Recipes {
 		$total_recipes = array_sum( $total ) - $no_permission_total;
 		$filtered_recipes = intval( $query->found_posts ) - $no_permission_total;
 
-		$data = array(
-			'rows' => array_values( $recipes ),
+		return array(
+			'recipes' => array_values( $recipes ),
 			'total' => $total_recipes,
 			'filtered' => $filtered_recipes,
-			'pages' => ceil( $filtered_recipes / $page_size ),
+			'pages' => $page_size ? ceil( $filtered_recipes / $page_size ) : 0,
+			'page' => $page,
+			'page_size' => $page_size,
 		);
+	}
 
-		return rest_ensure_response( $data );
+	/**
+	 * Prime caches for related objects used while hydrating manage rows.
+	 *
+	 * @since    10.0.0
+	 * @param    array $posts Posts returned for the current manage page.
+	 */
+	private static function prime_recipe_manage_caches( $posts ) {
+		if ( empty( $posts ) ) {
+			return;
+		}
+
+		$post_ids = wp_list_pluck( $posts, 'ID' );
+		$post_ids = array_values( array_unique( array_filter( array_map( 'intval', $post_ids ) ) ) );
+
+		if ( empty( $post_ids ) ) {
+			return;
+		}
+
+		update_meta_cache( 'post', $post_ids );
+		update_object_term_cache( $post_ids, WPRM_POST_TYPE );
+
+		$parent_post_ids = array();
+		$attachment_ids = array();
+		$user_ids = array();
+
+		foreach ( $posts as $post ) {
+			$post_id = intval( $post->ID );
+
+			if ( ! empty( $post->post_author ) ) {
+				$user_ids[] = intval( $post->post_author );
+			}
+
+			$parent_post_id = intval( get_post_meta( $post_id, 'wprm_parent_post_id', true ) );
+			if ( $parent_post_id ) {
+				$parent_post_ids[] = $parent_post_id;
+			}
+
+			$image_id = intval( get_post_meta( $post_id, '_thumbnail_id', true ) );
+			if ( $image_id ) {
+				$attachment_ids[] = $image_id;
+			}
+
+			$pin_image_id = intval( get_post_meta( $post_id, 'wprm_pin_image_id', true ) );
+			if ( $pin_image_id ) {
+				$attachment_ids[] = $pin_image_id;
+			}
+
+			$submission_user = maybe_unserialize( get_post_meta( $post_id, 'wprm_submission_user', true ) );
+			if ( is_array( $submission_user ) && ! empty( $submission_user['id'] ) ) {
+				$user_ids[] = intval( $submission_user['id'] );
+			}
+		}
+
+		$parent_post_ids = array_values( array_unique( array_filter( array_map( 'intval', $parent_post_ids ) ) ) );
+		if ( ! empty( $parent_post_ids ) ) {
+			if ( function_exists( '_prime_post_caches' ) ) {
+				_prime_post_caches( $parent_post_ids, false, true );
+			} else {
+				update_meta_cache( 'post', $parent_post_ids );
+				foreach ( $parent_post_ids as $parent_post_id ) {
+					get_post( $parent_post_id );
+				}
+			}
+
+			if ( WPRM_Settings::get( 'recipe_image_use_featured' ) ) {
+				foreach ( $parent_post_ids as $parent_post_id ) {
+					$parent_image_id = intval( get_post_meta( $parent_post_id, '_thumbnail_id', true ) );
+					if ( $parent_image_id ) {
+						$attachment_ids[] = $parent_image_id;
+					}
+				}
+			}
+		}
+
+		$attachment_ids = array_values( array_unique( array_filter( array_map( 'intval', $attachment_ids ) ) ) );
+		if ( ! empty( $attachment_ids ) ) {
+			if ( function_exists( '_prime_post_caches' ) ) {
+				_prime_post_caches( $attachment_ids, false, true );
+			} else {
+				update_meta_cache( 'post', $attachment_ids );
+				foreach ( $attachment_ids as $attachment_id ) {
+					get_post( $attachment_id );
+				}
+			}
+		}
+
+		$user_ids = array_values( array_unique( array_filter( array_map( 'intval', $user_ids ) ) ) );
+		if ( ! empty( $user_ids ) && function_exists( 'cache_users' ) ) {
+			cache_users( $user_ids );
+		}
 	}
 
 	/**

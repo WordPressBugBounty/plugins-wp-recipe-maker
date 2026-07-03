@@ -15,9 +15,18 @@
         margin-left: 26px;
         margin-top: 10px;
 
+        &.wprm-admin-modal-field-items-actions-top {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
         .button {
             margin-top: 5px;
             margin-right: 5px;
+        }
+
+        .wprm-admin-modal-field-items-import-button {
+            display: block;
         }
     }
 }

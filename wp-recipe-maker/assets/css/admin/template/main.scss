@@ -39,6 +39,98 @@
         border: 1px solid #ddd;
     }
 
+    .wprm-template-ai-comparison {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .wprm-template-ai-comparison-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 0 0 2px;
+
+        h2 {
+            margin: 0;
+        }
+
+        span {
+            display: inline-flex;
+            align-items: center;
+            min-height: 26px;
+            padding: 0 10px;
+            border: 1px solid #c3c4c7;
+            border-radius: 4px;
+            background: #f6f7f7;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+    }
+
+    .wprm-template-ai-comparison-section {
+        .wprm-main-container-name {
+            span {
+                color: #646970;
+                font-size: 13px;
+                font-weight: 600;
+                text-transform: uppercase;
+            }
+        }
+    }
+
+    .wprm-template-ai-comparison-preview {
+        .wprm-main-container {
+            margin-top: 0;
+        }
+    }
+
+    .wprm-template-ai-code-diff {
+        margin-top: 10px;
+        max-height: 420px;
+        overflow: auto;
+        border: 1px solid #ddd;
+        background: #fff;
+        font-family: Consolas, Monaco, monospace;
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    .wprm-template-ai-code-line {
+        display: grid;
+        grid-template-columns: 54px minmax(0, 1fr);
+        min-height: 20px;
+
+        code {
+            display: block;
+            min-width: 0;
+            padding: 1px 10px;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
+        }
+    }
+
+    .wprm-template-ai-code-line-number {
+        padding: 1px 8px;
+        border-right: 1px solid #ddd;
+        background: #f6f7f7;
+        color: #646970;
+        text-align: right;
+        user-select: none;
+    }
+
+    .wprm-template-ai-code-line-changed {
+        background: #fff8e5;
+
+        .wprm-template-ai-code-line-number {
+            background: #f7e5a6;
+            color: #1d2327;
+            font-weight: 600;
+        }
+    }
+
     .wprm-template-block-hovering {
         outline: 2px dashed blue;
         outline-offset: 2px;

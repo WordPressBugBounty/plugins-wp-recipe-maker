@@ -9,6 +9,19 @@
     max-width: 100% !important;
 }
 
+/* Keep WPRM block actions visible when third-party editor CSS hides Gutenberg components. */
+.editor-styles-wrapper [class*="wp-block-wp-recipe-maker-"][class*="wp-block-wp-recipe-maker-"] .components-button.components-button {
+    display: inline-flex !important;
+}
+
+.editor-styles-wrapper [class*="wp-block-wp-recipe-maker-"][class*="wp-block-wp-recipe-maker-"] .components-base-control.components-base-control {
+    display: block !important;
+}
+
+.editor-styles-wrapper [class*="wp-block-wp-recipe-maker-"][class*="wp-block-wp-recipe-maker-"] .components-toolbar.components-toolbar {
+    display: flex !important;
+}
+
 .editor-styles-wrapper .wp-block-wp-recipe-maker-recipe .wprm-recipe-block-invalid {
     padding: 10px;
     border: 1px solid darkred;

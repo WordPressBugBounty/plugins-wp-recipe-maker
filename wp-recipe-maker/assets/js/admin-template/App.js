@@ -59,6 +59,9 @@ class App extends Component {
             editingBlock: false,
             manageTemplateType: false,
             defaultTemplateUsages: wprm_admin_template.default_template_usages || {},
+            editorRefreshKey: 0,
+            aiTemplateProposal: false,
+            aiTemplateComparisonSide: 'after',
         }
         this.historyEnabled = isEnabledSetting( wprm_admin_template.undo_redo_history, true );
         
@@ -108,6 +111,7 @@ class App extends Component {
             historyPast: [],
             historyFuture: [],
             historyPastCapped: false,
+            ...this.getClearTemplateAIProposalState(),
         } : {};
 
         if ( shouldResetHistory ) {
@@ -212,7 +216,7 @@ class App extends Component {
             const blockUid = pathParts[2] ? parseInt(pathParts[2], 10) : false;
             
             // Validate mode
-            const validModes = ['properties', 'blocks', 'add', 'html', 'css'];
+            const validModes = ['properties', 'blocks', 'add', 'html', 'css', 'ai-assistant'];
             const finalMode = validModes.includes(mode) ? mode : 'properties';
             
             // Only allow block UID for blocks mode
@@ -264,6 +268,116 @@ class App extends Component {
 
     isTemplateEqual(a, b) {
         return JSON.stringify(a) === JSON.stringify(b);
+    }
+
+    getClearTemplateAIProposalState() {
+        return {
+            aiTemplateProposal: false,
+            aiTemplateComparisonSide: 'after',
+        };
+    }
+
+    getTemplateStyleCSS(template) {
+        if ( template && template.style && 'undefined' !== typeof template.style.css ) {
+            return template.style.css;
+        }
+
+        return template && template.css ? template.css : '';
+    }
+
+    getTemplateAIComparisonTemplate(template, html, css) {
+        const comparisonTemplate = this.cloneTemplate(template);
+        comparisonTemplate.html = 'string' === typeof html ? html : '';
+
+        if ( ! comparisonTemplate.style ) {
+            comparisonTemplate.style = {
+                properties: {},
+                css: '',
+            };
+        }
+
+        comparisonTemplate.style.css = 'string' === typeof css ? css : '';
+        comparisonTemplate.css = comparisonTemplate.style.css;
+
+        return comparisonTemplate;
+    }
+
+    getTemplateAIComparisonSnapshot(template) {
+        if ( ! template ) {
+            return false;
+        }
+
+        const html = 'string' === typeof template.html ? template.html : '';
+        const css = this.getTemplateStyleCSS(template);
+
+        return {
+            html,
+            css,
+            template: this.getTemplateAIComparisonTemplate(template, html, css),
+        };
+    }
+
+    onStartTemplateAIRequest() {
+        const sourceTemplate = this.state.template ? this.cloneTemplate(this.state.template) : false;
+
+        this.setState(this.getClearTemplateAIProposalState());
+
+        return sourceTemplate;
+    }
+
+    onSetTemplateAIProposal(result, sourceTemplate, requestPrompt = '') {
+        if ( ! result || ! sourceTemplate || ! this.state.template ) {
+            return;
+        }
+
+        if ( sourceTemplate.slug !== this.state.template.slug ) {
+            return;
+        }
+
+        if ( sourceTemplate.html !== this.state.template.html || this.getTemplateStyleCSS(sourceTemplate) !== this.getTemplateStyleCSS(this.state.template) ) {
+            return;
+        }
+
+        const html = 'string' === typeof result.html ? result.html : false;
+        const css = 'string' === typeof result.css ? result.css : false;
+
+        if ( false === html || false === css ) {
+            return;
+        }
+
+        const source = this.getTemplateAIComparisonSnapshot(sourceTemplate);
+        if ( ! source ) {
+            return;
+        }
+
+        const proposedTemplate = this.getTemplateAIComparisonTemplate(sourceTemplate, html, css);
+
+        this.setState({
+            aiTemplateProposal: {
+                id: Date.now(),
+                prompt: 'string' === typeof requestPrompt ? requestPrompt : '',
+                summary: 'string' === typeof result.summary ? result.summary : '',
+                warnings: Array.isArray(result.warnings) ? result.warnings : [],
+                rawResponse: result,
+                source,
+                proposed: {
+                    html,
+                    css,
+                    template: proposedTemplate,
+                },
+            },
+            aiTemplateComparisonSide: 'after',
+        });
+    }
+
+    onChangeTemplateAIComparisonSide(side) {
+        this.setState({
+            aiTemplateComparisonSide: 'before' === side ? 'before' : 'after',
+        });
+    }
+
+    onDiscardTemplateAIProposal() {
+        this.setState(this.getClearTemplateAIProposalState());
     }
 
     getCurrentSessionKey() {
@@ -523,6 +637,7 @@ class App extends Component {
                     historyPast: [],
                     historyFuture: [],
                     historyPastCapped: false,
+                    ...this.getClearTemplateAIProposalState(),
                 });
             } else {
                 // Update URL to manage overview (preserve type and selected template if any)
@@ -536,6 +651,7 @@ class App extends Component {
                     historyPast: [],
                     historyFuture: [],
                     historyPastCapped: false,
+                    ...this.getClearTemplateAIProposalState(),
                 });
             }
 
@@ -562,6 +678,7 @@ class App extends Component {
             this.setState({
                 manageTemplateType: type,
                 template: false,
+                ...this.getClearTemplateAIProposalState(),
             }, () => {
                 this.updateManageUrl(type, false);
             });
@@ -605,7 +722,7 @@ class App extends Component {
                 this.updateManageUrl(this.state.manageTemplateType, this.state.template ? this.state.template.slug : false);
             } else if ( this.state.editing && this.state.template && this.state.template.slug ) {
                 // Update URL with mode when editing a template
-                const validModes = ['properties', 'blocks', 'add', 'html', 'css'];
+                const validModes = ['properties', 'blocks', 'add', 'html', 'css', 'ai-assistant'];
                 if (validModes.includes(mode)) {
                     // Reset editing block when switching modes (unless staying in blocks mode)
                     // Allow editingBlock to be 0 (first block) - only exclude false
@@ -678,6 +795,7 @@ class App extends Component {
                 this.setState({
                     template: template,
                     editingBlock: false, // Reset editing block when switching templates
+                    ...this.getClearTemplateAIProposalState(),
                     ...( switchingTemplateWhileEditing ? { historyPast: [], historyFuture: [], historyPastCapped: false } : {} ),
                 }, () => {
                     // Update URL if we're editing this template
@@ -702,6 +820,7 @@ class App extends Component {
                         historyPast: [],
                         historyFuture: [],
                         historyPastCapped: false,
+                        ...this.getClearTemplateAIProposalState(),
                     }, () => {
                         this.updateManageUrl(this.state.manageTemplateType, false);
                     });
@@ -709,12 +828,14 @@ class App extends Component {
                     // Update URL in manage mode when deselecting template
                     this.setState({
                         template: false,
+                        ...this.getClearTemplateAIProposalState(),
                     }, () => {
                         this.updateManageUrl(this.state.manageTemplateType, false);
                     });
                 } else {
                     this.setState({
                         template: false,
+                        ...this.getClearTemplateAIProposalState(),
                     });
                 }
             }
@@ -794,6 +915,7 @@ class App extends Component {
                     })()
                     : this.recordHistoryBeforeChange(prevState, { mode: historyMode, persistUntilBoundary: historyPersistUntilBoundary }) ),
                 template,
+                ...this.getClearTemplateAIProposalState(),
             };
         }, () => {
             if ( historyBoundary ) {
@@ -871,6 +993,7 @@ class App extends Component {
                     })()
                     : this.recordHistoryBeforeChange(prevState, { mode: historyMode }) ),
                 template,
+                ...this.getClearTemplateAIProposalState(),
             };
         }, () => {
             if ( historyBoundary ) {
@@ -908,6 +1031,7 @@ class App extends Component {
                     historyFuture: [],
                     historyPastCapped: false,
                     codeHistoryResetNotice: this.historyEnabled,
+                    ...this.getClearTemplateAIProposalState(),
                 };
             });
             return;
@@ -977,6 +1101,7 @@ class App extends Component {
                     })()
                     : this.recordHistoryBeforeChange(prevState, { mode: historyMode }) ),
                 template,
+                ...this.getClearTemplateAIProposalState(),
             };
         }, () => {
             if ( historyBoundary ) {
@@ -1014,6 +1139,7 @@ class App extends Component {
                     historyFuture: [],
                     historyPastCapped: false,
                     codeHistoryResetNotice: this.historyEnabled,
+                    ...this.getClearTemplateAIProposalState(),
                 };
             });
             return;
@@ -1042,11 +1168,59 @@ class App extends Component {
             return {
                 ...this.recordHistoryBeforeChange(prevState, { mode: historyMode }),
                 template,
+                ...this.getClearTemplateAIProposalState(),
             };
         }, () => {
             if ( historyBoundary ) {
                 this.closeHistoryDebounceWindow();
             }
+        });
+    }
+
+    onApplyTemplateAIResult(result) {
+        if ( ! this.state.template || ! result ) {
+            return;
+        }
+
+        const html = 'string' === typeof result.html ? result.html : false;
+        const css = 'string' === typeof result.css ? result.css : false;
+
+        if ( false === html || false === css ) {
+            return;
+        }
+
+        this.closeHistoryDebounceWindow();
+        this.resetLastTemplatePropertyChange();
+
+        this.setState((prevState) => {
+            if ( ! prevState.template ) {
+                return null;
+            }
+
+            const template = this.cloneTemplate(prevState.template);
+
+            if ( html === template.html && template.style && css === template.style.css ) {
+                return this.getClearTemplateAIProposalState();
+            }
+
+            template.html = html;
+
+            if ( ! template.style ) {
+                template.style = {
+                    properties: {},
+                    css: '',
+                };
+            }
+
+            template.style.css = css;
+
+            return {
+                ...this.recordHistoryBeforeChange(prevState, { mode: 'immediate' }),
+                template,
+                editorRefreshKey: prevState.editorRefreshKey + 1,
+                codeHistoryResetNotice: false,
+                ...this.getClearTemplateAIProposalState(),
+            };
         });
     }
 
@@ -1202,6 +1376,14 @@ class App extends Component {
                     onUndo={ this.onUndo.bind(this) }
                     onRedo={ this.onRedo.bind(this) }
                     codeHistoryResetNotice={ this.state.codeHistoryResetNotice }
+                    aiTemplateEditor={ wprm_admin_template.ai_template_editor || {} }
+                    aiTemplateProposal={ this.state.aiTemplateProposal }
+                    aiTemplateComparisonSide={ this.state.aiTemplateComparisonSide }
+                    onStartTemplateAIRequest={ this.onStartTemplateAIRequest.bind(this) }
+                    onSetTemplateAIProposal={ this.onSetTemplateAIProposal.bind(this) }
+                    onChangeTemplateAIComparisonSide={ this.onChangeTemplateAIComparisonSide.bind(this) }
+                    onDiscardTemplateAIProposal={ this.onDiscardTemplateAIProposal.bind(this) }
+                    onApplyTemplateAIResult={ this.onApplyTemplateAIResult.bind(this) }
                 />
                 <Main
                     mode={ this.state.mode }
@@ -1216,8 +1398,11 @@ class App extends Component {
                     onChangeTemplate={ this.onChangeTemplate.bind(this) }
                     onChangeHTML={ this.onChangeHTML.bind(this) }
                     onChangeCSS={ this.onChangeCSS.bind(this) }
+                    editorRefreshKey={ this.state.editorRefreshKey }
                     shortcode={ this.state.shortcode }
                     onChangeShortcode={ this.onChangeShortcode.bind(this) }
+                    aiTemplateProposal={ this.state.aiTemplateProposal }
+                    aiTemplateComparisonSide={ this.state.aiTemplateComparisonSide }
                     editingBlock={ this.state.editingBlock }
                     onChangeEditingBlock={ this.onChangeEditingBlock.bind(this) }
                     manageTemplateType={ this.state.manageTemplateType }

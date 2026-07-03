@@ -2,20 +2,20 @@ window.WPRecipeMaker = typeof window.WPRecipeMaker === "undefined" ? {} : window
 
 // Source: https://github.com/slickstream/docs/tree/main/engagement/1.x#slickstream-javascript-api-v10.
 window.WPRecipeMaker.slickstream = {
-	init: () => {
-        // Add click listener.
-		document.addEventListener( 'click', function(e) {
-			for ( var target = e.target; target && target != this; target = target.parentNode ) {
+	    init: () => {
+	        // Add click listener.
+			document.addEventListener( 'click', function(e) {
+				const target = e.target.closest ? e.target.closest( '.wprm-recipe-slickstream-not-saved, .wprm-recipe-slickstream-saved' ) : false;
+				if ( ! target ) {
+					return;
+				}
+
 				if ( target.matches( '.wprm-recipe-slickstream-not-saved' ) ) {
 					WPRecipeMaker.slickstream.onClickSave( target, e );
-					break;
-                }
-                if ( target.matches( '.wprm-recipe-slickstream-saved' ) ) {
+				} else if ( target.matches( '.wprm-recipe-slickstream-saved' ) ) {
 					WPRecipeMaker.slickstream.onClickSaved( target, e );
-					break;
 				}
-			}
-        }, false );
+	        }, false );
 
         // Listen for favorites change to update button.
         document.addEventListener( 'slickstream-favorite-change', () => {

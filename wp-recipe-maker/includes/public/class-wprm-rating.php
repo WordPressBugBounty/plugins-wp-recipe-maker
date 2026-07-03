@@ -96,6 +96,10 @@ class WPRM_Rating {
 		update_post_meta( $recipe_id, 'wprm_rating_average', $recipe_rating['average'] );
 		update_post_meta( $recipe_id, 'wprm_rating_count', $recipe_rating['count'] );
 
+		if ( class_exists( 'WPRM_Metadata' ) ) {
+			WPRM_Metadata::invalidate_metadata_for_recipe( $recipe_id );
+		}
+
 		// Update parent post with rating data (TODO account for multiple recipes in a post).
 		if ( $parent_post_id ) {
 			update_post_meta( $parent_post_id, 'wprm_rating', $recipe_rating );
@@ -225,7 +229,9 @@ class WPRM_Rating {
 				// Can be comment ratings both to recipe itself and its parent post.
 				$post_ids = array();
 
-				if ( 'public' === WPRM_Settings::get( 'post_type_structure' ) && WPRM_Settings::get( 'post_type_comments' ) ) {
+				$user_ratings_enabled = WPRM_Addons::is_active( 'premium' ) && WPRM_Settings::get( 'features_user_ratings' );
+				$include_recipe_post_ratings = WPRM_Settings::get( 'post_type_comments' ) || $user_ratings_enabled;
+				if ( 'public' === WPRM_Settings::get( 'post_type_structure' ) && $include_recipe_post_ratings ) {
 					$post_ids[] = $recipe_id;
 				}
 

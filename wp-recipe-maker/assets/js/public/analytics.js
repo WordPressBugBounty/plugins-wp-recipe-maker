@@ -4,10 +4,9 @@ window.WPRecipeMaker.analytics = {
 	init: () => {
 		if ( wprm_public.settings.analytics_enabled || wprm_public.settings.google_analytics_enabled ) {
 			document.addEventListener( 'click', function(e) {
-				for ( var target = e.target; target && target != this; target = target.parentNode ) {
-					if ( window.WPRecipeMaker.analytics.checkClick( target, e ) ) {
-						break;
-					}
+				const target = e.target.closest ? e.target.closest( '.wprm-recipe-jump, .wprm-recipe-jump-video, .wprm-recipe-pin, .wprm-recipe-facebook-share, .wprm-recipe-messenger-share, .wprm-recipe-twitter-share, .wprm-recipe-bluesky-share, .wprm-recipe-mastodon-share, .wprm-recipe-tumblr-share, .wprm-recipe-text-share, .wprm-recipe-whatsapp-share, .wprm-recipe-email-share, .wprm-recipe-favorite, .wprm-recipe-add-to-collection-recipe, .wprm-recipe-add-to-shopping-list, .wprm-recipe-cook-mode, .wprm-recipe-equipment a, .wprm-recipe-ingredient a, .wprm-recipe-instruction a' ) : false;
+				if ( target ) {
+					window.WPRecipeMaker.analytics.checkClick( target, e );
 				}
 			}, false );
 		}
@@ -95,6 +94,15 @@ window.WPRecipeMaker.analytics = {
 
 			if ( recipeId ) {
 				window.WPRecipeMaker.analytics.registerAction( recipeId, wprm_public.post_id, 'email-share-button' );
+			}
+			return true;
+		} else if ( target.matches( '.wprm-recipe-favorite' ) ) {
+			const recipeId = target.dataset.hasOwnProperty( 'recipeId' ) ? target.dataset.recipeId : false;
+
+			if ( recipeId ) {
+				window.WPRecipeMaker.analytics.registerAction( recipeId, wprm_public.post_id, 'favorite-button', {
+					action: target.classList.contains( 'wprm-recipe-favorite-active' ) ? 'remove' : 'add',
+				} );
 			}
 			return true;
 		} else if ( target.matches( '.wprm-recipe-add-to-collection-recipe' ) ) {

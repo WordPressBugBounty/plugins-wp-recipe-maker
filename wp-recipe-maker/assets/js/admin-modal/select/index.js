@@ -97,6 +97,7 @@ export default class Select extends Component {
                         <Fragment>
                             <SelectList
                                 options={ [] }
+                                excludeIds={ this.props.args.excludeIds ? this.props.args.excludeIds : [] }
                                 value={ this.state.selection }
                                 onValueChange={(selection) => {
                                     this.setState({ selection });

@@ -56,6 +56,16 @@ $integrations = array(
 						'value' => true,
 					),
 				),
+				array(
+					'id' => 'jupiter_access_token',
+					'name' => __( 'Jupiter Access Token', 'wp-recipe-maker' ),
+					'description' => __( 'Generate a token to let Jupiter read and update global ingredient links through the WP Recipe Maker API.', 'wp-recipe-maker' ),
+					'type' => 'jupiterAccessToken',
+					'dependency' => array(
+						'id' => 'integration_jupiter',
+						'value' => true,
+					),
+				),
 			),
 		),
 		array(
@@ -138,7 +148,7 @@ $integrations = array(
 					'description' => __( 'Click the button to the right to register directly with Chicory and set up revenue payment. Please note that enabling the Activate Chicory toggle below will not automatically set up payment. Note: If you work with Mediavine, you can enable Chicory directly through your Mediavine dashboard.', 'wp-recipe-maker' ),
 					'type' => 'button',
 					'button' => __( 'Sign Up with Chicory', 'wp-recipe-maker' ),
-					'link' => 'https://chicoryapp.com/become-a-chicory-recipe-partner/?plugin=WP%20Recipe%20Maker',
+					'link' => 'https://chicoryco.typeform.com/to/y3PgIV0m?typeform-source=chicory.co',
 				),
 				array(
 					'id' => 'integration_chicory_activate',

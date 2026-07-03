@@ -10,19 +10,19 @@ window.WPRecipeMaker.grow = {
             window.growMe._ = [];
         }
 
-        // Add listener
-		document.addEventListener( 'click', function(e) {
-			for ( var target = e.target; target && target != this; target = target.parentNode ) {
+	        // Add listener
+			document.addEventListener( 'click', function(e) {
+				const target = e.target.closest ? e.target.closest( '.wprm-recipe-grow-not-saved, .wprm-recipe-grow-saved' ) : false;
+				if ( ! target ) {
+					return;
+				}
+
 				if ( target.matches( '.wprm-recipe-grow-not-saved' ) ) {
 					WPRecipeMaker.grow.onClickSave( target, e );
-					break;
-                }
-                if ( target.matches( '.wprm-recipe-grow-saved' ) ) {
+				} else if ( target.matches( '.wprm-recipe-grow-saved' ) ) {
 					WPRecipeMaker.grow.onClickSaved( target, e );
-					break;
 				}
-			}
-        }, false );
+	        }, false );
         
         // Check if already saved.
         let isBookmarked = null;

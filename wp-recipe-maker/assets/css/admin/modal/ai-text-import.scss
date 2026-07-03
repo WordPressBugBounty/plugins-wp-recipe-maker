@@ -104,6 +104,59 @@
         }
     }
 
+    .wprm-ai-preview-image-options {
+        display: grid;
+        gap: 8px;
+    }
+
+    .wprm-ai-preview-image-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        border: 1px solid #dcdcde;
+        border-radius: 4px;
+        cursor: pointer;
+
+        &.is-selected {
+            border-color: #2271b1;
+            box-shadow: 0 0 0 1px #2271b1;
+        }
+
+        input {
+            flex-shrink: 0;
+            margin: 0;
+        }
+    }
+
+    .wprm-ai-preview-image-option-none {
+        min-height: 36px;
+    }
+
+    .wprm-ai-preview-image-option-thumb {
+        flex-shrink: 0;
+        width: 64px;
+        height: 64px;
+        border-radius: 4px;
+        overflow: hidden;
+        background: #f6f7f7;
+
+        img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    }
+
+    .wprm-ai-preview-image-option-url {
+        min-width: 0;
+        color: #50575e;
+        font-size: 12px;
+        line-height: 1.4;
+        word-break: break-word;
+    }
+
     .wprm-ai-preview-ingredients {
         list-style: none;
         margin: 0;

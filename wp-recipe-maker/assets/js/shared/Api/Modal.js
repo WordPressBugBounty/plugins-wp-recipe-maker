@@ -45,4 +45,10 @@ export default {
             }
         });
     },
+    getIngredientUnitConnector(unit, create = false) {
+        return ApiWrapper.call( `${modalEndpoint}/ingredient-unit/connector`, 'POST', {
+            unit,
+            create,
+        } );
+    },
 };

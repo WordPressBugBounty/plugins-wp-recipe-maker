@@ -149,6 +149,115 @@
         }
     }
 
+    .wprm-template-ai-panel {
+        margin-top: 10px;
+        padding: 10px;
+
+        .wprm-template-ai-prompt {
+            width: 100%;
+            min-height: 90px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        .wprm-template-ai-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .wprm-template-ai-compare-toggle {
+            display: flex;
+            margin-top: 10px;
+
+            .button {
+                flex: 1;
+                justify-content: center;
+                border-radius: 0;
+
+                &:first-child {
+                    border-radius: 4px 0 0 4px;
+                }
+
+                &:last-child {
+                    border-radius: 0 4px 4px 0;
+                    margin-left: -1px;
+                }
+
+                &.active {
+                    z-index: 1;
+                }
+            }
+        }
+
+        .wprm-template-ai-loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        .wprm-template-ai-message,
+        .wprm-template-ai-warnings {
+            margin-top: 10px;
+            padding: 8px;
+            border: 1px solid #c3c4c7;
+            border-radius: 4px;
+            background: #f6f7f7;
+            font-size: 12px;
+            line-height: 1.4;
+            font-style: normal;
+            font-weight: normal;
+        }
+
+        .wprm-template-ai-notes-toggle,
+        .wprm-template-ai-feedback-link {
+            display: block;
+            margin: 10px auto 0;
+            padding: 0;
+            border: 0;
+            background: none;
+            color: #2271b1;
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 1.4;
+            text-decoration: underline;
+
+            &:hover,
+            &:focus {
+                color: #135e96;
+            }
+        }
+
+        .wprm-template-ai-error {
+            border-color: #d63638;
+            background: #fcf0f1;
+            color: #8a2424;
+        }
+
+        .wprm-template-ai-warnings {
+            border-color: #dba617;
+            background: #fcf9e8;
+            color: #6e4f00;
+
+            .wprm-template-ai-warning {
+                margin: 0 0 8px;
+                font-size: inherit;
+                line-height: inherit;
+                font-style: inherit;
+                font-weight: normal;
+
+                &:last-child {
+                    margin-bottom: 0;
+                }
+            }
+        }
+    }
+
     .wprm-feature-explorer-sidebar-list {
         display: flex;
         flex-direction: column;

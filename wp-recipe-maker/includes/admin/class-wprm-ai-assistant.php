@@ -41,7 +41,7 @@ class WPRM_AI_Assistant {
 			'wprecipemaker',
 			__( 'AI Assistant', 'wp-recipe-maker' ),
 			self::get_submenu_title(),
-			WPRM_Settings::get( 'features_manage_access' ),
+			WPRM_Settings::get( 'features_ai_assistant_access' ),
 			'wprm_ai_assistant',
 			array( __CLASS__, 'page_template' )
 		);
@@ -109,6 +109,17 @@ class WPRM_AI_Assistant {
 				'documentation_url' => 'https://help.bootstrapped.ventures/docs/wp-recipe-maker/generate-ideas-with-ai/',
 				'button' => array(
 					'label' => __( 'Generate Ideas', 'wp-recipe-maker' ),
+					'url' => $documentation_url,
+					'tooltip' => $locked_tooltip,
+					'class' => 'button button-primary button-compact wprm-button-ai wprm-button-required wprm-ai-assistant-tool-button',
+				),
+			),
+			'template_editor' => array(
+				'name' => __( 'Template Editor', 'wp-recipe-maker' ),
+				'description' => __( 'Use AI inside the Template Editor to suggest recipe card HTML and CSS changes you can review before saving.', 'wp-recipe-maker' ),
+				'documentation_url' => 'https://help.bootstrapped.ventures/article/53-template-editor',
+				'button' => array(
+					'label' => __( 'Open Template Editor', 'wp-recipe-maker' ),
 					'url' => $documentation_url,
 					'tooltip' => $locked_tooltip,
 					'class' => 'button button-primary button-compact wprm-button-ai wprm-button-required wprm-ai-assistant-tool-button',

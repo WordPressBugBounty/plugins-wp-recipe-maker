@@ -278,7 +278,9 @@ export default class List extends Component {
                                 id={ 'items' }
                             >
                                 <ListItems
+                                    listId={ this.state.list.id }
                                     items={ this.state.list.items }
+                                    openSecondaryModal={ this.props.openSecondaryModal }
                                     onEditItem={ this.onEditItem }
                                     onListChange={ this.onListChange }
                                 />

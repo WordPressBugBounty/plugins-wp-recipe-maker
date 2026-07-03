@@ -144,6 +144,8 @@ class WPRM_Api_Manage_Lists {
 		$lists = array();
 		$posts = $query->posts;
 
+		self::prime_list_manage_caches( $posts );
+
 		foreach ( $posts as $post ) {
 			$list = WPRM_List_Manager::get_list( $post );
 
@@ -169,6 +171,48 @@ class WPRM_Api_Manage_Lists {
 		);
 
 		return rest_ensure_response( $data );
+	}
+
+	/**
+	 * Prime caches for related objects used while hydrating manage rows.
+	 *
+	 * @since    10.0.0
+	 * @param    array $posts Posts returned for the current manage page.
+	 */
+	private static function prime_list_manage_caches( $posts ) {
+		if ( empty( $posts ) ) {
+			return;
+		}
+
+		$post_ids = wp_list_pluck( $posts, 'ID' );
+		$post_ids = array_values( array_unique( array_filter( array_map( 'intval', $post_ids ) ) ) );
+
+		if ( empty( $post_ids ) ) {
+			return;
+		}
+
+		update_meta_cache( 'post', $post_ids );
+
+		$parent_post_ids = array();
+
+		foreach ( $post_ids as $post_id ) {
+			$parent_post_id = intval( get_post_meta( $post_id, 'wprm_parent_post_id', true ) );
+			if ( $parent_post_id ) {
+				$parent_post_ids[] = $parent_post_id;
+			}
+		}
+
+		$parent_post_ids = array_values( array_unique( array_filter( array_map( 'intval', $parent_post_ids ) ) ) );
+		if ( ! empty( $parent_post_ids ) ) {
+			if ( function_exists( '_prime_post_caches' ) ) {
+				_prime_post_caches( $parent_post_ids, false, true );
+			} else {
+				update_meta_cache( 'post', $parent_post_ids );
+				foreach ( $parent_post_ids as $parent_post_id ) {
+					get_post( $parent_post_id );
+				}
+			}
+		}
 	}
 
 	/**

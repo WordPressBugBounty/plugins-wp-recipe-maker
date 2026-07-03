@@ -25,7 +25,7 @@ class WPRM_Rating_Database {
 	 * @access   private
 	 * @var      mixed $database_version Current version of the rating database structure.
 	 */
-	private static $database_version = '4.0';
+	private static $database_version = '4.1';
 
 	/**
 	 * Fields in the rating database table.
@@ -94,7 +94,11 @@ class WPRM_Rating_Database {
 		KEY date (date),
 		KEY recipe_id (recipe_id),
 		KEY post_id (post_id),
-		KEY comment_id (comment_id)
+		KEY comment_id (comment_id),
+		KEY recipe_user (recipe_id, user_id),
+		KEY recipe_ip (recipe_id, ip),
+		KEY recipe_approved (recipe_id, approved),
+		KEY post_approved_comment (post_id, approved, has_comment)
 		) $charset_collate;";
 
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );

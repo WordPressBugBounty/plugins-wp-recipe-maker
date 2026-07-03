@@ -11,6 +11,7 @@ import IconRemove from '../../../icons/template/remove.svg';
 import IconMove from '../../../icons/template/move.svg';
 import IconHTML from '../../../icons/template/html.svg';
 import IconCSS from '../../../icons/template/css.svg';
+import IconSparks from '../../../icons/admin/sparks.svg';
 import IconArrowUp from '../../../icons/arrow-small-up.svg';
 import IconArrowDown from '../../../icons/arrow-small-down.svg';
  
@@ -24,6 +25,7 @@ const icons = {
     move: IconMove,
     html: IconHTML,
     css: IconCSS,
+    'ai-assistant': IconSparks,
     'arrow-up': IconArrowUp,
     'arrow-down': IconArrowDown,
 };

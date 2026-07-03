@@ -1495,7 +1495,21 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 
 		if ( isset( $instruction['ingredients'] ) && $instruction['ingredients'] ) {
 			$ingredients_to_output = array();
-			$ingredients_flat = $recipe->ingredients_flat();
+			static $ingredients_by_uid_cache = array();
+
+			$recipe_id = $recipe ? $recipe->id() : 0;
+
+			if ( ! isset( $ingredients_by_uid_cache[ $recipe_id ] ) ) {
+				$ingredients_by_uid_cache[ $recipe_id ] = array();
+
+				foreach ( $recipe->ingredients_flat() as $ingredient ) {
+					if ( isset( $ingredient['uid'] ) && isset( $ingredient['type'] ) && 'ingredient' === $ingredient['type'] ) {
+						$ingredients_by_uid_cache[ $recipe_id ][ intval( $ingredient['uid'] ) ] = $ingredient;
+					}
+				}
+			}
+
+			$ingredients_by_uid = $ingredients_by_uid_cache[ $recipe_id ];
 
 			foreach ( $instruction['ingredients'] as $ingredient ) {
 				$ingredient_str = (string) $ingredient;
@@ -1520,10 +1534,8 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 				}
 				
 				// Find the parent ingredient
-				$index = array_search( $parent_uid, array_column( $ingredients_flat, 'uid' ) );
-				
-					if ( false !== $index && isset( $ingredients_flat[ $index ] ) ) {
-						$found_ingredient = $ingredients_flat[ $index ];
+				if ( isset( $ingredients_by_uid[ $parent_uid ] ) ) {
+					$found_ingredient = $ingredients_by_uid[ $parent_uid ];
 
 						if ( 'ingredient' === $found_ingredient['type'] ) {
 							$get_unit_for_amount = function( $default_unit, $unit_id, $amount_parsed ) {
@@ -1602,7 +1614,7 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 								}
 
 								// Split-specific ingredient name singular/plural.
-								if ( isset( $found_ingredient['id'] ) && $found_ingredient['id'] ) {
+								if ( isset( $found_ingredient['id'] ) && $found_ingredient['id'] && WPRM_Ingredient_Display::connector_allows_ingredient_plural( $found_ingredient, intval( $recipe->unit_system() ) ) ) {
 									$ingredient_term = get_term( intval( $found_ingredient['id'] ), 'wprm_ingredient' );
 									$singular_name = ( $ingredient_term && ! is_wp_error( $ingredient_term ) ) ? $ingredient_term->name : $ingredient_name;
 									$plural_name = get_term_meta( intval( $found_ingredient['id'] ), 'wprm_ingredient_plural', true );
@@ -1623,10 +1635,11 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 								$ingredient_name = WPRMPUC_Manager::get_ingredient_name_for_system( $ingredient_for_name, intval( $recipe->unit_system() ), $split_amount_parsed_for_plural );
 							}
 
-							$ingredient_name = do_shortcode( $ingredient_name );
+							$ingredient_name = false === strpos( $ingredient_name, '[' ) ? $ingredient_name : do_shortcode( $ingredient_name );
 						
 							if ( $amount ) { $parts[] = $amount; };
 							if ( $unit ) { $parts[] = $unit; };
+							$amount_unit = implode( ' ', $parts );
 
 						// Optionally add second unit system.
 						$show_both_units = (bool) $atts['ingredients_show_both_units'];
@@ -1688,15 +1701,10 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 										$name_with_notes .= ' ' . $found_ingredient['notes'];
 								}
 							}
-						}
-						$parts[] = $name_with_notes;
-
-						$text_to_show = implode( ' ', $parts );
+							}
+							$text_to_show = WPRM_Ingredient_Display::join_amount_unit_and_name_html( $amount_unit, $name_with_notes, $found_ingredient, intval( $recipe->unit_system() ) );
 
 							if ( $text_to_show ) {
-								if ( $show_both_units ) {
-									$text_to_show = $amount_unit . ' ' . $ingredient_name;
-								}
 								$ingredients_to_output[ $output_key ] = $text_to_show;
 							}
 					}
@@ -1733,10 +1741,9 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 						// Find the split percentage to store in data attribute for adjustable servings
 						$parent_uid = intval( $parts[0] );
 						$split_id = intval( $parts[1] );
-						$index = array_search( $parent_uid, array_column( $ingredients_flat, 'uid' ) );
 						
-						if ( false !== $index && isset( $ingredients_flat[ $index ] ) ) {
-							$found_ingredient = $ingredients_flat[ $index ];
+						if ( isset( $ingredients_by_uid[ $parent_uid ] ) ) {
+							$found_ingredient = $ingredients_by_uid[ $parent_uid ];
 							if ( isset( $found_ingredient['splits'] ) && is_array( $found_ingredient['splits'] ) ) {
 								foreach ( $found_ingredient['splits'] as $split ) {
 									if ( isset( $split['id'] ) && intval( $split['id'] ) === $split_id && isset( $split['percentage'] ) ) {
@@ -1886,8 +1893,11 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 			$img = str_ireplace( '<img ', '<img data-pin-nopin="true" ', $img );
 		}
 
-		// Clickable images (but not in Gutenberg Preview).
-		if ( WPRM_Settings::get( 'instruction_image_clickable' ) && ! WPRM_Context::is_gutenberg_preview() ) {
+		// Allow extensions to customize instruction image output.
+		$custom_link_image = apply_filters( 'wprm_recipe_instruction_image_custom_link', false, $img, $instruction );
+		if ( false !== $custom_link_image ) {
+			$img = $custom_link_image;
+		} elseif ( WPRM_Settings::get( 'instruction_image_clickable' ) && ! WPRM_Context::is_gutenberg_preview() ) {
 			$settings_size = WPRM_Settings::get( 'clickable_image_size' );
 
 			preg_match( '/^(\d+)x(\d+)$/i', $settings_size, $match );
@@ -1929,7 +1939,9 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 				$output .= ' width="' . $video_data['width'] . '"';
 				$output .= ' height="' . $video_data['height'] . '"';
 
-				if ( in_array( WPRM_Settings::get( 'video_autoplay' ), array( 'instruction', 'all' ) ) ) { $output .= ' autoplay="true"'; }
+				$video_autoplay = in_array( WPRM_Settings::get( 'video_autoplay' ), array( 'instruction', 'all' ) );
+				if ( $video_autoplay ) { $output .= ' autoplay="true"'; }
+				if ( ! $video_autoplay ) { $output .= ' preload="none"'; }
 				if ( in_array( WPRM_Settings::get( 'video_loop' ), array( 'instruction', 'all' ) ) ) { $output .= ' loop="true"'; }
 	
 				$format = isset( $video_data['fileformat'] ) && $video_data['fileformat'] ? $video_data['fileformat'] : 'mp4';

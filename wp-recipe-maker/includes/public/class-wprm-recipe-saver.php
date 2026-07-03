@@ -694,12 +694,22 @@ class WPRM_Recipe_Saver {
 
 			// Get language for this post.
 			$parent_language = WPRM_Compatibility::get_language_for( $post_id );
+			$parent_is_wpml_translation = WPRM_Compatibility::is_wpml_translation_post( $post_id );
 
 			// Update recipes.
 			foreach ( $recipe_ids as $recipe_id ) {
 				// Prevent infinite loop.
 				if ( $recipe_id === $post_id ) {
 					continue;
+				}
+
+				if ( $parent_is_wpml_translation && $parent_language ) {
+					$recipe_language = WPRM_Compatibility::get_language_for( $recipe_id );
+
+					// A WPML translated post can contain the original/shared recipe shortcode.
+					if ( $recipe_language && $recipe_language !== $parent_language ) {
+						continue;
+					}
 				}
 
 				$recipe = array(

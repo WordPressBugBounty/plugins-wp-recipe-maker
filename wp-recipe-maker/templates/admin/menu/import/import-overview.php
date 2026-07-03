@@ -14,6 +14,7 @@
 <div class="wrap wprm-import wprm-tools-page wprm-admin-page-cards">
 	<?php
 	$has_elite_ai_import = defined( 'WPRMP_BUNDLE' ) && 'Elite' === WPRMP_BUNDLE;
+	$has_ai_assistant_access = current_user_can( WPRM_Settings::get( 'features_ai_assistant_access' ) );
 	$ai_import_url = $has_elite_ai_import ? admin_url( 'admin.php?page=wprm_ai_assistant&tool=import_with_ai' ) : admin_url( 'admin.php?page=wprm_ai_assistant' );
 	$learn_more_label = __( 'Learn More', 'wp-recipe-maker' );
 	$render_docs_link = static function( $url ) use ( $learn_more_label ) {
@@ -86,6 +87,7 @@
 		</div>
 		<?php endif; ?>
 
+		<?php if ( $has_ai_assistant_access ) : ?>
 		<div class="wprm-tools-panel">
 			<?php $render_docs_link( 'https://help.bootstrapped.ventures/import-text-with-ai/' ); ?>
 			<span class="wprm-tools-tag"><?php esc_html_e( 'AI', 'wp-recipe-maker' ); ?></span>
@@ -95,7 +97,8 @@
 				<a href="<?php echo esc_url( $ai_import_url ); ?>" class="button button-secondary button-compact"><?php esc_html_e( 'Open AI Assistant', 'wp-recipe-maker' ); ?></a>
 			</div>
 		</div>
-	</div>
+		<?php endif; ?>
+		</div>
 
 	<?php
 	$recipes_to_import = array();

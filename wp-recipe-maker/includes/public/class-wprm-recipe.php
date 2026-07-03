@@ -38,6 +38,15 @@ class WPRM_Recipe {
 	private $meta = false;
 
 	/**
+	 * Cached parsed recipe field values.
+	 *
+	 * @since    10.2.0
+	 * @access   private
+	 * @var      array    $parsed_fields Parsed recipe field values.
+	 */
+	private $parsed_fields = array();
+
+	/**
 	 * Get new recipe object from associated post.
 	 *
 	 * @since    1.0.0
@@ -991,6 +1000,10 @@ class WPRM_Recipe {
 
 				update_post_meta( $this->id(), 'wprm_video_metadata', $metadata );
 				update_post_meta( $this->id(), 'wprm_video_metadata_updated', time() );
+
+				if ( class_exists( 'WPRM_Metadata' ) ) {
+					WPRM_Metadata::invalidate_metadata_for_recipe( $this->id() );
+				}
 			}
 		}
 
@@ -1031,8 +1044,14 @@ class WPRM_Recipe {
 				if ( false !== $value ) {
 
 					if ( array_key_exists( $nutrient, $migrate_values ) ) {
+						$percentage = $value;
+						if ( is_string( $percentage ) ) {
+							$percentage = str_replace( ',', '.', trim( $percentage ) );
+							$percentage = trim( rtrim( $percentage, '%' ) );
+						}
+
 						// Daily needs * currently saved as percentage, round to 1 decimal.
-						$value = round( $migrate_values[ $nutrient ] * ( $value / 100 ), 1 );
+						$value = is_numeric( $percentage ) ? round( $migrate_values[ $nutrient ] * ( floatval( $percentage ) / 100 ), 1 ) : '';
 					}
 
 					// Save in post meta and emulate.
@@ -1295,10 +1314,12 @@ class WPRM_Recipe {
 	 * @since    1.0.0
 	 */
 	public function ingredients() {
-		$ingredients = self::unserialize( $this->meta( 'wprm_ingredients', array() ) );
-		$ingredients = is_array( $ingredients ) ? $ingredients : array();
+		if ( ! isset( $this->parsed_fields['ingredients'] ) ) {
+			$ingredients = self::unserialize( $this->meta( 'wprm_ingredients', array() ) );
+			$this->parsed_fields['ingredients'] = is_array( $ingredients ) ? $ingredients : array();
+		}
 
-		return apply_filters( 'wprm_recipe_field', $ingredients, 'ingredients', $this );
+		return apply_filters( 'wprm_recipe_field', $this->parsed_fields['ingredients'], 'ingredients', $this );
 	}
 
 	/**
@@ -1332,7 +1353,11 @@ class WPRM_Recipe {
 	 * @since	5.0.0
 	 */
 	public function ingredients_flat() {
-		$ingredients = self::ingredients();
+		if ( isset( $this->parsed_fields['ingredients_flat'] ) ) {
+			return $this->parsed_fields['ingredients_flat'];
+		}
+
+		$ingredients = $this->ingredients();
 
 		$uid = 0;
 		$ingredients_flat = array();
@@ -1376,6 +1401,8 @@ class WPRM_Recipe {
 			$used_uids[] = $ingredients_flat[ $index ]['uid'];
 		}
 
+		$this->parsed_fields['ingredients_flat'] = $ingredients_flat;
+
 		return $ingredients_flat;
 	}
 
@@ -1385,6 +1412,10 @@ class WPRM_Recipe {
 	 * @since    1.0.0
 	 */
 	public function ingredients_without_groups() {
+		if ( isset( $this->parsed_fields['ingredients_without_groups'] ) ) {
+			return $this->parsed_fields['ingredients_without_groups'];
+		}
+
 		$ingredients = $this->ingredients();
 		$ingredients_without_groups = array();
 
@@ -1393,6 +1424,8 @@ class WPRM_Recipe {
 				$ingredients_without_groups = array_merge( $ingredients_without_groups, $ingredient_group['ingredients'] );				
 			}
 		}
+
+		$this->parsed_fields['ingredients_without_groups'] = $ingredients_without_groups;
 
 		return $ingredients_without_groups;
 	}
@@ -1403,10 +1436,12 @@ class WPRM_Recipe {
 	 * @since    1.0.0
 	 */
 	public function instructions() {
-		$instructions = self::unserialize( $this->meta( 'wprm_instructions', array() ) );
-		$instructions = is_array( $instructions ) ? $instructions : array();
+		if ( ! isset( $this->parsed_fields['instructions'] ) ) {
+			$instructions = self::unserialize( $this->meta( 'wprm_instructions', array() ) );
+			$this->parsed_fields['instructions'] = is_array( $instructions ) ? $instructions : array();
+		}
 
-		return apply_filters( 'wprm_recipe_field', $instructions, 'instructions', $this );
+		return apply_filters( 'wprm_recipe_field', $this->parsed_fields['instructions'], 'instructions', $this );
 	}
 
 	/**
@@ -1415,7 +1450,11 @@ class WPRM_Recipe {
 	 * @since	5.0.0
 	 */
 	public function instructions_flat() {
-		$instructions = self::instructions();
+		if ( isset( $this->parsed_fields['instructions_flat'] ) ) {
+			return $this->parsed_fields['instructions_flat'];
+		}
+
+		$instructions = $this->instructions();
 
 		$uid = 0;
 		$instructions_flat = array();
@@ -1461,16 +1500,18 @@ class WPRM_Recipe {
 					$instruction['image_url'] = $image_url;
 					$instruction['text'] = str_ireplace( '<br>', '<br/>', $instruction['text'] ); // Otherwise new editor detects change.
 
-						if ( 'tip' === $instruction_type ) {
-							$instruction['tip_icon'] = isset( $instruction['tip_icon'] ) ? $instruction['tip_icon'] : '';
-							$instruction['tip_style'] = isset( $instruction['tip_style'] ) ? $instruction['tip_style'] : '';
-							$instruction['tip_accent'] = isset( $instruction['tip_accent'] ) ? $instruction['tip_accent'] : '';
-							$instruction['tip_text_color'] = isset( $instruction['tip_text_color'] ) ? $instruction['tip_text_color'] : '';
-							unset( $instruction['image'] );
-							unset( $instruction['video'] );
+					if ( 'tip' === $instruction_type ) {
+						$instruction['tip_icon'] = isset( $instruction['tip_icon'] ) ? $instruction['tip_icon'] : '';
+						$instruction['tip_style'] = isset( $instruction['tip_style'] ) ? $instruction['tip_style'] : '';
+						$instruction['tip_accent'] = isset( $instruction['tip_accent'] ) ? $instruction['tip_accent'] : '';
+						$instruction['tip_text_color'] = isset( $instruction['tip_text_color'] ) ? $instruction['tip_text_color'] : '';
+						unset( $instruction['image'] );
+						unset( $instruction['video'] );
 						unset( $instruction['ingredients'] );
 					}
 	
+					$instruction = apply_filters( 'wprm_recipe_instruction', $instruction, $instruction_type );
+
 					$instructions_flat[] = $instruction;
 				}
 			}
@@ -1487,6 +1528,8 @@ class WPRM_Recipe {
 			}
 			$used_uids[] = $instructions_flat[ $index ]['uid'];
 		}
+
+		$this->parsed_fields['instructions_flat'] = $instructions_flat;
 
 		return $instructions_flat;
 	}

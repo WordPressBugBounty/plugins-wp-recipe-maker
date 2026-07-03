@@ -194,6 +194,10 @@ class WPRM_SC_Print extends WPRM_Template_Shortcode {
 		}
 
 		$print_url = $recipe->print_url( $template );
+		if ( ! $print_url && $atts['is_template_editor_preview'] ) {
+			$print_url = '#';
+		}
+
 		if ( ! $print_url ) {
 			return apply_filters( parent::get_hook(), '', $atts, $recipe );
 		}

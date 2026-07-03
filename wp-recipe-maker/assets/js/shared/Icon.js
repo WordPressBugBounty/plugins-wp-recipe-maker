@@ -117,10 +117,29 @@ const Icon = (props) => {
     let className = props.className ? `wprm-admin-icon ${props.className}` : 'wprm-admin-icon';
 
     const hidden = props.hasOwnProperty( 'hidden' ) ? props.hidden : false;
+    let iconDisabled = false;
 
     if ( hidden ) {
         tooltip = '';
         className += ' wprm-admin-icon-hidden';
+    }
+
+    // Check if there are requirements.
+    if ( ! hidden && props.required ) {
+        if ( ! wprm_admin.addons.hasOwnProperty( props.required ) || true !== wprm_admin.addons[ props.required ] ) {
+            iconDisabled = true;
+
+            let requiredTooltip;
+            if ( 'premium' !== props.required ) {
+                const capitalized = props.required[0].toUpperCase() + props.required.substring(1);
+                requiredTooltip = `WP Recipe Maker ${capitalized} Bundle Only`;
+            } else {
+                requiredTooltip = 'WP Recipe Maker Premium Only';
+            }
+
+            tooltip = tooltip ? `${ tooltip }<br/>${ requiredTooltip }` : requiredTooltip;
+            className += ' wprm-admin-icon-required';
+        }
     }
 
     // Optional custom color.
@@ -133,7 +152,11 @@ const Icon = (props) => {
         <Tooltip content={ tooltip }>
             <span
                 className={ className }
-                onClick={ hidden ? () => {} : props.onClick }
+                onClick={ hidden ? () => {} : iconDisabled ? () => {
+                    if ( confirm( 'Want to learn more about the version required for this feature?' ) ) {
+                        window.open( 'https://bootstrapped.ventures/wp-recipe-maker/get-the-plugin/', '_blank' );
+                    }
+                } : props.onClick }
             >
                 <SVG
                     src={ icon }

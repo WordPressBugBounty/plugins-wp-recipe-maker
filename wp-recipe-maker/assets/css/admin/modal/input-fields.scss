@@ -5,10 +5,48 @@
         padding: 10px;
         padding-top: 0;
 
+        .wprm-admin-modal-input-fields-warning {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+            margin: 13px 0 18px;
+            padding: 8px 10px;
+            color: #50575e;
+            background-color: #f6f7f7;
+            border: 1px solid #dcdcde;
+            border-left: 4px solid #dba617;
+            border-radius: 2px;
+            font-size: 13px;
+            line-height: 1.4;
+
+            .wprm-admin-icon,
+            svg {
+                flex: 0 0 auto;
+                width: 16px;
+                height: 16px;
+                margin-top: 0;
+            }
+        }
+
         .wprm-admin-modal-input-fields-field-label {
             font-weight: bold;
             margin-top: 10px;
             margin-bottom: 5px;
+        }
+
+        .wprm-admin-modal-input-fields-checkbox-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 14px;
+            font-weight: bold;
+            line-height: 1.3;
+            cursor: pointer;
+
+            .wprm-admin-modal-field-checkbox {
+                flex: 0 0 auto;
+                margin: 0;
+            }
         }
 
         textarea {

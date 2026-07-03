@@ -80,4 +80,15 @@ export default {
 
         return ApiWrapper.call( templateEndpoint, 'DELETE', data );
     },
+    suggestTemplateChanges(options) {
+        const aiTemplateEditor = 'undefined' !== typeof wprm_admin_template && wprm_admin_template.ai_template_editor ? wprm_admin_template.ai_template_editor : {};
+
+        if ( ! aiTemplateEditor.enabled || ! aiTemplateEditor.endpoint ) {
+            return Promise.reject( {
+                message: 'AI Assistant is not available.',
+            } );
+        }
+
+        return ApiWrapper.call( aiTemplateEditor.endpoint, 'POST', options );
+    },
 };

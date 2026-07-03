@@ -2,7 +2,8 @@
 @use 'public';
 
 .wprm-admin-modal-overlay,
-.wprm-admin-modal-overlay-secondary {
+.wprm-admin-modal-overlay-secondary,
+.wprm-admin-modal-overlay-tertiary {
     position: fixed;
     top: 0px;
     left: 0px;
@@ -22,6 +23,10 @@
 
 .wprm-admin-modal-overlay-secondary {
     z-index: 100000;
+}
+
+.wprm-admin-modal-overlay-tertiary {
+    z-index: 100001;
 }
 
 .wprm-admin-modal {

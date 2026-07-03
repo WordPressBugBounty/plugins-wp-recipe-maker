@@ -176,6 +176,11 @@ class WPRM_Tools_Find_Ratings {
 					$comment_rating = intval( get_comment_meta( $comment->comment_ID, 'wprm-comment-rating', true ) );
 
 					if ( ! $comment_rating ) {
+						// Check for WP Recipe Card rating.
+						$comment_rating = intval( get_comment_meta( $comment->comment_ID, '_user_recipe_rating', true ) );
+					}
+
+					if ( ! $comment_rating ) {
 						// Check for EasyRecipe or WP Tasty rating.
 						$comment_rating = intval( get_comment_meta( $comment->comment_ID, 'ERRating', true ) );
 					}

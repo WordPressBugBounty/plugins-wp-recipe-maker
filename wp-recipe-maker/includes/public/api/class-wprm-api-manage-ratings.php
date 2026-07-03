@@ -147,6 +147,8 @@ class WPRM_Api_Manage_Ratings {
 		$total = $query['total'] ? $query['total'] : 0;
 		$rows = $query['ratings'] ? array_values( $query['ratings'] ) : array();
 
+		self::prime_rating_manage_caches( $rows );
+
 		// Add extra infromation for the manage page.
 		foreach ( $rows as $row ) {
 			$row->type = 0 < $row->recipe_id ? 'user' : 'comment';
@@ -202,6 +204,88 @@ class WPRM_Api_Manage_Ratings {
 		);
 
 		return rest_ensure_response( $data );
+	}
+
+	/**
+	 * Prime caches for related objects used while hydrating manage rows.
+	 *
+	 * @since    10.0.0
+	 * @param    array $rows Rating rows returned for the current manage page.
+	 */
+	private static function prime_rating_manage_caches( $rows ) {
+		if ( empty( $rows ) ) {
+			return;
+		}
+
+		$user_ids = array();
+		$comment_ids = array();
+		$recipe_ids = array();
+		$post_ids = array();
+
+		foreach ( $rows as $row ) {
+			if ( ! empty( $row->user_id ) ) {
+				$user_ids[] = intval( $row->user_id );
+			}
+
+			if ( ! empty( $row->comment_id ) ) {
+				$comment_ids[] = intval( $row->comment_id );
+			}
+
+			if ( ! empty( $row->recipe_id ) ) {
+				$recipe_ids[] = intval( $row->recipe_id );
+			}
+
+			if ( ! empty( $row->post_id ) ) {
+				$post_ids[] = intval( $row->post_id );
+			}
+		}
+
+		$recipe_ids = array_values( array_unique( array_filter( array_map( 'intval', $recipe_ids ) ) ) );
+		if ( ! empty( $recipe_ids ) ) {
+			if ( function_exists( '_prime_post_caches' ) ) {
+				_prime_post_caches( $recipe_ids, false, true );
+			} else {
+				update_meta_cache( 'post', $recipe_ids );
+				foreach ( $recipe_ids as $recipe_id ) {
+					get_post( $recipe_id );
+				}
+			}
+
+			foreach ( $recipe_ids as $recipe_id ) {
+				$parent_post_id = intval( get_post_meta( $recipe_id, 'wprm_parent_post_id', true ) );
+				if ( $parent_post_id ) {
+					$post_ids[] = $parent_post_id;
+				}
+			}
+		}
+
+		$post_ids = array_values( array_unique( array_filter( array_map( 'intval', $post_ids ) ) ) );
+		if ( ! empty( $post_ids ) ) {
+			if ( function_exists( '_prime_post_caches' ) ) {
+				_prime_post_caches( $post_ids, false, true );
+			} else {
+				update_meta_cache( 'post', $post_ids );
+				foreach ( $post_ids as $post_id ) {
+					get_post( $post_id );
+				}
+			}
+		}
+
+		$comment_ids = array_values( array_unique( array_filter( array_map( 'intval', $comment_ids ) ) ) );
+		if ( ! empty( $comment_ids ) ) {
+			if ( function_exists( '_prime_comment_caches' ) ) {
+				_prime_comment_caches( $comment_ids, true );
+			} else {
+				foreach ( $comment_ids as $comment_id ) {
+					get_comment( $comment_id );
+				}
+			}
+		}
+
+		$user_ids = array_values( array_unique( array_filter( array_map( 'intval', $user_ids ) ) ) );
+		if ( ! empty( $user_ids ) && function_exists( 'cache_users' ) ) {
+			cache_users( $user_ids );
+		}
 	}
 
 	/**

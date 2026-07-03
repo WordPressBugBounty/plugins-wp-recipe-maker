@@ -7,8 +7,11 @@ import EditTemplate from './edit-template';
 import PreviewTemplate from './preview-template';
 import ShortcodeGenerator from './shortcode-generator';
 import FeatureExplorer from './feature-explorer';
+import TemplateAIComparison from './ai-comparison';
 
 const Main = (props) => {
+    const showAIComparison = 'ai-assistant' === props.mode && props.aiTemplateProposal;
+
     return (
         <div id="wprm-template-main" className={`wprm-template-main-${props.mode}`}>
             {
@@ -28,13 +31,14 @@ const Main = (props) => {
                 />
             }
             {
-                'manage' !== props.mode && 'shortcode' !== props.mode && 'feature-explorer' !== props.mode && props.template
+                ! showAIComparison && 'manage' !== props.mode && 'shortcode' !== props.mode && 'feature-explorer' !== props.mode && props.template
                 &&
                 <EditTemplate
                     mode={ props.mode }
                     template={ props.template }
                     onChangeHTML={ props.onChangeHTML }
                     onChangeCSS={ props.onChangeCSS }
+                    editorRefreshKey={ props.editorRefreshKey }
                 />
             }
             {
@@ -53,7 +57,15 @@ const Main = (props) => {
                 />
             }
             {
-                'feature-explorer' !== props.mode && props.template
+                showAIComparison
+                &&
+                <TemplateAIComparison
+                    proposal={ props.aiTemplateProposal }
+                    side={ props.aiTemplateComparisonSide }
+                />
+            }
+            {
+                ! showAIComparison && 'feature-explorer' !== props.mode && props.template
                 &&
                 <PreviewTemplate
                     mode={ props.mode }

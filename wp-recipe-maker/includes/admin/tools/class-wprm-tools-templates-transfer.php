@@ -258,10 +258,10 @@ class WPRM_Tools_Templates_Transfer {
 			return new WP_Error( 'invalid_template_name', __( 'Missing template name.', 'wp-recipe-maker' ) );
 		}
 
-		$html = isset( $template['html'] ) ? $template['html'] : '';
-		$css  = isset( $template['css'] ) ? $template['css'] : '';
+		$html = array_key_exists( 'html', $template ) ? $template['html'] : null;
+		$css  = array_key_exists( 'css', $template ) ? $template['css'] : null;
 
-		if ( ! is_string( $html ) || '' === trim( $html ) || ! is_string( $css ) || '' === trim( $css ) ) {
+		if ( ! is_string( $html ) || '' === trim( $html ) || ! is_string( $css ) ) {
 			return new WP_Error( 'invalid_template_content', __( 'Missing template HTML or CSS.', 'wp-recipe-maker' ) );
 		}
 
@@ -318,4 +318,3 @@ class WPRM_Tools_Templates_Transfer {
 }
 
 WPRM_Tools_Templates_Transfer::init();
-

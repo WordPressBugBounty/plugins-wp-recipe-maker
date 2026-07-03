@@ -78,7 +78,9 @@ class WPRM_Preview {
 
 		global $wp, $wp_query;
 
-		$post_id = -4273189; // Just a random number.
+		self::prevent_preview_caching();
+
+		$post_id = self::get_fake_post_id(); // Negative ID to avoid collisions with real posts.
 
 		// Create fake post.
 		$post = new stdClass();
@@ -106,8 +108,8 @@ class WPRM_Preview {
 		// Convert to WP_Post object
 		$wp_post = new WP_Post( $post );
 
-		// Add the fake post to the cache
- 		wp_cache_add( $post_id, $wp_post, 'posts' );
+		// Add the fake post to the cache for this request, overwriting any stale object cache entry.
+		wp_cache_set( $post_id, $wp_post, 'posts' );
 
 		// Update the main query
 		$wp_query->post = $wp_post;
@@ -147,6 +149,32 @@ class WPRM_Preview {
 
 		$GLOBALS['wp_query'] = $wp_query;
   		$wp->register_globals();
+	}
+
+	/**
+	 * Get a deterministic fake post ID for the current preview.
+	 *
+	 * @since	9.6.0
+	 */
+	private static function get_fake_post_id() {
+		if ( 'new' === self::$previewing_id ) {
+			return -4273189;
+		}
+
+		return -4273189 - absint( self::$previewing_id );
+	}
+
+	/**
+	 * Prevent cache plugins from storing recipe preview pages.
+	 *
+	 * @since	9.6.0
+	 */
+	private static function prevent_preview_caching() {
+		if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+			define( 'DONOTCACHEPAGE', true );
+		}
+
+		nocache_headers();
 	}
 
 	/**

@@ -125,14 +125,7 @@ class WPRM_Print {
 			if ( 'recipe' === $print_args[0] && 'slug' === WPRM_Settings::get( 'print_recipe_identifier' ) ) {
 				// Don't do anything if it's actually an ID. Unless that ID is not actually a recipe.
 				if ( '' . intval( $print_args[1] ) !== $print_args[1] || WPRM_POST_TYPE !== get_post_type( intval( $print_args[1] ) ) ) {
-					$slug = $print_args[1];
-
-					// Test with wprm- prefix first, as that could have been removed.
-					$recipe = get_page_by_path( 'wprm-' . $slug, OBJECT, WPRM_POST_TYPE );
-
-					if ( ! $recipe ) {
-						$recipe = get_page_by_path( $slug, OBJECT, WPRM_POST_TYPE );
-					}
+					$recipe = self::get_recipe_post_by_slug( $print_args[1] );
 
 					if ( $recipe ) {
 						$print_args[1] = $recipe->ID;
@@ -174,6 +167,54 @@ class WPRM_Print {
 				exit();
 			}
 		}
+	}
+
+	/**
+	 * Get a recipe post by its print URL slug.
+	 *
+	 * @since	10.6.2
+	 * @param	string $slug Slug from the print URL.
+	 */
+	private static function get_recipe_post_by_slug( $slug ) {
+		$slug = trim( (string) $slug );
+
+		if ( ! $slug ) {
+			return false;
+		}
+
+		// Test with wprm- prefix first, as that could have been removed.
+		$recipe_slugs = array_values( array_unique( array(
+			'wprm-' . $slug,
+			$slug,
+		) ) );
+
+		foreach ( $recipe_slugs as $recipe_slug ) {
+			$recipe = get_page_by_path( $recipe_slug, OBJECT, WPRM_POST_TYPE );
+
+			if ( $recipe ) {
+				return $recipe;
+			}
+
+			$recipes = get_posts( array(
+				'name'                   => $recipe_slug,
+				'post_type'              => WPRM_POST_TYPE,
+				'post_status'            => 'any',
+				'numberposts'            => 1,
+				'orderby'                => 'ID',
+				'order'                  => 'ASC',
+				'suppress_filters'       => true,
+				'cache_results'          => false,
+				'no_found_rows'          => true,
+				'update_post_meta_cache' => false,
+				'update_post_term_cache' => false,
+			) );
+
+			if ( ! empty( $recipes ) ) {
+				return $recipes[0];
+			}
+		}
+
+		return false;
 	}
 
 	/**

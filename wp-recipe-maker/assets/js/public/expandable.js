@@ -1,16 +1,14 @@
 window.WPRecipeMaker = typeof window.WPRecipeMaker === "undefined" ? {} : window.WPRecipeMaker;
 
 window.WPRecipeMaker.expandable = {
-	init: () => {
-		document.addEventListener( 'click', function(e) {
-			for ( var target = e.target; target && target != this; target = target.parentNode ) {
-				if ( target.matches( '.wprm-expandable-button' ) ) {
+		init: () => {
+			document.addEventListener( 'click', function(e) {
+				const target = e.target.closest ? e.target.closest( '.wprm-expandable-button' ) : false;
+				if ( target ) {
 					WPRecipeMaker.expandable.onClick( target, e );
-					break;
 				}
-			}
-        }, false );
-	},
+	        }, false );
+		},
 	onClick: ( el, e ) => {
 		e.preventDefault();
         const showingContent = el.classList.contains( 'wprm-expandable-button-show' );

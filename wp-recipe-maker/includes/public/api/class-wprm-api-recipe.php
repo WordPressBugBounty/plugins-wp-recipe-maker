@@ -97,9 +97,9 @@ class WPRM_Api_Recipe{
 		$recipe = WPRM_Recipe_Sanitizer::sanitize( $recipe_data );
 		$recipe_id = $post->ID;
 
-		// Allow images to be passed as URLs instead of IDs, but only when IDs had not been set explicitly.
+		// Allow recipe image to be passed as URL when no real media ID has been set yet.
 		require_once( WPRM_DIR . 'includes/admin/class-wprm-import-helper.php' );
-		if ( isset( $recipe_data['image_url'] ) && $recipe_data['image_url'] && ! isset( $recipe['image_id'] ) ) {
+		if ( isset( $recipe_data['image_url'] ) && $recipe_data['image_url'] && ( ! isset( $recipe['image_id'] ) || ! $recipe['image_id'] ) ) {
 			$attachment_id = WPRM_Import_Helper::get_or_upload_attachment( $recipe_id, $recipe_data['image_url'] );
 			if ( $attachment_id ) {
 				$recipe['image_id'] = $attachment_id;

@@ -63,16 +63,23 @@ export default class App extends Component {
             secondaryModalIsOpen: false,
             secondaryMode: '',
             secondaryArgs: {},
+            tertiaryModalIsOpen: false,
+            tertiaryMode: '',
+            tertiaryArgs: {},
         };
 
         this.content = React.createRef();
         this.secondaryContent = React.createRef();
+        this.tertiaryContent = React.createRef();
 
         this.close = this.close.bind(this);
         this.closeIfAllowed = this.closeIfAllowed.bind(this);
         this.openSecondary = this.openSecondary.bind(this);
         this.closeSecondary = this.closeSecondary.bind(this);
         this.closeSecondaryIfAllowed = this.closeSecondaryIfAllowed.bind(this);
+        this.openTertiary = this.openTertiary.bind(this);
+        this.closeTertiary = this.closeTertiary.bind(this);
+        this.closeTertiaryIfAllowed = this.closeTertiaryIfAllowed.bind(this);
     }
 
     open( mode, args = {}, forceOpen = false ) {
@@ -81,6 +88,8 @@ export default class App extends Component {
                 modalIsOpen: true,
                 mode,
                 args,
+                secondaryModalIsOpen: false,
+                tertiaryModalIsOpen: false,
             }, () => {
                 // Don't set onbeforeunload for simple modals that don't have unsaved changes
                 const simpleModals = [ 'add-recipe-to-post', 'select' ];
@@ -97,6 +106,8 @@ export default class App extends Component {
         
         this.setState({
             modalIsOpen: false,
+            secondaryModalIsOpen: false,
+            tertiaryModalIsOpen: false,
         }, () => {
             window.onbeforeunload = null;
             
@@ -125,12 +136,14 @@ export default class App extends Component {
             secondaryModalIsOpen: true,
             secondaryMode: mode,
             secondaryArgs: args,
+            tertiaryModalIsOpen: false,
         });
     }
 
     closeSecondary(callback = false) { 
         this.setState({
             secondaryModalIsOpen: false,
+            tertiaryModalIsOpen: false,
         }, () => {
             if ( 'function' === typeof callback ) {
                 callback();
@@ -143,6 +156,32 @@ export default class App extends Component {
 
         if ( ! checkFunction || checkFunction() ) {
             this.closeSecondary(callback);
+        }
+    }
+
+    openTertiary( mode, args = {} ) {
+        this.setState({
+            tertiaryModalIsOpen: true,
+            tertiaryMode: mode,
+            tertiaryArgs: args,
+        });
+    }
+
+    closeTertiary(callback = false) {
+        this.setState({
+            tertiaryModalIsOpen: false,
+        }, () => {
+            if ( 'function' === typeof callback ) {
+                callback();
+            }
+        });
+    }
+
+    closeTertiaryIfAllowed(callback = false) {
+        const checkFunction = this.tertiaryContent.current && this.tertiaryContent.current.hasOwnProperty( 'allowCloseModal' ) ? this.tertiaryContent.current.allowCloseModal : false;
+
+        if ( ! checkFunction || checkFunction() ) {
+            this.closeTertiary(callback);
         }
     }
 
@@ -170,6 +209,8 @@ export default class App extends Component {
         const Content = allContentBlocks.hasOwnProperty(this.state.mode) ? allContentBlocks[this.state.mode] : false;
         const SecondaryContent = allContentBlocks.hasOwnProperty(this.state.secondaryMode) ? allContentBlocks[this.state.secondaryMode] : 
                                  allRecipeContentBlocks.hasOwnProperty(this.state.secondaryMode) ? allRecipeContentBlocks[this.state.secondaryMode] : false;
+        const TertiaryContent = allContentBlocks.hasOwnProperty(this.state.tertiaryMode) ? allContentBlocks[this.state.tertiaryMode] :
+                                allRecipeContentBlocks.hasOwnProperty(this.state.tertiaryMode) ? allRecipeContentBlocks[this.state.tertiaryMode] : false;
 
         if ( ! Content ) {
             return null;
@@ -178,6 +219,9 @@ export default class App extends Component {
         const primaryOverlayClass = this.state.secondaryModalIsOpen 
             ? "wprm-admin-modal-overlay wprm-admin-modal-overlay-dimmed"
             : "wprm-admin-modal-overlay";
+        const secondaryOverlayClass = this.state.tertiaryModalIsOpen
+            ? "wprm-admin-modal-overlay-secondary wprm-admin-modal-overlay-dimmed"
+            : "wprm-admin-modal-overlay-secondary";
 
         return (
             <>
@@ -202,7 +246,7 @@ export default class App extends Component {
                     <Modal
                         isOpen={ this.state.secondaryModalIsOpen }
                         onRequestClose={ this.closeSecondaryIfAllowed }
-                        overlayClassName="wprm-admin-modal-overlay-secondary"
+                        overlayClassName={ secondaryOverlayClass }
                         className={`wprm-admin-modal wprm-admin-modal-secondary wprm-admin-modal-recipe wprm-admin-modal-${this.state.secondaryMode} wp-core-ui`}
                     >
                         <ErrorBoundary module="SecondaryModal">
@@ -212,6 +256,26 @@ export default class App extends Component {
                                 args={ this.state.secondaryArgs }
                                 maybeCloseModal={ this.closeSecondaryIfAllowed }
                                 { ...this.state.secondaryArgs }
+                                openSecondaryModal={ this.openTertiary }
+                            />
+                        </ErrorBoundary>
+                    </Modal>
+                )}
+
+                { TertiaryContent && (
+                    <Modal
+                        isOpen={ this.state.tertiaryModalIsOpen }
+                        onRequestClose={ this.closeTertiaryIfAllowed }
+                        overlayClassName="wprm-admin-modal-overlay-tertiary"
+                        className={`wprm-admin-modal wprm-admin-modal-tertiary wprm-admin-modal-${this.state.tertiaryMode} wp-core-ui`}
+                    >
+                        <ErrorBoundary module="TertiaryModal">
+                            <TertiaryContent
+                                ref={ this.tertiaryContent }
+                                mode={ this.state.tertiaryMode }
+                                args={ this.state.tertiaryArgs }
+                                maybeCloseModal={ this.closeTertiaryIfAllowed }
+                                { ...this.state.tertiaryArgs }
                             />
                         </ErrorBoundary>
                     </Modal>

@@ -293,7 +293,7 @@ $amazon = array(
 				array(
 					'id' => 'amazon_credential_version',
 					'name' => __( 'Credential Version', 'wp-recipe-maker' ),
-					'description' => __( 'Your credential version based on region: 2.1 for North America, 2.2 for Europe, 2.3 for Far East.', 'wp-recipe-maker' ),
+					'description' => __( 'Your credential version based on region: 2.1 or 3.1 for North America, 2.2 or 3.2 for Europe, 2.3 or 3.3 for Far East.', 'wp-recipe-maker' ),
 					'type' => 'text',
 					'default' => '',
 				),

@@ -184,7 +184,7 @@ class WPRM_Shortcode_Reusable_Label_Container {
 		// Check for accessibility label.
 		$accessibility_label = '';
 		if ( $atts['accessibility_label'] ) {
-			$accessibility_label = '<span class="sr-only screen-reader-text wprm-screen-reader-text">' . WPRM_Shortcode_Helper::sanitize_html( $atts['accessibility_label'] ) . '</span>';
+			$accessibility_label = '<span class="sr-only screen-reader-text wprm-screen-reader-text" data-nosnippet>' . WPRM_Shortcode_Helper::sanitize_html( $atts['accessibility_label'] ) . '</span>';
 		}
 
 		// Get optional label.

@@ -16,17 +16,15 @@ window.WPRecipeMaker.myShoppingHelp = {
 		// Stop checking after 10 seconds.
 		setTimeout( () => {
 			clearInterval( checkInterval );
-		}, 10000 );
+			}, 10000 );
 
-		document.addEventListener( 'click', function( e ) {
-			for ( let target = e.target; target && target !== this; target = target.parentNode ) {
-				if ( target.matches( '.wprm-recipe-my-shopping-help' ) ) {
+			document.addEventListener( 'click', function( e ) {
+				const target = e.target.closest ? e.target.closest( '.wprm-recipe-my-shopping-help' ) : false;
+				if ( target ) {
 					WPRecipeMaker.myShoppingHelp.onClick( target, e );
-					break;
 				}
-			}
-		}, false );
-	},
+			}, false );
+		},
 	checkAndShow: () => {
 		if ( window.msh && ( typeof window.msh.addRecipe === 'function' || typeof window.msh.AddRecipe === 'function' ) ) {
 			const elements = document.querySelectorAll( '.wprm-recipe-my-shopping-help' );
@@ -108,4 +106,3 @@ function ready( fn ) {
 		document.addEventListener( 'DOMContentLoaded', fn );
 	}
 }
-

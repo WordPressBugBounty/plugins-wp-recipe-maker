@@ -46,6 +46,24 @@ class WPRM_Settings {
 	private static $defaults = array();
 
 	/**
+	 * Cached version of the settings details.
+	 *
+	 * @since    10.6.1
+	 * @access   private
+	 * @var      array    $details    Details for all registered settings.
+	 */
+	private static $details = array();
+
+	/**
+	 * Filter signature used for the cached settings details.
+	 *
+	 * @since    10.6.1
+	 * @access   private
+	 * @var      mixed    $details_filter_signature    Signature of registered settings structure filters.
+	 */
+	private static $details_filter_signature = false;
+
+	/**
 	 * Cached recipe type usage.
 	 *
 	 * @since    10.5.0
@@ -106,7 +124,7 @@ class WPRM_Settings {
 		if ( isset( $settings[ $setting ] ) ) {
 			$value = $settings[ $setting ];
 
-			if ( is_string( $value ) ) {
+			if ( is_string( $value ) && has_filter( 'wpml_translate_single_string' ) && self::is_translatable_setting( $setting ) ) {
 				return apply_filters( 'wpml_translate_single_string', $value, 'wp-recipe-maker', 'Setting - ' . $setting, null );
 			} else {
 				return $value;
@@ -114,6 +132,18 @@ class WPRM_Settings {
 		} else {
 			return self::get_default( $setting );
 		}
+	}
+
+	/**
+	 * Check if a specific setting should be translated by WPML.
+	 *
+	 * @since	10.6.0
+	 * @param	mixed $setting Setting to check.
+	 */
+	private static function is_translatable_setting( $setting ) {
+		$translatable_settings = self::get_translatable_settings();
+
+		return in_array( $setting, $translatable_settings, true );
 	}
 
 	/**
@@ -290,6 +320,21 @@ class WPRM_Settings {
 		}
 
 		return apply_filters( 'wprm_settings_structure', self::$structure );
+	}
+
+	/**
+	 * Check if the settings UI supports a specific special component.
+	 *
+	 * @since    10.6.2
+	 * @param	 mixed $component Component to check.
+	 */
+	public static function supports_settings_component( $component ) {
+		return in_array( $component, array(
+			'amazonQueue',
+			'appAccessTokens',
+			'jupiterAccessToken',
+			'unitConversionUnits',
+		), true );
 	}
 
 	/**
@@ -714,33 +759,137 @@ class WPRM_Settings {
 	 * @since	3.0.0
 	 */
 	public static function get_details() {
-		$details = array();
-		$structure = self::get_structure();
+		$filter_signature = self::get_settings_structure_filter_signature();
 
-		// Loop over structure to find settings.
-		foreach ( $structure as $group ) {
-			if ( isset( $group['settings'] ) ) {
-				foreach ( $group['settings'] as $setting ) {
-					if ( isset( $setting['id'] ) ) {
-						$details[ $setting['id'] ] = $setting;
+		if ( empty( self::$details ) || self::$details_filter_signature !== $filter_signature ) {
+			$details = array();
+			$structure = self::get_structure();
+
+			// Loop over structure to find settings.
+			foreach ( $structure as $group ) {
+				if ( isset( $group['settings'] ) ) {
+					foreach ( $group['settings'] as $setting ) {
+						if ( isset( $setting['id'] ) ) {
+							$details[ $setting['id'] ] = $setting;
+						}
 					}
 				}
-			}
 
-			if ( isset( $group['subGroups'] ) ) {
-				foreach ( $group['subGroups'] as $sub_group ) {
-					if ( isset( $sub_group['settings'] ) ) {
-						foreach ( $sub_group['settings'] as $setting ) {
-							if ( isset( $setting['id'] ) ) {
-								$details[ $setting['id'] ] = $setting;
+				if ( isset( $group['subGroups'] ) ) {
+					foreach ( $group['subGroups'] as $sub_group ) {
+						if ( isset( $sub_group['settings'] ) ) {
+							foreach ( $sub_group['settings'] as $setting ) {
+								if ( isset( $setting['id'] ) ) {
+									$details[ $setting['id'] ] = $setting;
+								}
 							}
 						}
 					}
 				}
 			}
+
+			self::$details = $details;
+			self::$details_filter_signature = $filter_signature;
 		}
 
-		return $details;
+		return self::$details;
+	}
+
+	/**
+	 * Get lookup of settings that should be translated.
+	 *
+	 * @since    10.6.1
+	 */
+	private static function get_translatable_settings() {
+		return apply_filters( 'wprm_translatable_settings', array(
+			'cook_mode_closing_screen_message',
+			'favorite_recipes_empty_message',
+			'favorite_recipes_link_text',
+			'favorite_recipes_loading_message',
+			'favorite_recipes_tooltip_active',
+			'favorite_recipes_tooltip_inactive',
+			'label_author',
+			'label_calories',
+			'label_comment_rating',
+			'label_cook_time',
+			'label_course_tags',
+			'label_cuisine_tags',
+			'label_ingredients',
+			'label_instructions',
+			'label_keyword_tags',
+			'label_notes',
+			'label_prep_time',
+			'label_print_button',
+			'label_servings',
+			'label_total_time',
+			'label_video',
+			'nutrition_default_serving_unit',
+			'nutrition_label_custom_daily_values_disclaimer',
+			'pinterest_custom_description',
+			'print_credit',
+			'private_notes_not_logged_in_message',
+			'quick_access_shopping_list_loading_message',
+			'rating_details_multiple',
+			'rating_details_one',
+			'rating_details_user_not_voted',
+			'rating_details_user_voted',
+			'rating_details_zero',
+			'recipe_author_custom_default',
+			'recipe_author_same_bio',
+			'recipe_author_same_name',
+			'recipe_collections_add_button_not_logged_in_tooltip',
+			'recipe_collections_favorites_collection_name',
+			'recipe_collections_inbox_name',
+			'recipe_collections_loading_message',
+			'recipe_collections_no_access_message',
+			'recipe_snippets_text',
+			'recipe_submission_after_text',
+			'saved_recipe_collection_loading_message',
+			'unit_conversion_system_1',
+			'unit_conversion_system_2',
+			'user_ratings_comment_suggestion_1',
+			'user_ratings_comment_suggestion_2',
+			'user_ratings_comment_suggestion_3',
+			'user_ratings_comment_suggestion_4',
+			'user_ratings_comment_suggestion_5',
+			'user_ratings_comment_suggestion_6',
+			'user_ratings_comment_suggestion_text_after',
+			'user_ratings_comment_suggestion_text_before',
+			'user_ratings_modal_comment_placeholder',
+			'user_ratings_modal_email_placeholder',
+			'user_ratings_modal_name_placeholder',
+			'user_ratings_modal_submit_comment_button',
+			'user_ratings_modal_submit_no_comment_button',
+			'user_ratings_modal_title',
+			'user_ratings_problem_message',
+			'user_ratings_summary_modal_title',
+			'user_ratings_text_above_comment',
+			'user_ratings_thank_you_message_with_comment',
+			'user_ratings_thank_you_title',
+		) );
+	}
+
+	/**
+	 * Get signature of registered settings structure filters.
+	 *
+	 * @since    10.6.1
+	 */
+	private static function get_settings_structure_filter_signature() {
+		global $wp_filter;
+
+		if ( ! isset( $wp_filter['wprm_settings_structure'] ) || ! is_object( $wp_filter['wprm_settings_structure'] ) || ! isset( $wp_filter['wprm_settings_structure']->callbacks ) ) {
+			return '';
+		}
+
+		$signature = array();
+
+		foreach ( $wp_filter['wprm_settings_structure']->callbacks as $priority => $callbacks ) {
+			foreach ( $callbacks as $callback_id => $callback ) {
+				$signature[] = $priority . ':' . $callback_id . ':' . $callback['accepted_args'];
+			}
+		}
+
+		return implode( '|', $signature );
 	}
 
 	/**

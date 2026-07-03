@@ -15,7 +15,10 @@ const AITextImport = ( props ) => {
         importing,
         error,
         importedRecipe,
+        imageUrls,
+        selectedImageUrl,
         onTextChange,
+        onSelectedImageUrlChange,
         editImportedRecipe,
         importRecipe,
     } = useAIRecipeImport( {
@@ -25,7 +28,19 @@ const AITextImport = ( props ) => {
 
     const useImportedValues = () => {
         if ( importedRecipe && props.onImportValues ) {
-            props.onImportValues( importedRecipe );
+            const recipeToImport = {
+                ...importedRecipe,
+            };
+
+            if ( selectedImageUrl ) {
+                recipeToImport.image_id = 0;
+                recipeToImport.image_url = selectedImageUrl;
+            } else {
+                delete recipeToImport.image_id;
+                delete recipeToImport.image_url;
+            }
+
+            props.onImportValues( recipeToImport );
             props.maybeCloseModal();
         }
     };
@@ -43,7 +58,10 @@ const AITextImport = ( props ) => {
                 importing={ importing }
                 error={ error }
                 importedRecipe={ importedRecipe }
+                imageUrls={ imageUrls }
+                selectedImageUrl={ selectedImageUrl }
                 onTextChange={ onTextChange }
+                onSelectedImageUrlChange={ onSelectedImageUrlChange }
             />
             <Footer savingChanges={ importing }>
                 <button className="button button-secondary button-compact" onClick={ props.maybeCloseModal }>

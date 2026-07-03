@@ -238,6 +238,9 @@ class WPRM_Template_Editor {
 			'thumbnail_sizes' => get_intermediate_image_sizes(),
 			'preview_recipe' => WPRM_Settings::get( 'template_editor_preview_recipe' ),
 			'undo_redo_history' => WPRM_Settings::get( 'template_editor_undo_redo_history' ),
+			'ai_template_editor' => apply_filters( 'wprm_template_editor_ai', array(
+				'enabled' => false,
+			) ),
 		) );
 	}
 

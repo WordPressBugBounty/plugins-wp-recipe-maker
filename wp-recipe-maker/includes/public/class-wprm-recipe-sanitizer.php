@@ -368,20 +368,20 @@ class WPRM_Recipe_Sanitizer {
 							'text' => isset( $instruction['text'] ) ? self::sanitize_html( $instruction['text'] ) : '',
 						);
 
-							if ( $is_tip ) {
-								$sanitized_instruction['type'] = 'tip';
-								$sanitized_instruction['tip_icon'] = isset( $instruction['tip_icon'] ) ? sanitize_text_field( $instruction['tip_icon'] ) : '';
-								$tip_style = isset( $instruction['tip_style'] ) ? sanitize_key( $instruction['tip_style'] ) : '';
-								if ( 'left-border' === $tip_style ) {
-									$tip_style = 'left-border-straight';
-								}
-								$sanitized_instruction['tip_style'] = in_array( $tip_style, array( 'left-border-straight', 'left-border-rounded', 'filled', 'outline', 'banner' ), true ) ? $tip_style : '';
+						if ( $is_tip ) {
+							$sanitized_instruction['type'] = 'tip';
+							$sanitized_instruction['tip_icon'] = isset( $instruction['tip_icon'] ) ? sanitize_text_field( $instruction['tip_icon'] ) : '';
+							$tip_style = isset( $instruction['tip_style'] ) ? sanitize_key( $instruction['tip_style'] ) : '';
+							if ( 'left-border' === $tip_style ) {
+								$tip_style = 'left-border-straight';
+							}
+							$sanitized_instruction['tip_style'] = in_array( $tip_style, array( 'left-border-straight', 'left-border-rounded', 'filled', 'outline', 'banner' ), true ) ? $tip_style : '';
 
-								$tip_accent = isset( $instruction['tip_accent'] ) ? sanitize_hex_color( $instruction['tip_accent'] ) : false;
-								$sanitized_instruction['tip_accent'] = $tip_accent ? $tip_accent : '';
-								$tip_text_color = isset( $instruction['tip_text_color'] ) ? sanitize_hex_color( $instruction['tip_text_color'] ) : false;
-								$sanitized_instruction['tip_text_color'] = $tip_text_color ? $tip_text_color : '';
-							} else {
+							$tip_accent = isset( $instruction['tip_accent'] ) ? sanitize_hex_color( $instruction['tip_accent'] ) : false;
+							$sanitized_instruction['tip_accent'] = $tip_accent ? $tip_accent : '';
+							$tip_text_color = isset( $instruction['tip_text_color'] ) ? sanitize_hex_color( $instruction['tip_text_color'] ) : false;
+							$sanitized_instruction['tip_text_color'] = $tip_text_color ? $tip_text_color : '';
+						} else {
 							$sanitized_instruction['image'] = isset( $instruction['image'] ) ? intval( $instruction['image'] ) : 0;
 							$sanitized_instruction['ingredients'] = $sanitized_ingredients;
 						}
@@ -397,6 +397,8 @@ class WPRM_Recipe_Sanitizer {
 								'name' => sanitize_text_field( $instruction['video']['name'] ),
 							);
 						}
+
+						$sanitized_instruction = apply_filters( 'wprm_recipe_sanitized_instruction', $sanitized_instruction, $instruction, $is_tip );
 
 						if ( $sanitized_instruction['text'] || ( ! $is_tip && $sanitized_instruction['image'] ) ) {
 							$sanitized_group['instructions'][] = $sanitized_instruction;

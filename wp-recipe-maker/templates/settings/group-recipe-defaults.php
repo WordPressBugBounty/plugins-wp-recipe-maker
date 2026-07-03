@@ -164,6 +164,18 @@ $recipe_defaults = array(
 					'type' => 'toggle',
 					'default' => true,
 				),
+				array(
+					'id' => 'recipe_modal_ingredient_unit_connectors',
+					'name' => __( 'Ingredient Unit Connectors', 'wp-recipe-maker' ),
+					'description' => __( 'Show a small connector control between the unit and ingredient name fields. In Auto mode this is enabled for site languages that commonly use ingredient connectors.', 'wp-recipe-maker' ),
+					'type' => 'dropdown',
+					'options' => array(
+						'auto' => __( 'Auto (based on site language)', 'wp-recipe-maker' ),
+						'show' => __( 'Show', 'wp-recipe-maker' ),
+						'hide' => __( 'Hide', 'wp-recipe-maker' ),
+					),
+					'default' => 'auto',
+				),
 			),
 		),
 	),

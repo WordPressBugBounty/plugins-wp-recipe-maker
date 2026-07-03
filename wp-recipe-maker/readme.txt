@@ -5,7 +5,7 @@ Tags: recipe, recipes, food, cooking, schema
 Requires at least: 4.4
 Tested up to: 7.0
 Requires PHP: 7.2
-Stable tag: 10.6.1
+Stable tag: 10.7.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -141,6 +141,25 @@ Please report security bugs found in the source code of the WP Recipe Maker plug
 7. Our Template Editor allows you to completely customize the look and feel.
 
 == Changelog ==
+= 10.7.0 =
+* Feature: Optional ingredient connectors
+* Improvement: Split assets for better performance
+* Improvement: Cache recipe metadata to improve page speed
+* Improvement: Setting lookup performance
+* Improvement: Click listener performance
+* Improvement: Cache modal margin for slight performance gain
+* Improvement: Manage page loading speeds when showing many rows
+* Improvement: Importing ratings from WPZOOM
+* Improvement: Easily add items from other roundup lists to a new list
+* Improvement: Edit recipes while editing a roundup list
+* Fix: Prevent screenreader text from showing in Google snippets
+* Fix: Potential PHP 8.4 error when converting legacy data
+* Fix: Error on manage page for older recipes in different format
+* Fix: Prevent recipe previews from getting cached
+* Fix: Make sure print button shows up in template editor when previewing with demo recipe
+* Fix: WPML Recipe language when translating parent post
+* Fix: Prevent the Heroic Table of Contents plugin from breaking our blocks
+
 = 10.6.1 =
 * Fix: Prevent ingredient border issue in some themes
 * Fix: Prevent losing parent post when a duplicate post gets deleted
@@ -556,6 +575,9 @@ Please report security bugs found in the source code of the WP Recipe Maker plug
 For earlier versions, please refer to [our full changelog](https://help.bootstrapped.ventures/article/124-wp-recipe-maker-changelog).
 
 == Upgrade notice ==
+= 10.7.0 =
+Some great new features and improvements
+
 = 10.6.1 =
 Some small fixes
 

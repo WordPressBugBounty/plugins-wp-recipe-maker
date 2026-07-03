@@ -57,8 +57,11 @@ class WPRM_Api_Ingredient_Units {
 		$meta = get_term_meta( $object[ 'id' ] );
 
 		$data = array(
-			'abbr' => isset( $meta['wprm_ingredient_unit_abbr'] ) ? $meta['wprm_ingredient_unit_abbr'] : '',
-			'plural' => isset( $meta['wprm_ingredient_unit_plural'] ) ? $meta['wprm_ingredient_unit_plural'] : '',
+			'abbr' => self::get_meta_value( $meta, 'wprm_ingredient_unit_abbr' ),
+			'plural' => self::get_meta_value( $meta, 'wprm_ingredient_unit_plural' ),
+			'connector' => self::get_meta_value( $meta, 'wprm_ingredient_unit_connector' ),
+			'connector_spacing' => WPRM_Ingredient_Display::sanitize_connector_spacing( self::get_meta_value( $meta, 'wprm_ingredient_unit_connector_spacing' ) ),
+			'connector_pluralizes_ingredient' => '1' === self::get_meta_value( $meta, 'wprm_ingredient_unit_connector_pluralizes_ingredient' ),
 		);
 
 		return $data;
@@ -80,6 +83,35 @@ class WPRM_Api_Ingredient_Units {
 			$plural = sanitize_text_field( $meta['plural'] );
 			update_term_meta( $term->term_id, 'wprm_ingredient_unit_plural', $plural );
 		}
+		if ( isset( $meta['connector'] ) ) {
+			$connector = sanitize_text_field( $meta['connector'] );
+			update_term_meta( $term->term_id, 'wprm_ingredient_unit_connector', $connector );
+		}
+		if ( isset( $meta['connector_spacing'] ) ) {
+			$connector_spacing = WPRM_Ingredient_Display::sanitize_connector_spacing( $meta['connector_spacing'] );
+			update_term_meta( $term->term_id, 'wprm_ingredient_unit_connector_spacing', $connector_spacing );
+		}
+		if ( isset( $meta['connector_pluralizes_ingredient'] ) ) {
+			$connector_pluralizes_ingredient = rest_sanitize_boolean( $meta['connector_pluralizes_ingredient'] ) ? '1' : '0';
+			update_term_meta( $term->term_id, 'wprm_ingredient_unit_connector_pluralizes_ingredient', $connector_pluralizes_ingredient );
+		}
+	}
+
+	/**
+	 * Get a scalar value from raw term meta.
+	 *
+	 * @since 10.3.0
+	 * @param array  $meta Raw term meta.
+	 * @param string $key  Meta key.
+	 */
+	private static function get_meta_value( $meta, $key ) {
+		if ( ! isset( $meta[ $key ] ) ) {
+			return '';
+		}
+
+		$value = is_array( $meta[ $key ] ) ? reset( $meta[ $key ] ) : $meta[ $key ];
+
+		return is_scalar( $value ) ? (string) $value : '';
 	}
 
 	/**

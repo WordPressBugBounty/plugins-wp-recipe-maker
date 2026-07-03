@@ -24,10 +24,12 @@ const INLINE_BLOCKS = [ 'link', 'affiliate-link', 'code', 'temperature', 'ingred
 
 const RichEditor = React.memo((props) => {
     if ( isProblemBrowser() ) {
+        const legacyClassName = `wprm-admin-modal-field-richtext-legacy${ props.className ? ` ${ props.className }` : '' }`;
+
         if ( props.singleLine ) {
-            return ( <div className="wprm-admin-modal-field-richtext-legacy"><FieldText {...props} /></div> );
+            return ( <div className={ legacyClassName }><FieldText {...props} /></div> );
         } else {
-            return ( <div className="wprm-admin-modal-field-richtext-legacy"><FieldTextarea {...props} /></div> );
+            return ( <div className={ legacyClassName }><FieldTextarea {...props} /></div> );
         }
     }
 

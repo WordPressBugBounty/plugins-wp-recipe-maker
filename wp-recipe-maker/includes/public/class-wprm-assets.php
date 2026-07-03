@@ -63,13 +63,45 @@ class WPRM_Assets {
 		// Only include scripts when not AMP page.
 		if ( ! function_exists( 'is_amp_endpoint' ) || ! is_amp_endpoint() ) {
 			// Always load the modern JS file. Legacy JS is basically the same thing, just different CSS.
-			wp_register_script( 'wprm-public', WPRM_URL . 'dist/public-modern.js', array(), WPRM_VERSION, true );
+			wp_register_script( 'wprm-public', self::public_js_url(), array(), WPRM_VERSION, true );
 			wp_localize_script( 'wprm-public', 'wprm_public', self::localize_public() );
 		}
 		
 		if ( false === WPRM_Settings::get( 'only_load_assets_when_needed' ) ) {
 			self::load();
 		}
+	}
+
+	/**
+	 * Whether to use the split public JavaScript bundle.
+	 *
+	 * @since	10.7.0
+	 */
+	public static function use_split_public_js() {
+		// Premium public bundles before 10.7.0 depend on the non-split core public bundle.
+		if ( defined( 'WPRMP_VERSION' ) && version_compare( WPRMP_VERSION, '10.7.0', '<' ) ) {
+			return false;
+		}
+
+		return (bool) WPRM_Settings::get( 'assets_use_split_js' );
+	}
+
+	/**
+	 * Get the public JavaScript filename to enqueue.
+	 *
+	 * @since	10.7.0
+	 */
+	public static function public_js_filename() {
+		return self::use_split_public_js() ? 'public-modern-split' : 'public-modern';
+	}
+
+	/**
+	 * Get the public JavaScript URL to enqueue.
+	 *
+	 * @since	10.7.0
+	 */
+	public static function public_js_url() {
+		return WPRM_URL . 'dist/' . self::public_js_filename() . '.js';
 	}
 
 	/**
@@ -221,6 +253,7 @@ class WPRM_Assets {
 				'modal' => rtrim( get_rest_url( null, 'wp-recipe-maker/v1/modal' ), '/' ),
 				'notices' => rtrim( get_rest_url( null, 'wp-recipe-maker/v1/notice' ), '/' ),
 				'analytics' => rtrim( get_rest_url( null, 'wp-recipe-maker/v1/analytics' ), '/' ),
+				'app' => rtrim( get_rest_url( null, 'wp-recipe-maker/v1/app' ), '/' ),
 				'integrations' => rtrim( get_rest_url( null, 'wp-recipe-maker/v1/integrations' ), '/' ),
 				'custom_taxonomies' => rtrim( get_rest_url( null, 'wp-recipe-maker/v1/custom-taxonomies' ), '/' ),
 				'rating' => rtrim( get_rest_url( null, 'wp-recipe-maker/v1/rating' ), '/' ),
@@ -249,6 +282,8 @@ class WPRM_Assets {
 				'recipe_use_author' => WPRM_Settings::get( 'recipe_use_author' ),
 				'recipe_times_use_days' => WPRM_Settings::get( 'recipe_times_use_days' ),
 				'recipe_modal_undo_redo_history' => WPRM_Settings::get( 'recipe_modal_undo_redo_history' ),
+				'recipe_modal_ingredient_unit_connectors' => WPRM_Settings::get( 'recipe_modal_ingredient_unit_connectors' ),
+				'recipe_modal_ingredient_unit_connectors_auto_enabled' => WPRM_Ingredient_Display::locale_uses_ingredient_connectors(),
 				'print_access' => WPRM_Print::access(),
 				'print_access_allowed' => WPRM_Print::has_access(),
 				'default_print_template_admin' => WPRM_Settings::get( 'default_print_template_admin' ),
@@ -296,13 +331,17 @@ class WPRM_Assets {
 	}
 
 	/**
-	 * Enqueue Gutenberg block assets (styles for both editor and frontend).
-	 * This hook loads styles in both contexts, including the iframe editor (API version 3).
+	 * Enqueue Gutenberg block assets for the editor preview.
+	 * This hook also runs on the frontend, so keep frontend loading conditional.
 	 *
 	 * @since    2.4.0
 	 */
 	public static function block_assets() {
-		// Public CSS needed for block previews in editor and on frontend.
+		if ( ! is_admin() ) {
+			return;
+		}
+
+		// Public CSS needed for block previews in the editor.
 		$public_css = WPRM_URL . 'dist/public-' . WPRM_Settings::get( 'recipe_template_mode' ) . '.css';
 		wp_enqueue_style( 'wprm-public', $public_css, array(), WPRM_VERSION, 'all' );
 	}

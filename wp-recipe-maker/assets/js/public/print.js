@@ -17,16 +17,14 @@ window.WPRecipeMaker.print = {
 
 		return true;
 	},
-	init: () => {
-		document.addEventListener( 'click', function(e) {
-			for ( var target = e.target; target && target != this; target = target.parentNode ) {
-				if ( target.matches( '.wprm-recipe-print, .wprm-print-recipe-shortcode' ) ) {
+		init: () => {
+			document.addEventListener( 'click', function(e) {
+				const target = e.target.closest ? e.target.closest( '.wprm-recipe-print, .wprm-print-recipe-shortcode' ) : false;
+				if ( target ) {
 					WPRecipeMaker.print.onClick( target, e );
-					break;
 				}
-			}
-		}, false );
-	},
+			}, false );
+		},
 	onClick: ( el, e ) => {
 		if ( ! WPRecipeMaker.print.hasAccess() ) {
 			e.preventDefault();

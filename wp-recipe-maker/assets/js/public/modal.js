@@ -6,6 +6,25 @@ window.WPRecipeMaker = typeof window.WPRecipeMaker === "undefined" ? {} : window
 window.WPRecipeMaker.modal = {
     savedScrollPosition: 0,
     currentOpenUid: null,
+    htmlMarginTopValue: null,
+
+    getHtmlMarginTopValue() {
+        if ( null !== this.htmlMarginTopValue ) {
+            return this.htmlMarginTopValue;
+        }
+
+        // Check if html has a margin-top (e.g., from WordPress admin bar).
+        const htmlStyle = window.getComputedStyle( document.documentElement );
+        const htmlMarginTop = htmlStyle.marginTop;
+        const parsedMarginTop = htmlMarginTop && htmlMarginTop !== '0px' ? parseFloat( htmlMarginTop ) : 0;
+
+        this.htmlMarginTopValue = isNaN( parsedMarginTop ) ? 0 : parsedMarginTop;
+        return this.htmlMarginTopValue;
+    },
+
+    resetHtmlMarginTopValue() {
+        this.htmlMarginTopValue = null;
+    },
     
     open( uid, data = {} ) {
         // Close currently open modal if there is one
@@ -21,14 +40,7 @@ window.WPRecipeMaker.modal = {
 
         // Prevent body scroll by fixing it in place
         this.savedScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-        
-        // Check if html has a margin-top (e.g., from WordPress admin bar)
-        const htmlStyle = window.getComputedStyle( document.documentElement );
-        const htmlMarginTop = htmlStyle.marginTop;
-        let htmlMarginTopValue = 0;
-        if ( htmlMarginTop && htmlMarginTop !== '0px' ) {
-            htmlMarginTopValue = parseFloat( htmlMarginTop );
-        }
+        const htmlMarginTopValue = this.getHtmlMarginTopValue();
         
         document.body.classList.add( 'wprm-popup-modal-open' );
         // Adjust body top position to account for html margin-top
@@ -77,3 +89,6 @@ window.WPRecipeMaker.modal = {
         }
     },
 };
+
+window.addEventListener( 'resize', () => window.WPRecipeMaker.modal.resetHtmlMarginTopValue() );
+window.addEventListener( 'orientationchange', () => window.WPRecipeMaker.modal.resetHtmlMarginTopValue() );

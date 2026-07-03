@@ -825,6 +825,8 @@ class WPRM_Recipe_Roundup {
 			}
 
 			if ( $template ) {
+				WPRM_Assets::load();
+
 				// Add to used templates.
 				WPRM_Template_Manager::add_used_template( $template );
 

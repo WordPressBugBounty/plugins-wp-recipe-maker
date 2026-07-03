@@ -150,8 +150,13 @@ class WPRM_Compatibility {
 	public static function cache_js_excludes( $excludes ) {
 		if ( WPRM_Settings::get( 'assets_prevent_caching_optimization' ) && is_array( $excludes ) ) {
 			$excludes[] = 'wp-recipe-maker/dist/public-modern.js';
+			$excludes[] = 'wp-recipe-maker/dist/public-modern-split.js';
+			$excludes[] = 'wp-recipe-maker/dist/public-feature-';
 			if ( defined( 'WPRMP_BUNDLE' ) ) {
 				$excludes[] = 'wp-recipe-maker-premium/dist/public-' . strtolower( WPRMP_BUNDLE ) . '.js';
+				$excludes[] = 'wp-recipe-maker-premium/dist/public-' . strtolower( WPRMP_BUNDLE ) . '-split.js';
+				$excludes[] = 'wp-recipe-maker-premium/dist/public-feature-';
+				$excludes[] = 'wp-recipe-maker-premium/dist/public-recipe-collections-split.js';
 			}
 		}
 
@@ -552,6 +557,41 @@ class WPRM_Compatibility {
 		}
 
 		return $language;
+	}
+
+	/**
+	 * Check if a post is a WPML translation of another post.
+	 *
+	 * @since	10.8.2
+	 * @param	int $post_id Post ID to check.
+	 */
+	public static function is_wpml_translation_post( $post_id ) {
+		$post_id = intval( $post_id );
+
+		if ( ! $post_id || ! has_filter( 'wpml_element_language_details' ) ) {
+			return false;
+		}
+
+		$post_type = get_post_type( $post_id );
+
+		if ( ! $post_type ) {
+			return false;
+		}
+
+		$details = apply_filters(
+			'wpml_element_language_details',
+			null,
+			array(
+				'element_id'   => $post_id,
+				'element_type' => 'post_' . $post_type,
+			)
+		);
+
+		if ( is_object( $details ) ) {
+			$details = (array) $details;
+		}
+
+		return is_array( $details ) && ! empty( $details['source_language_code'] );
 	}
 
 	/**

@@ -1,6 +1,7 @@
 import React, { Component, Fragment, useEffect } from 'react';
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import he from 'he';
+const { hooks } = WPRecipeMakerAdmin['wp-recipe-maker/dist/shared'];
 
 import '../../../../../css/admin/modal/recipe/fields/instructions.scss';
 
@@ -116,6 +117,7 @@ export default class RecipeInstructions extends Component {
                 ingredients: [],
             }
         }
+        newField = hooks.applyFilters( 'modalRecipeInstructionDefaults', newField, type );
 
         this.props.onRecipeChange((recipe) => {
             const instructions = recipe && recipe.instructions_flat ? recipe.instructions_flat : [];
@@ -232,7 +234,11 @@ export default class RecipeInstructions extends Component {
                             }
                             const splitUnit = ingredient.unit || '';
                             const splitName = ingredient.name || '';
-                            const splitString = splitAmount ? `  └ ${splitAmount} ${splitUnit} ${splitName}`.trim() : `  └ ${percentage}% ${splitName}`.trim();
+                            const splitString = splitAmount ? `  └ ${ Helpers.joinAmountUnitAndName(
+                                [ splitAmount, splitUnit ].filter( Boolean ).join( ' ' ),
+                                splitName,
+                                Helpers.getIngredientConnectorData( ingredient )
+                            ) }`.trim() : `  └ ${percentage}% ${splitName}`.trim();
                             unusedIngredients.push( splitString );
                         }
                     }
@@ -347,6 +353,7 @@ export default class RecipeInstructions extends Component {
 
                                                             newFields[instructionIndex].image = image;
                                                             newFields[instructionIndex].image_url = url;
+                                                            newFields[instructionIndex] = hooks.applyFilters( 'modalRecipeInstructionImageChange', newFields[instructionIndex], image, url );
 
                                                             return {
                                                                 instructions_flat: newFields,
@@ -355,6 +362,28 @@ export default class RecipeInstructions extends Component {
                                                             historyMode: 'immediate',
                                                             historyBoundary: true,
                                                             historyKey: `instructions:${ field.uid }:image`,
+                                                        });
+                                                    }}
+                                                    onChangeField={ ( key, value, changeOptions = {} ) => {
+                                                        this.props.onRecipeChange((recipe) => {
+                                                            const instructions = recipe && recipe.instructions_flat ? recipe.instructions_flat : [];
+                                                            const findIndex = instructions.findIndex( ( i ) => field.uid === i.uid );
+                                                            const instructionIndex = 0 <= findIndex ? findIndex : index;
+
+                                                            if ( ! instructions[ instructionIndex ] ) {
+                                                                return {};
+                                                            }
+
+                                                            let newFields = JSON.parse( JSON.stringify( instructions ) );
+                                                            newFields[instructionIndex][key] = value;
+
+                                                            return {
+                                                                instructions_flat: newFields,
+                                                            };
+                                                        }, {
+                                                            historyMode: changeOptions.historyMode ? changeOptions.historyMode : 'debounced',
+                                                            historyBoundary: !! changeOptions.historyBoundary,
+                                                            historyKey: `instructions:${ field.uid }:${ key }`,
                                                         });
                                                     }}
                                                     onDelete={() => {

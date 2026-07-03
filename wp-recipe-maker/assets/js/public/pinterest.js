@@ -1,16 +1,14 @@
 window.WPRecipeMaker = typeof window.WPRecipeMaker === "undefined" ? {} : window.WPRecipeMaker;
 
-window.WPRecipeMaker.pinterest = {
-	init() {
-		document.addEventListener( 'click', function(e) {
-			for ( var target = e.target; target && target != this; target = target.parentNode ) {
-				if ( target.matches( '.wprm-recipe-pin' ) ) {
+	window.WPRecipeMaker.pinterest = {
+		init() {
+			document.addEventListener( 'click', function(e) {
+				const target = e.target.closest ? e.target.closest( '.wprm-recipe-pin' ) : false;
+				if ( target ) {
 					WPRecipeMaker.pinterest.onClick( target, e );
-					break;
 				}
-			}
-        }, false );
-	},
+	        }, false );
+		},
 	onClick( el, e ) {
 		e.preventDefault();
 

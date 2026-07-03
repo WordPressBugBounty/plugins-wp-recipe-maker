@@ -82,7 +82,9 @@ class WPRM_Comment_Rating {
 				// Can be comment ratings both to recipe itself and its parent post.
 				$post_ids = array();
 
-				if ( 'public' === WPRM_Settings::get( 'post_type_structure' ) && WPRM_Settings::get( 'post_type_comments' ) ) {
+				$user_ratings_enabled = WPRM_Addons::is_active( 'premium' ) && WPRM_Settings::get( 'features_user_ratings' );
+				$include_recipe_post_ratings = WPRM_Settings::get( 'post_type_comments' ) || $user_ratings_enabled;
+				if ( 'public' === WPRM_Settings::get( 'post_type_structure' ) && $include_recipe_post_ratings ) {
 					$post_ids[] = $recipe_id;
 				}
 

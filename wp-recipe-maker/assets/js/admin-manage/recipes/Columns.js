@@ -38,6 +38,14 @@ const getFormattedTime = ( timeMins, showZero = false ) => {
     return formatted.trim();
 }
 
+const getTextWithoutHtml = ( value ) => {
+    if ( null === value || 'undefined' === typeof value ) {
+        return '';
+    }
+
+    return `${ value }`.replace( /(<([^>]+)>)/ig, '' ).trim();
+}
+
 const getImageSizeStatus = ( dimensions ) => {
     if ( ! dimensions || !dimensions.width || !dimensions.height ) {
         return {
@@ -902,11 +910,11 @@ export default {
                 Cell: row => (
                     <div>
                         {
-                            row.value
+                            Array.isArray( row.value )
                             ?
                             row.value.map( (equipment, equipment_index) => {
-                                if ( equipment.name ) {
-                                    const name = equipment.name.replace( /(<([^>]+)>)/ig, '' ).trim();
+                                if ( equipment && equipment.name ) {
+                                    const name = getTextWithoutHtml( equipment.name );
 
                                     if ( name ) {
                                         return (
@@ -931,16 +939,25 @@ export default {
                 Cell: row => (
                     <div>
                         {
-                            row.value
+                            Array.isArray( row.value )
                             ?
                             row.value.map( (group, index) => {
-                                group.name = group.name.replace( /(<([^>]+)>)/ig, '' ).trim();
+                                if ( ! group ) {
+                                    return null;
+                                }
+
+                                const groupName = getTextWithoutHtml( group.name );
+                                const ingredients = Array.isArray( group.ingredients ) ? group.ingredients : [];
 
                                 return (
                                     <div key={index}>
-                                        { group.name && <div style={{ fontWeight: 'bold' }}>{ he.decode( group.name ) }</div> }
+                                        { groupName && <div style={{ fontWeight: 'bold' }}>{ he.decode( groupName ) }</div> }
                                         {
-                                            group.ingredients.map( (ingredient, ingredient_index) => {
+                                            ingredients.map( (ingredient, ingredient_index) => {
+                                                if ( ! ingredient ) {
+                                                    return null;
+                                                }
+
                                                 let fields = [];
                                                 
                                                 if ( ingredient.amount ) { fields.push( ingredient.amount ); }
@@ -949,7 +966,7 @@ export default {
                                                 if ( ingredient.notes ) { fields.push( ingredient.notes ); }
                                                 
                                                 if ( fields.length ) {
-                                                    const ingredientString = fields.join( ' ' ).replace( /(<([^>]+)>)/ig, '' ).trim();
+                                                    const ingredientString = getTextWithoutHtml( fields.join( ' ' ) );
 
                                                     if ( ingredientString ) {
                                                         return (
@@ -980,7 +997,7 @@ export default {
                         return (
                             <div>
                                 { row.value.map( (line, index) => {
-                                    line = line.replace( /(<([^>]+)>)/ig, '' ).trim();
+                                    line = getTextWithoutHtml( line );
 
                                     if ( line ) {
                                         return (
@@ -1009,17 +1026,26 @@ export default {
                 Cell: row => (
                     <div>
                         {
-                            row.value
+                            Array.isArray( row.value )
                             ?
                             row.value.map( (group, index) => {
-                                group.name = group.name.replace( /(<([^>]+)>)/ig, '' ).trim();
+                                if ( ! group ) {
+                                    return null;
+                                }
+
+                                const groupName = getTextWithoutHtml( group.name );
+                                const instructions = Array.isArray( group.instructions ) ? group.instructions : [];
 
                                 return (
                                     <div key={index}>
-                                        { group.name && <div style={{ fontWeight: 'bold' }}>{ he.decode( group.name ) }</div> }
+                                        { groupName && <div style={{ fontWeight: 'bold' }}>{ he.decode( groupName ) }</div> }
                                         {
-                                            group.instructions.map( (instruction, instruction_index) => {
-                                                const instructionText = instruction.text.replace( /(<([^>]+)>)/ig, '' ).trim();
+                                            instructions.map( (instruction, instruction_index) => {
+                                                if ( ! instruction ) {
+                                                    return null;
+                                                }
+
+                                                const instructionText = getTextWithoutHtml( Object.prototype.hasOwnProperty.call( instruction, 'text' ) ? instruction.text : instruction );
 
                                                 if ( instructionText ) {
                                                     return (

@@ -127,6 +127,18 @@ export default class FieldListItem extends Component {
 
     render() {
         const { item, post } = this.props;
+        const canEditRecipe = 'roundup' === item.type && item.data && 'internal' === item.data.type && 0 < parseInt( item.data.id ) && ! this.state.postLoadFailed && 'function' === typeof this.props.onEditRecipe;
+        let typeLabel = __wprm( 'Text' );
+
+        if ( 'roundup' === item.type ) {
+            if ( 'internal' === item.data.type ) {
+                typeLabel = __wprm( 'Recipe' );
+            } else if ( 'post' === item.data.type ) {
+                typeLabel = __wprm( 'Post' );
+            } else if ( 'external' === item.data.type ) {
+                typeLabel = __wprm( 'External' );
+            }
+        }
 
         // Get image to display.
         let image_url = item.data.image_url;
@@ -169,23 +181,39 @@ export default class FieldListItem extends Component {
                         >
                             { handle(provided) }
                             <div className="wprm-admin-modal-field-item-container">
+                                <div className="wprm-admin-modal-field-item-value wprm-admin-modal-field-item-number"></div>
+                                <div className="wprm-admin-modal-field-item-value wprm-admin-modal-field-item-type">
+                                    <span>{ typeLabel }</span>
+                                    {
+                                        canEditRecipe
+                                        &&
+                                        <Icon
+                                            type="pencil"
+                                            className="wprm-admin-modal-field-item-edit-recipe"
+                                            title={ __wprm( 'Edit Recipe' ) }
+                                            onClick={ this.props.onEditRecipe }
+                                        />
+                                    }
+                                </div>
                                 {
                                     'text' === item.type
                                     &&
-                                    <FieldRichText
-                                        className="wprm-admin-modal-field-item-text"
-                                        toolbar="list"
-                                        value={ item.data.text }
-                                        placeholder=""
-                                        onChange={ (value) => this.props.onChange( { text: value } ) }
-                                        key={ this.props.hasOwnProperty( 'externalUpdate' ) ? this.props.externalUpdate : null }
-                                    />
+                                    <Fragment>
+                                        <div className="wprm-admin-modal-field-item-value wprm-admin-modal-field-item-image"></div>
+                                        <FieldRichText
+                                            className="wprm-admin-modal-field-item-text"
+                                            toolbar="list"
+                                            value={ item.data.text }
+                                            placeholder=""
+                                            onChange={ (value) => this.props.onChange( { text: value } ) }
+                                            key={ this.props.hasOwnProperty( 'externalUpdate' ) ? this.props.externalUpdate : null }
+                                        />
+                                    </Fragment>
                                 }
                                 {
                                     'roundup' === item.type
                                     &&
                                     <Fragment>
-                                        <div className="wprm-admin-modal-field-item-value wprm-admin-modal-field-item-number"></div>
                                         <div className="wprm-admin-modal-field-item-value wprm-admin-modal-field-item-image">
                                             {
                                                 image_url
@@ -222,7 +250,7 @@ export default class FieldListItem extends Component {
                                     ! this.state.loading
                                     &&
                                     <div className="wprm-admin-modal-field-item-after-container-icons">
-                                        <div className="wprm-admin-modal-field-item-after-container-icon">
+                                        <div className="wprm-admin-modal-field-item-after-container-icon wprm-admin-modal-field-item-after-container-edit-icons">
                                             {
                                                 'roundup' === item.type
                                                 &&

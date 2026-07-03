@@ -11,6 +11,10 @@
         opacity: 0.1;
         cursor: default;
     }
+
+    &.wprm-admin-icon-required {
+        opacity: 0.35;
+    }
 }
 
 .wprm-admin-icon-help {

@@ -2,6 +2,7 @@ import React, { Component, Fragment } from 'react';
 import { Draggable } from 'react-beautiful-dnd';
 import { isKeyHotkey } from 'is-hotkey';
 import SVG from 'react-inlinesvg';
+const { hooks } = WPRecipeMakerAdmin['wp-recipe-maker/dist/shared'];
 
 const isTabHotkey = isKeyHotkey('tab');
 const isValidHexColor = ( value ) => /^#[0-9a-f]{3,6}$/i.test( value );
@@ -473,6 +474,7 @@ export default class FieldInstruction extends Component {
             // Need to re-render when instruction media changes so the preview updates immediately.
             || this.props.image !== nextProps.image
             || this.props.image_url !== nextProps.image_url
+            || hooks.applyFilters( 'modalRecipeInstructionShouldUpdate', false, this.props, nextProps )
         ) {
             return true;
         }

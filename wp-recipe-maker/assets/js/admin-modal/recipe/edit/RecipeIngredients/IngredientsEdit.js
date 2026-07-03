@@ -256,6 +256,7 @@ export default class IngredientsEdit extends Component {
                                             onAddGroup={() => {
                                                 this.addField('group', index);
                                             }}
+                                            openSecondaryModal={ this.props.openSecondaryModal }
                                                 onSplit={() => {
                                                     this.props.openSecondaryModal('split-ingredient', {
                                                         ingredient: field,

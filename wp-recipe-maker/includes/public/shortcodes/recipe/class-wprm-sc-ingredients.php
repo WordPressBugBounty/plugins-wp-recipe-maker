@@ -1304,6 +1304,9 @@ class WPRM_SC_Ingredients extends WPRM_Template_Shortcode {
 		}
 
 		$ingredients = $recipe->ingredients();
+		$recipe_unit_system = intval( $recipe->unit_system() );
+		$replace_fraction_symbols = WPRM_Settings::get( 'automatic_amount_fraction_symbols' );
+
 		foreach ( $ingredients as $ingredient_group ) {
 			$output .= '<div class="wprm-recipe-ingredient-group">';
 
@@ -1367,7 +1370,7 @@ class WPRM_SC_Ingredients extends WPRM_Template_Shortcode {
 					}
 
 					// Maybe replace fractions in amount.
-					if ( WPRM_Settings::get( 'automatic_amount_fraction_symbols' ) ) {
+					if ( $replace_fraction_symbols ) {
 						$ingredient['amount'] = WPRM_Recipe_Parser::replace_any_fractions_with_symbol( $ingredient['amount'] );
 					}
 
@@ -1375,14 +1378,16 @@ class WPRM_SC_Ingredients extends WPRM_Template_Shortcode {
 					$image = apply_filters( 'wprm_recipe_ingredients_shortcode_image', '', $atts, $ingredient );
 					
 					// Amount & Unit.
-					$amount_unit = '';
+					$amount_unit_parts = array();
 
 					if ( $ingredient['amount'] || ( isset( $ingredient['converted'] ) && isset( $ingredient['converted'][2] ) && $ingredient['converted'][2]['amount'] ) ) {
-						$amount_unit .= '<span class="wprm-recipe-ingredient-amount">' . $ingredient['amount'] . '</span>&#32;';
+						$amount_unit_parts[] = '<span class="wprm-recipe-ingredient-amount">' . $ingredient['amount'] . '</span>';
 					}
 					if ( $ingredient['unit'] || ( isset( $ingredient['converted'] ) && isset( $ingredient['converted'][2] ) && $ingredient['converted'][2]['unit'] ) ) {
-						$amount_unit .= '<span class="wprm-recipe-ingredient-unit">' . $ingredient['unit'] . '</span>&#32;';
+						$amount_unit_parts[] = '<span class="wprm-recipe-ingredient-unit">' . $ingredient['unit'] . '</span>';
 					}
+
+					$amount_unit = implode( '&#32;', $amount_unit_parts );
 
 					// Allow filtering for second unit system.
 					$amount_unit = apply_filters( 'wprm_recipe_ingredients_shortcode_amount_unit', $amount_unit, $atts, $ingredient );
@@ -1415,9 +1420,9 @@ class WPRM_SC_Ingredients extends WPRM_Template_Shortcode {
 						// Ingredient link.
 						$ingredient_display_name = $ingredient['name'];
 						if ( class_exists( 'WPRMPUC_Manager' ) && method_exists( 'WPRMPUC_Manager', 'get_ingredient_name_for_system' ) && $recipe ) {
-							$ingredient_display_name = WPRMPUC_Manager::get_ingredient_name_for_system( $ingredient, intval( $recipe->unit_system() ), isset( $ingredient['amount'] ) ? $ingredient['amount'] : false );
+							$ingredient_display_name = WPRMPUC_Manager::get_ingredient_name_for_system( $ingredient, $recipe_unit_system, isset( $ingredient['amount'] ) ? $ingredient['amount'] : false );
 						}
-						$name = apply_filters( 'wprm_recipe_ingredients_shortcode_link', do_shortcode( $ingredient_display_name ), $ingredient, $recipe );
+						$name = apply_filters( 'wprm_recipe_ingredients_shortcode_link', false === strpos( $ingredient_display_name, '[' ) ? $ingredient_display_name : do_shortcode( $ingredient_display_name ), $ingredient, $recipe );
 					}
 
 					if ( $name || ! in_array( $atts['ingredients_style'], array( 'regular', 'grouped' ) ) ) {
@@ -1455,8 +1460,7 @@ class WPRM_SC_Ingredients extends WPRM_Template_Shortcode {
 						$ingredient_output .= '&#32;';
 						$ingredient_output .= $amount_unit;
 					} else {
-						$ingredient_output .= $amount_unit;
-						$ingredient_output .= $names_notes;
+						$ingredient_output .= WPRM_Ingredient_Display::join_amount_unit_and_name_html( $amount_unit, $names_notes, $ingredient, $recipe_unit_system );
 					}
 
 					// Have image separate when using the grouped style.

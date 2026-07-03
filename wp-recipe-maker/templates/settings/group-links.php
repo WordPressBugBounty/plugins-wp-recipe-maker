@@ -209,5 +209,26 @@ $links = array(
 				),
 			),
 		),
+		array(
+			'name' => __( 'Instruction Image Links', 'wp-recipe-maker' ),
+			'description' => __( 'These settings apply to custom links set for individual instruction images.', 'wp-recipe-maker' ),
+			'required' => 'premium',
+			'settings' => array(
+				array(
+					'id' => 'instruction_image_links_open_in_new_tab',
+					'name' => __( 'Open in New Tab', 'wp-recipe-maker' ),
+					'description' => __( 'Open custom instruction image links in a new tab.', 'wp-recipe-maker' ),
+					'type' => 'toggle',
+					'default' => false,
+				),
+				array(
+					'id' => 'instruction_image_links_nofollow_external',
+					'name' => __( 'Use Nofollow for External Links', 'wp-recipe-maker' ),
+					'description' => __( 'Add the nofollow attribute to custom instruction image links pointing to an external URL.', 'wp-recipe-maker' ),
+					'type' => 'toggle',
+					'default' => true,
+				),
+			),
+		),
 	),
 );

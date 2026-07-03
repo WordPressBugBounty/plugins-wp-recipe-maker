@@ -8,6 +8,7 @@ import Icon from '../general/Icon';
 import Loader from 'Shared/Loader';
 import Tooltip from 'Shared/Tooltip';
 import TemplateProperties from './TemplateProperties';
+import TemplateAI from './TemplateAI';
 
 const Menu = (props) => {
     const isCodeEditMode = 'html' === props.mode || 'css' === props.mode;
@@ -154,6 +155,12 @@ const Menu = (props) => {
                                 onClick={ (e) => { props.onChangeMode( 'css' ) } }
                             ><Icon type='css' /> Edit CSS</a>
                         </Tooltip>
+                        <Tooltip content={props.sidebarCollapsed ? 'AI Assistant' : ''} placement="right">
+                            <a
+                                className={ 'ai-assistant' === props.mode ? "wprm-template-menu-group active" : "wprm-template-menu-group" }
+                                onClick={ (e) => { props.onChangeMode( 'ai-assistant' ) } }
+                            ><Icon type='ai-assistant' /> AI Assistant</a>
+                        </Tooltip>
                     </Fragment>
                 }
             </div>
@@ -165,6 +172,23 @@ const Menu = (props) => {
                     onChangeTemplateProperty={props.onChangeTemplateProperty}
                     fonts={props.fonts}
                     onChangeFonts={props.onChangeFonts}
+                />
+                :
+                null
+            }
+            {
+                'ai-assistant' === props.mode && props.editing && props.template
+                ?
+                <TemplateAI
+                    template={ props.template }
+                    aiTemplateEditor={ props.aiTemplateEditor }
+                    proposal={ props.aiTemplateProposal }
+                    comparisonSide={ props.aiTemplateComparisonSide }
+                    onStartTemplateAIRequest={ props.onStartTemplateAIRequest }
+                    onSetTemplateAIProposal={ props.onSetTemplateAIProposal }
+                    onChangeTemplateAIComparisonSide={ props.onChangeTemplateAIComparisonSide }
+                    onDiscardTemplateAIProposal={ props.onDiscardTemplateAIProposal }
+                    onApplyTemplateAIResult={ props.onApplyTemplateAIResult }
                 />
                 :
                 null

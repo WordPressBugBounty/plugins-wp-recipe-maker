@@ -64,6 +64,7 @@ class WPRM_Analytics {
 			'whatsapp-share-button' => __( 'WhatsApp Share', 'wp-recipe-maker' ),
 			'email-share-button' => __( 'Email Share', 'wp-recipe-maker' ),
 
+			'favorite-button' => __( 'Favorite Button', 'wp-recipe-maker' ),
 			'add-to-collections-button' => __( 'Add to Recipe Collections', 'wp-recipe-maker' ),
 			'add-to-shopping-list-button' => __( 'Add to Quick Access Shopping List', 'wp-recipe-maker' ),
 			'product-add-to-cart' => __( 'Product Add to Cart', 'wp-recipe-maker' ),
@@ -163,6 +164,10 @@ class WPRM_Analytics {
 					break;
 				case 'generate-shopping-list':
 					$sanitized_meta['collection'] = isset( $meta['collection'] ) ? sanitize_text_field( $meta['collection'] ) : 'unknown';
+					break;
+				case 'favorite-button':
+					$action = isset( $meta['action'] ) ? sanitize_key( $meta['action'] ) : 'unknown';
+					$sanitized_meta['action'] = in_array( $action, array( 'add', 'remove' ), true ) ? $action : 'unknown';
 					break;
 				case 'product-add-to-cart':
 					$item_type = isset( $meta['item_type'] ) ? sanitize_key( $meta['item_type'] ) : 'unknown';
@@ -362,6 +367,19 @@ class WPRM_Analytics {
 	 * @since    7.4.0
 	 */
 	public static function get_dashboard_chart_data() {
+		return self::get_chart_data( 8, 5 );
+	}
+
+	/**
+	 * Get aggregated analytics chart data for a period of days.
+	 *
+	 * @since    10.7.0
+	 * @param    int $days Number of days to get the data for, including today.
+	 * @param    int $top_recipes_limit Maximum number of top recipes to return.
+	 */
+	public static function get_chart_data( $days = 8, $top_recipes_limit = 5 ) {
+		$days = max( 1, intval( $days ) );
+
 		$total_actions = 0;
 		$per_day = array();
 		$per_type = array();
@@ -369,54 +387,55 @@ class WPRM_Analytics {
 
 		$date_format = 'M j';
 
-		for ( $i = 7; $i >= 0; $i-- ) {
+		// Initialize all days in the period so days without actions show up as 0.
+		$per_day_lookup = array();
+		for ( $i = $days - 1; $i >= 0; $i-- ) {
 			$datetime = new DateTime( $i . ' days ago' );
 
-			$date_display = $datetime->format( $date_format );
-			$date_database = $datetime->format( 'Y-m-d' );
-
-			$per_day_date = array(
-				'date' => $date_display,
+			$per_day_lookup[ $datetime->format( 'Y-m-d' ) ] = count( $per_day );
+			$per_day[] = array(
+				'date' => $datetime->format( $date_format ),
 				'total' => 0,
 			);
+		}
 
-			$actions = WPRM_Analytics_Database::get_aggregated_actions_for( $date_database );
+		$actions = WPRM_Analytics_Database::get_aggregated_actions_between( ( $days - 1 ) . ' days ago', 'now' );
+		$actions = is_array( $actions ) ? $actions : array();
 
-			foreach ( $actions as $action ) {
-				$total = intval( $action->total );
-				$unique = intval( $action->total_unique );
+		foreach ( $actions as $action ) {
+			$total = intval( $action->total );
+			$unique = intval( $action->total_unique );
 
-				// Per day.
-				$per_day_date[ 'total' ] += $total;
-				$total_actions += $total;
+			// Per day.
+			if ( isset( $per_day_lookup[ $action->day ] ) ) {
+				$per_day[ $per_day_lookup[ $action->day ] ]['total'] += $total;
+			}
+			$total_actions += $total;
 
-				// Per action type.
-				if ( $action->type ) {
-					if ( ! isset( $per_type[ $action->type ] ) ) {
-						$per_type[ $action->type ] = array(
-							'total' => 0,
-							'unique' => 0,
-						);
-					}
-					$per_type[ $action->type ]['total'] += $total;
-					$per_type[ $action->type ]['unique'] += $unique;
+			// Per action type.
+			if ( $action->type ) {
+				if ( ! isset( $per_type[ $action->type ] ) ) {
+					$per_type[ $action->type ] = array(
+						'total' => 0,
+						'unique' => 0,
+					);
 				}
-
-				// Per recipe.
-				$recipe_id = intval( $action->recipe_id );
-				if ( $recipe_id ) {
-					if ( ! isset( $per_recipe[ '' . $recipe_id ] ) ) {
-						$per_recipe[ '' . $recipe_id ] = array(
-							'total' => 0,
-							'unique' => 0,
-						);
-					}
-					$per_recipe[ '' . $recipe_id ]['total'] += $total;
-					$per_recipe[ '' . $recipe_id ]['unique'] += $unique;
-				}
+				$per_type[ $action->type ]['total'] += $total;
+				$per_type[ $action->type ]['unique'] += $unique;
 			}
 
-			$per_day[] = $per_day_date;
+			// Per recipe.
+			$recipe_id = intval( $action->recipe_id );
+			if ( $recipe_id ) {
+				if ( ! isset( $per_recipe[ '' . $recipe_id ] ) ) {
+					$per_recipe[ '' . $recipe_id ] = array(
+						'total' => 0,
+						'unique' => 0,
+					);
+				}
+				$per_recipe[ '' . $recipe_id ]['total'] += $total;
+				$per_recipe[ '' . $recipe_id ]['unique'] += $unique;
+			}
 		}
 
 		// Sort by total interactions.
@@ -466,8 +485,8 @@ class WPRM_Analytics {
 				);
 			}
 
-			// Stop after 5 recipes.
-			if ( 5 === count( $top_recipes ) ) {
+			// Stop when reaching the limit.
+			if ( $top_recipes_limit <= count( $top_recipes ) ) {
 				break;
 			}
 		}

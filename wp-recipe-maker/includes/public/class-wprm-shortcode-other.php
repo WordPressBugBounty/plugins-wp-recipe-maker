@@ -317,7 +317,7 @@ class WPRM_Shortcode_Other {
 							}
 
 							// Split-specific ingredient name singular/plural.
-							if ( isset( $found_ingredient['id'] ) && $found_ingredient['id'] ) {
+							if ( isset( $found_ingredient['id'] ) && $found_ingredient['id'] && WPRM_Ingredient_Display::connector_allows_ingredient_plural( $found_ingredient, intval( $recipe->unit_system() ) ) ) {
 								$ingredient_term = get_term( intval( $found_ingredient['id'] ), 'wprm_ingredient' );
 								$singular_name = ( $ingredient_term && ! is_wp_error( $ingredient_term ) ) ? $ingredient_term->name : $ingredient_name;
 								$plural_name = get_term_meta( intval( $found_ingredient['id'] ), 'wprm_ingredient_plural', true );
@@ -342,13 +342,14 @@ class WPRM_Shortcode_Other {
 
 						$parts = array();
 
-					if ( $split_amount ) { $parts[] = $split_amount; };
-					if ( $unit ) { $parts[] = $unit; };
+						if ( $split_amount ) { $parts[] = $split_amount; };
+						if ( $unit ) { $parts[] = $unit; };
+						$amount_unit = implode( ' ', $parts );
 
-					// Optionally add second unit system.
-					$show_both_units = 'both' === $atts['unit_conversion'];
-					if ( $show_both_units ) {
-						$ingredient_for_output = $found_ingredient;
+						// Optionally add second unit system.
+						$show_both_units = 'both' === $atts['unit_conversion'];
+						if ( $show_both_units ) {
+							$ingredient_for_output = $found_ingredient;
 
 							if ( $is_split && null !== $split_percentage ) {
 								$ingredient_for_output['amount'] = $split_amount;
@@ -376,63 +377,56 @@ class WPRM_Shortcode_Other {
 											}
 										}
 									}
+								}
 							}
-						}
 
-						$amount_unit = apply_filters( 'wprm_recipe_ingredients_shortcode_amount_unit', implode( ' ', $parts ), $atts, $ingredient_for_output );
-					}
+							$amount_unit = apply_filters( 'wprm_recipe_ingredients_shortcode_amount_unit', implode( ' ', $parts ), $atts, $ingredient_for_output );
+						}
 
 						// Ingredient name and maybe notes.
 						$name_with_notes = '';
 						if ( $ingredient_name ) { $name_with_notes = $ingredient_name; };
 
-					if ( '' !== $atts['notes_separator'] ) {
-						if ( $found_ingredient['notes'] ) {
-							switch ( $atts['notes_separator'] ) {
-								case 'comma':
-									$name_with_notes .= ', ' . $found_ingredient['notes'];
-									break;
-								case 'dash':
-									$name_with_notes .= ' - ' . $found_ingredient['notes'];
-									break;
-								case 'parentheses':
-									$name_with_notes .= ' (' . $found_ingredient['notes'] . ')';
-									break;
-								default:
-									$name_with_notes .= ' ' . $found_ingredient['notes'];
+						if ( '' !== $atts['notes_separator'] ) {
+							if ( $found_ingredient['notes'] ) {
+								switch ( $atts['notes_separator'] ) {
+									case 'comma':
+										$name_with_notes .= ', ' . $found_ingredient['notes'];
+										break;
+									case 'dash':
+										$name_with_notes .= ' - ' . $found_ingredient['notes'];
+										break;
+									case 'parentheses':
+										$name_with_notes .= ' (' . $found_ingredient['notes'] . ')';
+										break;
+									default:
+										$name_with_notes .= ' ' . $found_ingredient['notes'];
+								}
 							}
 						}
-					}
-					$parts[] = $name_with_notes;
+						$text_to_show = WPRM_Ingredient_Display::join_amount_unit_and_name_html( $amount_unit, $name_with_notes, $found_ingredient, intval( $recipe->unit_system() ) );
 
-					$text_to_show = implode( ' ', $parts );
+						if ( $text_to_show ) {
+							// Use the full UID (including split ID) for the class
+							// Replace colon with dash in class name to avoid CSS selector issues
+							$uid_for_class = $is_split ? str_replace( ':', '-', $uid_str ) : $parent_uid;
 
-					if ( $text_to_show ) {
-						// Use the full UID (including split ID) for the class
-						// Replace colon with dash in class name to avoid CSS selector issues
-						$uid_for_class = $is_split ? str_replace( ':', '-', $uid_str ) : $parent_uid;
+							$classes = array(
+								'wprm-inline-ingredient',
+								'wprm-inline-ingredient-' . $recipe->id() . '-' . $uid_for_class,
+								'wprm-block-text-' . $atts['style'],
+							);
 
-						$classes = array(
-							'wprm-inline-ingredient',
-							'wprm-inline-ingredient-' . $recipe->id() . '-' . $uid_for_class,
-							'wprm-block-text-' . $atts['style'],
-						);
+							// Custom CSS style.
+							$css = '';
 
-						// Custom CSS style.
-						$css = '';
+							if ( $atts['color'] ) {
+								$css = 'color: ' . $atts['color'] . ';';
+							}
+							$style = WPRM_Shortcode_Helper::get_inline_style( $css );
 
-						if ( $atts['color'] ) {
-							$css = 'color: ' . $atts['color'] . ';';
-						}
-						$style = WPRM_Shortcode_Helper::get_inline_style( $css );
-
-						// Needed to show both units?
-						if ( $show_both_units ) {
-							$text_to_show = $amount_unit . ' ' . $ingredient_name;
-						}
-
-						// Keep notes?
-						$data_keep_notes = '';
+							// Keep notes?
+							$data_keep_notes = '';
 
 							if ( '' !== $atts['notes_separator'] ) {
 								$data_keep_notes = ' data-notes-separator="' . esc_attr( $atts['notes_separator'] ) . '"';

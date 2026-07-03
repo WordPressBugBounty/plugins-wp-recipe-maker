@@ -45,6 +45,11 @@ class WPRM_Api_Modal {
 			'methods' => 'POST',
 			'permission_callback' => array( __CLASS__, 'api_required_permissions' ),
 		));
+		register_rest_route( 'wp-recipe-maker/v1', '/modal/ingredient-unit/connector', array(
+			'callback' => array( __CLASS__, 'api_modal_ingredient_unit_connector' ),
+			'methods' => 'POST',
+			'permission_callback' => array( __CLASS__, 'api_required_permissions' ),
+		));
 		register_rest_route( 'wp-recipe-maker/v1', '/modal/categories', array(
 			'callback' => array( __CLASS__, 'api_modal_categories' ),
 			'methods' => 'POST',
@@ -241,6 +246,97 @@ class WPRM_Api_Modal {
 		);
 
 		return rest_ensure_response( $data );
+	}
+
+	/**
+	 * Handle ingredient unit connector call to the REST API.
+	 *
+	 * @since 10.3.0
+	 * @param WP_REST_Request $request Current request.
+	 */
+	public static function api_modal_ingredient_unit_connector( $request ) {
+		// Parameters.
+		$params = $request->get_params();
+
+		$unit = isset( $params['unit'] ) ? sanitize_text_field( wp_strip_all_tags( $params['unit'] ) ) : '';
+		$create = isset( $params['create'] ) ? rest_sanitize_boolean( $params['create'] ) : false;
+
+		if ( ! $unit ) {
+			return rest_ensure_response( array(
+				'term_id' => 0,
+				'found' => false,
+			) );
+		}
+
+		$term_id = $create ? WPRM_Recipe_Sanitizer::get_ingredient_unit_id( $unit ) : self::get_existing_ingredient_unit_id( $unit );
+
+		if ( ! $term_id ) {
+			return rest_ensure_response( array(
+				'term_id' => 0,
+				'found' => false,
+			) );
+		}
+
+		$term = get_term( $term_id, 'wprm_ingredient_unit' );
+
+		if ( ! $term || is_wp_error( $term ) ) {
+			return rest_ensure_response( array(
+				'term_id' => 0,
+				'found' => false,
+			) );
+		}
+
+		$connector_data = WPRM_Ingredient_Display::get_unit_connector_data( $term_id );
+
+		return rest_ensure_response( array(
+			'term_id' => intval( $term_id ),
+			'found' => true,
+			'name' => $term->name,
+			'connector' => $connector_data['connector'],
+			'connector_spacing' => $connector_data['connector_spacing'],
+			'connector_pluralizes_ingredient' => $connector_data['connector_pluralizes_ingredient'],
+		) );
+	}
+
+	/**
+	 * Get existing ingredient unit ID by unit text.
+	 *
+	 * @since 10.3.0
+	 * @param string $unit Unit text.
+	 */
+	private static function get_existing_ingredient_unit_id( $unit ) {
+		$unit = WPRM_Recipe_Sanitizer::sanitize_html( $unit );
+
+		if ( ! $unit ) {
+			return 0;
+		}
+
+		$args = array(
+			'hide_empty' => false,
+			'meta_query' => array(
+				array(
+					'key' => 'wprm_ingredient_unit_plural',
+					'value' => $unit,
+					'compare' => '=',
+				),
+			),
+			'taxonomy' => 'wprm_ingredient_unit',
+			'fields' => 'ids',
+			'number' => 1,
+		);
+		$terms = get_terms( $args );
+
+		if ( ! is_wp_error( $terms ) && isset( $terms[0] ) && $terms[0] ) {
+			return intval( $terms[0] );
+		}
+
+		$term = term_exists( $unit, 'wprm_ingredient_unit' ); // @codingStandardsIgnoreLine
+
+		if ( is_array( $term ) && isset( $term['term_id'] ) ) {
+			return intval( $term['term_id'] );
+		}
+
+		return is_numeric( $term ) ? intval( $term ) : 0;
 	}
 
 	/**

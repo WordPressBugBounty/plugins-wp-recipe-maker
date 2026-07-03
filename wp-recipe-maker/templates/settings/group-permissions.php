@@ -137,6 +137,15 @@ $permissions = array(
 					},
 				),
 				array(
+					'id' => 'features_ai_assistant_access',
+					'name' => __( 'Access to AI Assistant Page', 'wp-recipe-maker' ),
+					'type' => 'text',
+					'default' => 'manage_options',
+					'sanitize' => function( $value ) {
+						return preg_replace( '/[,\s]/', '', $value );
+					},
+				),
+				array(
 					'id' => 'features_tools_access',
 					'name' => __( 'Access to Tools Page', 'wp-recipe-maker' ),
 					'type' => 'text',

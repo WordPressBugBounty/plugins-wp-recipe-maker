@@ -188,6 +188,10 @@ export default class Block extends Component {
                     value = value.replace(/&quot;/gm, '"');
                     value = value.replace(/&#93;/gm, ']');
 
+                    if ( options.value_aliases && options.value_aliases.hasOwnProperty( value ) ) {
+                        value = options.value_aliases[ value ];
+                    }
+
                     properties[id] = {
                         ...options,
                         id,

@@ -5,7 +5,7 @@ import Button from 'Shared/Button';
 import { __wprm } from 'Shared/Translations';
  
 const FieldImage = (props) => {
-    const hasImage = props.id > 0;
+    const hasImage = props.id > 0 || !! props.url;
 
     const selectImage = (e) => {
         e.preventDefault();

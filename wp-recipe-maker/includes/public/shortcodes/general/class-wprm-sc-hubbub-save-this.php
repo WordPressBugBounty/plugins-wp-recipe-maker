@@ -35,15 +35,25 @@ class WPRM_SC_Hubbub_Save_This extends WPRM_Template_Shortcode {
 				'type' => 'text',
 			),
 			'consent' => array(
-				'default' => '0',
-				'type' => 'toggle',
+				'default' => 'default',
+				'type' => 'dropdown',
+				'options' => array(
+					'default' => 'Use Hubbub Setting',
+					'no' => 'No Consent Checkbox',
+					'yes' => 'Consent Required to Submit',
+					'mailing-list' => 'Consent for Mailing List Only',
+				),
+				'value_aliases' => array(
+					'0' => 'no',
+					'1' => 'yes',
+				),
 			),
 			'consent_text' => array(
 				'default' => '',
 				'type' => 'text',
 				'dependency' => array(
 					'id' => 'consent',
-					'value' => '1',
+					'value' => array( 'yes', 'mailing-list' ),
 				),
 			),
 			'button_text' => array(
@@ -93,11 +103,12 @@ class WPRM_SC_Hubbub_Save_This extends WPRM_Template_Shortcode {
 		if ( $atts['heading'] ) { $hubbub_atts['heading'] = $atts['heading']; }
 		if ( $atts['message'] ) { $hubbub_atts['message'] = $atts['message']; }
 
-		if ( (bool) $atts['consent'] ) {
-			$hubbub_atts['consent'] = 'yes';
+		$consent = self::normalize_consent( $atts['consent'] );
+		if ( 'default' !== $consent ) {
+			$hubbub_atts['consent'] = $consent;
+		}
+		if ( in_array( $consent, array( 'yes', 'mailing-list' ), true ) ) {
 			if ( $atts['consent_text'] ) { $hubbub_atts['consent_text'] = $atts['consent_text']; }
-		} else {
-			$hubbub_atts['consent'] = 'no';
 		}
 
 		if ( $atts['button_text'] ) { $hubbub_atts['button_text'] = $atts['button_text']; }
@@ -136,6 +147,26 @@ class WPRM_SC_Hubbub_Save_This extends WPRM_Template_Shortcode {
 		}
 		
 		return apply_filters( parent::get_hook(), $output, $atts );
+	}
+
+	/**
+	 * Normalize WPRM and Hubbub consent values.
+	 *
+	 * @since	10.5.0
+	 * @param	mixed $consent Consent attribute.
+	 */
+	private static function normalize_consent( $consent ) {
+		if ( in_array( $consent, array( '1', 1, true, 'yes' ), true ) ) {
+			return 'yes';
+		}
+		if ( in_array( $consent, array( '0', 0, false, 'no' ), true ) ) {
+			return 'no';
+		}
+		if ( 'mailing-list' === $consent ) {
+			return 'mailing-list';
+		}
+
+		return 'default';
 	}
 }
 

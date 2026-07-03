@@ -336,8 +336,11 @@ class WPRM_Template_Helper {
 			$img = str_ireplace( '<img ', '<img data-pin-nopin="true" ', $img );
 		}
 
-		// Clickable images (but not in Gutenberg Preview).
-		if ( WPRM_Settings::get( 'instruction_image_clickable' ) && ! WPRM_Context::is_gutenberg_preview() ) {
+		// Allow extensions to customize instruction image output.
+		$custom_link_image = apply_filters( 'wprm_recipe_instruction_image_custom_link', false, $img, $instruction );
+		if ( false !== $custom_link_image ) {
+			$img = $custom_link_image;
+		} elseif ( WPRM_Settings::get( 'instruction_image_clickable' ) && ! WPRM_Context::is_gutenberg_preview() ) {
 			$settings_size = WPRM_Settings::get( 'clickable_image_size' );
 
 			preg_match( '/^(\d+)x(\d+)(\!?)$/i', $settings_size, $match );

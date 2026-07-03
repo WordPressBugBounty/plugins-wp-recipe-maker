@@ -14,6 +14,47 @@ import '../../../css/admin/manage/taxonomies.scss';
 
 export default {
     getColumns( datatable ) {
+        const connectorSpacingOptions = [
+            { value: 'space-both', label: __wprm( 'Space before and after' ) },
+            { value: 'space-before', label: __wprm( 'Space before only' ) },
+            { value: 'space-after', label: __wprm( 'Space after only' ) },
+            { value: 'no-space', label: __wprm( 'No spaces' ) },
+        ];
+        const connectorScopeWarning = __wprm( 'This connector is saved for the ingredient unit. Setting or changing it will affect all recipes using this unit.' );
+        const connectorSpacingLabel = ( value ) => {
+            const option = connectorSpacingOptions.find( ( option ) => option.value === value );
+            return option ? option.label : connectorSpacingOptions[0].label;
+        };
+        const openConnectorModal = ( row ) => {
+            WPRM_Modal.open( 'input-fields', {
+                header: __wprm( 'Change Connector' ),
+                warning: connectorScopeWarning,
+                fields: [
+                    {
+                        label: __wprm( 'Connector' ),
+                        value: row.original.connector || '',
+                    },
+                    {
+                        label: __wprm( 'Connector Spacing' ),
+                        type: 'dropdown',
+                        options: connectorSpacingOptions,
+                        value: row.original.connector_spacing || 'space-both',
+                    },
+                    {
+                        label: __wprm( 'Pluralize ingredient after connector' ),
+                        type: 'checkbox',
+                        value: !! row.original.connector_pluralizes_ingredient,
+                    },
+                ],
+                insertCallback: ( args ) => {
+                    Api.manage.updateTaxonomyMeta(datatable.props.options.id, row.original.term_id, {
+                        connector: args.fields[0].value ? args.fields[0].value.trim() : '',
+                        connector_spacing: args.fields[1].value || 'space-both',
+                        connector_pluralizes_ingredient: !! args.fields[2].value,
+                    }).then(() => datatable.refreshData());
+                },
+            } );
+        };
         let columns = [
             bulkEditCheckbox( datatable, 'term_id' ),
             {
@@ -105,6 +146,42 @@ export default {
                                 row.value
                                 ?
                                 <span>{ row.value }</span>
+                                :
+                                null
+                            }
+                        </div>
+                    )
+                },
+            },{
+                Header: __wprm( 'Connector' ),
+                id: 'connector',
+                accessor: 'connector',
+                width: 240,
+                Filter: (props) => (<TextFilter {...props}/>),
+                Cell: row => {
+                    const connector = row.original.connector || '';
+                    const values = connector ? [
+                        connector,
+                        connectorSpacingLabel( row.original.connector_spacing || 'space-both' ),
+                    ] : [];
+
+                    if ( connector && row.original.connector_pluralizes_ingredient ) {
+                        values.push( __wprm( 'pluralizes ingredient' ) );
+                    }
+
+                    return (
+                        <div className="wprm-manage-ingredient-units-group-container">
+                            <Icon
+                                type="pencil"
+                                title={ __wprm( 'Change Connector' ) }
+                                onClick={() => {
+                                    openConnectorModal( row );
+                                }}
+                            />
+                            {
+                                values.length
+                                ?
+                                <span>{ values.join( ' / ' ) }</span>
                                 :
                                 null
                             }

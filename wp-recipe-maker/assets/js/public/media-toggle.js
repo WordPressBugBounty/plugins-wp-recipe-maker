@@ -1,19 +1,19 @@
 window.WPRecipeMaker = typeof window.WPRecipeMaker === "undefined" ? {} : window.WPRecipeMaker;
 
 window.WPRecipeMaker.media = {
-	init: () => {
-		document.addEventListener( 'click', function(e) {
-			for ( var target = e.target; target && target != this; target = target.parentNode ) {
+		init: () => {
+			document.addEventListener( 'click', function(e) {
+				const target = e.target.closest ? e.target.closest( '.wprm-recipe-media-toggle, .wprm-media-toggle-checkbox' ) : false;
+				if ( ! target ) {
+					return;
+				}
+
 				if ( target.matches( '.wprm-recipe-media-toggle' ) ) {
 					WPRecipeMaker.media.onClick( target, e );
-					break;
-				}
-				if ( target.matches( '.wprm-media-toggle-checkbox' ) ) {
+				} else if ( target.matches( '.wprm-media-toggle-checkbox' ) ) {
 					WPRecipeMaker.media.onSwitch( target, e );
-					break;
 				}
-			}
-        }, false );
+	        }, false );
 
         // Set starting state.
         WPRecipeMaker.media.setState( wprm_public.settings.instruction_media_toggle_default );

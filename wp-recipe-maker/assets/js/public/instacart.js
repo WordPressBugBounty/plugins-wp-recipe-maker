@@ -2,16 +2,14 @@ window.WPRecipeMaker = typeof window.WPRecipeMaker === "undefined" ? {} : window
 
 // Source: https://docs.instacart.com/developer_platform_api.
 window.WPRecipeMaker.instacart = {
-	init: () => {
-        // Add click listener.
-		document.addEventListener( 'click', function(e) {
-			for ( var target = e.target; target && target != this; target = target.parentNode ) {
-				if ( target.matches( '.wprm-recipe-shop-instacart' ) ) {
+	    init: () => {
+	        // Add click listener.
+			document.addEventListener( 'click', function(e) {
+				const target = e.target.closest ? e.target.closest( '.wprm-recipe-shop-instacart' ) : false;
+				if ( target ) {
 					WPRecipeMaker.instacart.onClickButton( target, e );
-					break;
-                }
-			}
-        }, false );
+				}
+	        }, false );
 
         // Javascript is loaded, so make sure to show buttons.
         WPRecipeMaker.instacart.show();

@@ -22,7 +22,7 @@
     align-items: center;
     margin: 0 26px 10px 26px;
     font-weight: bold;
-    max-width: 650px;
+    max-width: 730px;
 
     .wprm-admin-modal-field-items-header {
         &:nth-of-type(1) {
@@ -31,9 +31,13 @@
             text-align: center;
         }
         &:nth-of-type(2) {
-            display: none;
+            flex: 0 0 80px;
+            margin-right: 5px;
         }
         &:nth-of-type(3) {
+            display: none;
+        }
+        &:nth-of-type(4) {
             flex: auto;
         }
     }
@@ -70,11 +74,11 @@
         flex: auto;
         flex-wrap: wrap;
         align-items: center;
-        max-width: 650px;
+        max-width: 730px;
 
         .wprm-admin-modal-field-item-text {
             flex: auto;
-            margin: 10px 0 10px 55px;
+            margin: 10px 0;
         }
 
         .wprm-admin-modal-field-item-number {
@@ -86,6 +90,18 @@
             &::before {
                 counter-increment: item;
                 content: counter(item);
+            }
+        }
+        .wprm-admin-modal-field-item-type {
+            display: flex;
+            align-items: center;
+            flex: 0 0 80px;
+            margin-right: 5px;
+
+            .wprm-admin-icon {
+                display: inline-flex;
+                align-items: center;
+                margin: 0 0 0 5px;
             }
         }
         .wprm-admin-modal-field-item-image {
@@ -109,6 +125,12 @@
             &:first-child {
                 width: 75px;
                 text-align: center;
+            }
+
+            &.wprm-admin-modal-field-item-after-container-edit-icons {
+                .wprm-admin-icon + .wprm-admin-icon {
+                    margin-left: 5px;
+                }
             }
 
             &:last-child {
@@ -135,7 +157,7 @@
 @media screen and (min-width: 550px) {
     .wprm-admin-modal-field-items-header-container {
         .wprm-admin-modal-field-items-header {
-            &:nth-of-type(2) {
+            &:nth-of-type(3) {
                 display: block;
                 flex: 0 0 100px;
                 text-align: center;

@@ -778,6 +778,10 @@ class WPRM_Shortcode {
 				}
 			}
 
+			if ( class_exists( 'WPRMPUC_Manager' ) && method_exists( 'WPRMPUC_Manager', 'prime_ingredient_name_forms' ) ) {
+				WPRMPUC_Manager::prime_ingredient_name_forms( $recipe->ingredients_flat() );
+			}
+
 			$output .= WPRM_Template_Manager::get_template( $recipe, $type, $recipe_template );
 			$output .= '</div>';
 			

@@ -31,8 +31,8 @@ class WP_Recipe_Maker {
 	 * @since    1.0.0
 	 */
 	private function define_constants() {
-		define( 'WPRM_VERSION', '10.6.1' );
-		define( 'WPRM_PREMIUM_VERSION_RECOMMENDED', '10.6.0' );
+		define( 'WPRM_VERSION', '10.7.0' );
+		define( 'WPRM_PREMIUM_VERSION_RECOMMENDED', '10.7.0' );
 		define( 'WPRM_PREMIUM_VERSION_REQUIRED', '7.0.0' );
 		define( 'WPRM_POST_TYPE', 'wprm_recipe' );
 		define( 'WPRM_IDEA_POST_TYPE', 'wprm_idea' );
@@ -78,6 +78,9 @@ class WP_Recipe_Maker {
 
 		// API.
 		require_once( WPRM_DIR . 'includes/public/api/class-wprm-api-analytics.php' );
+		require_once( WPRM_DIR . 'includes/public/api/class-wprm-api-app.php' );
+		require_once( WPRM_DIR . 'includes/public/api/class-wprm-api-app-analytics.php' );
+		require_once( WPRM_DIR . 'includes/public/api/class-wprm-api-app-recipes.php' );
 		require_once( WPRM_DIR . 'includes/public/api/class-wprm-api-comments.php' );
 		require_once( WPRM_DIR . 'includes/public/api/class-wprm-api-custom-taxonomies.php' );
 		require_once( WPRM_DIR . 'includes/public/api/class-wprm-api-dashboard.php' );
@@ -127,9 +130,10 @@ class WP_Recipe_Maker {
 		require_once( WPRM_DIR . 'includes/public/class-wprm-context.php' );
 		require_once( WPRM_DIR . 'includes/public/class-wprm-cron.php' );
 		require_once( WPRM_DIR . 'includes/public/class-wprm-custom-hash.php' );
-		require_once( WPRM_DIR . 'includes/public/class-wprm-fallback-recipe.php' );
-		require_once( WPRM_DIR . 'includes/public/class-wprm-icon.php' );
-		require_once( WPRM_DIR . 'includes/public/class-wprm-idea-manager.php' );
+			require_once( WPRM_DIR . 'includes/public/class-wprm-fallback-recipe.php' );
+			require_once( WPRM_DIR . 'includes/public/class-wprm-icon.php' );
+			require_once( WPRM_DIR . 'includes/public/class-wprm-ingredient-display.php' );
+			require_once( WPRM_DIR . 'includes/public/class-wprm-idea-manager.php' );
 		require_once( WPRM_DIR . 'includes/public/class-wprm-idea-post-type.php' );
 		require_once( WPRM_DIR . 'includes/public/class-wprm-idea-saver.php' );
 		require_once( WPRM_DIR . 'includes/public/class-wprm-idea.php' );

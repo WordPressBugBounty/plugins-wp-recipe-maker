@@ -10,6 +10,7 @@ const EditTemplate = (props) => {
                 'html' === props.mode
                 &&
                 <HTML
+                    key={ `html-${ props.template.slug }-${ props.editorRefreshKey }` }
                     template={ props.template }
                     onChangeValue={ props.onChangeHTML }
                 />
@@ -18,6 +19,7 @@ const EditTemplate = (props) => {
                 'css' === props.mode
                 &&
                 <CSS
+                    key={ `css-${ props.template.slug }-${ props.editorRefreshKey }` }
                     template={ props.template }
                     onChangeValue={ props.onChangeCSS }
                 />

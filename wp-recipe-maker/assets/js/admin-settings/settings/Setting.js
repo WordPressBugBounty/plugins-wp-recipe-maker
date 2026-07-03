@@ -18,6 +18,9 @@ import SettingRichTextarea from './setting/RichTextarea';
 import SettingText from './setting/Text';
 import SettingTextarea from './setting/Textarea';
 import SettingToggle from './setting/Toggle';
+import SettingAmazonQueue from './special/AmazonQueue';
+import SettingAppAccessTokens from './special/AppAccessTokens';
+import SettingJupiterAccessToken from './special/JupiterAccessToken';
 import SettingUnitConversionUnits from './special/UnitConversionUnits';
 
 import InformationButton from './information/Button';
@@ -36,6 +39,9 @@ const settingTypes = {
     text: SettingText,
     textarea: SettingTextarea,
     toggle: SettingToggle,
+    amazonQueue: SettingAmazonQueue,
+    appAccessTokens: SettingAppAccessTokens,
+    jupiterAccessToken: SettingJupiterAccessToken,
     unitConversionUnits: SettingUnitConversionUnits,
 }
 const informationTypes = {
@@ -53,6 +59,7 @@ const Setting = (props) => {
         return (
             <SettingComponent
                 setting={props.setting}
+                settings={props.settings}
                 settingsChanged={props.settingsChanged}
                 onValueChange={(value) => {
                     const saveValue = Helpers.beforeSettingSave(value, props.setting.id, props.settings);
@@ -88,6 +95,7 @@ const Setting = (props) => {
                     SettingComponent ?
                     <SettingComponent
                         setting={props.setting}
+                        settings={props.settings}
                         settingsChanged={props.settingsChanged}
                         onValueChange={(value) => {
                             const saveValue = Helpers.beforeSettingSave(value, props.setting.id, props.settings);

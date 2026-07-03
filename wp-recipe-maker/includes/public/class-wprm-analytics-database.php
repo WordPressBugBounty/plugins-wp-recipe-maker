@@ -272,6 +272,85 @@ class WPRM_Analytics_Database {
 
 		return $actions;
 	}
+
+	/**
+	 * Get actions data aggregated per day for a date range. Uses a single
+	 * query so large ranges don't need one query per day.
+	 *
+	 * @since    10.7.0
+	 * @param    mixed $start Start of the range, anything DateTime understands.
+	 * @param    mixed $end   End of the range, anything DateTime understands.
+	 */
+	public static function get_aggregated_actions_between( $start, $end ) {
+		global $wpdb;
+		$table_name = self::get_table_name();
+
+		$start_datetime = new DateTime( $start );
+		$end_datetime = new DateTime( $end );
+		if ( ! $start_datetime || ! $end_datetime ) return false;
+
+		$actions = $wpdb->get_results( $wpdb->prepare(
+			"SELECT
+				DATE(created_at) as day,
+				type,
+				recipe_id,
+				count(*) as total,
+				count(distinct visitor_id) as total_unique
+			FROM `%1s`
+			WHERE
+				created_at >= %s
+				AND created_at <= %s
+			GROUP BY
+				day,
+				type,
+				recipe_id",
+			array(
+				$table_name,
+				$start_datetime->format( 'Y-m-d 00:00:00' ),
+				$end_datetime->format( 'Y-m-d 23:59:59' ),
+			)
+		) );
+
+		return $actions;
+	}
+
+	/**
+	 * Get actions data aggregated per type for a single recipe.
+	 *
+	 * @since    10.7.0
+	 * @param    int   $recipe_id Recipe to get the data for.
+	 * @param    mixed $start Optional start of the range, anything DateTime understands. Lifetime when false.
+	 */
+	public static function get_aggregated_actions_for_recipe( $recipe_id, $start = false ) {
+		global $wpdb;
+		$table_name = self::get_table_name();
+
+		$query_start = '';
+		$query_args = array( $table_name, intval( $recipe_id ) );
+
+		if ( false !== $start ) {
+			$start_datetime = new DateTime( $start );
+			if ( ! $start_datetime ) return false;
+
+			$query_start = ' AND created_at >= %s';
+			$query_args[] = $start_datetime->format( 'Y-m-d 00:00:00' );
+		}
+
+		$actions = $wpdb->get_results( $wpdb->prepare(
+			"SELECT
+				type,
+				count(*) as total,
+				count(distinct visitor_id) as total_unique
+			FROM `%1s`
+			WHERE
+				recipe_id = %d" . $query_start . "
+			GROUP BY
+				type",
+			$query_args
+		) );
+
+		return $actions;
+	}
 }
 
 WPRM_Analytics_Database::init();

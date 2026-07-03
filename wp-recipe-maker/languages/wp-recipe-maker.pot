@@ -426,6 +426,10 @@ msgstr ""
 msgid "Add Image"
 msgstr ""
 
+#: templates/admin/translations.php:42
+msgid "Add Image Link"
+msgstr ""
+
 #: templates/admin/translations.php:43
 msgid "Add Ingredient"
 msgstr ""
@@ -519,6 +523,12 @@ msgstr ""
 #: templates/settings/group-integrations.php:51
 msgid ""
 "Add the \"Shop Ingredients\" button so readers can buy ingredients directly."
+msgstr ""
+
+#: templates/settings/group-links.php:227
+msgid ""
+"Add the nofollow attribute to custom instruction image links pointing to an "
+"external URL."
 msgstr ""
 
 #: templates/settings/group-social-sharing.php:37
@@ -5417,6 +5427,10 @@ msgstr ""
 msgid "Instruction Images"
 msgstr ""
 
+#: templates/settings/group-links.php:213
+msgid "Instruction Image Links"
+msgstr ""
+
 #: templates/admin/translations.php:417
 msgid "Instruction is part of the main video"
 msgstr ""
@@ -6973,6 +6987,10 @@ msgstr ""
 msgid "Open custom equipment links in a new tab."
 msgstr ""
 
+#: templates/settings/group-links.php:220
+msgid "Open custom instruction image links in a new tab."
+msgstr ""
+
 #: templates/settings/group-links.php:144
 msgid "Open custom ingredient links in a new tab."
 msgstr ""
@@ -6985,9 +7003,10 @@ msgstr ""
 msgid "Open Feature Explorer"
 msgstr ""
 
-#: templates/settings/group-links.php:109 
-#: templates/settings/group-links.php:143 
+#: templates/settings/group-links.php:109
+#: templates/settings/group-links.php:143
 #: templates/settings/group-links.php:185
+#: templates/settings/group-links.php:219
 msgid "Open in New Tab"
 msgstr ""
 
@@ -10297,6 +10316,10 @@ msgid ""
 "recommend leaving them to their default values."
 msgstr ""
 
+#: templates/settings/group-links.php:214
+msgid "These settings apply to custom links set for individual instruction images."
+msgstr ""
+
 #: templates/settings/group-recipe-defaults.php:19
 msgid ""
 "These settings change the default value when you start creating a new recipe."
@@ -11053,6 +11076,10 @@ msgstr ""
 #: templates/settings/group-links.php:159 
 #: templates/settings/group-links.php:201
 msgid "Use Nofollow"
+msgstr ""
+
+#: templates/settings/group-links.php:226
+msgid "Use Nofollow for External Links"
 msgstr ""
 
 #: templates/admin/translations.php:846

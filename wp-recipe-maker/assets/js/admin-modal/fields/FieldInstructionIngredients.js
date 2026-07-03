@@ -109,7 +109,11 @@ const FieldInstructionIngredients = (props) => {
                                     }
                                     const splitUnit = ingredient.unit || '';
                                     const splitName = ingredient.name || '';
-                                    const splitString = splitAmount ? `${splitAmount} ${splitUnit} ${splitName}`.trim() : `${percentage}% ${splitName}`.trim();
+                                    const splitString = splitAmount ? Helpers.joinAmountUnitAndName(
+                                        [ splitAmount, splitUnit ].filter( Boolean ).join( ' ' ),
+                                        splitName,
+                                        Helpers.getIngredientConnectorData( ingredient )
+                                    ) : `${percentage}% ${splitName}`.trim();
                                     
                                     const splitOption = {
                                         value: splitValue,
@@ -158,7 +162,11 @@ const FieldInstructionIngredients = (props) => {
                                     }
                                     const splitUnit = ingredient.unit || '';
                                     const splitName = ingredient.name || '';
-                                    const splitString = splitAmount ? `${splitAmount} ${splitUnit} ${splitName}`.trim() : `${percentage}% ${splitName}`.trim();
+                                    const splitString = splitAmount ? Helpers.joinAmountUnitAndName(
+                                        [ splitAmount, splitUnit ].filter( Boolean ).join( ' ' ),
+                                        splitName,
+                                        Helpers.getIngredientConnectorData( ingredient )
+                                    ) : `${percentage}% ${splitName}`.trim();
                                     
                                     const splitOption = {
                                         value: splitValue,

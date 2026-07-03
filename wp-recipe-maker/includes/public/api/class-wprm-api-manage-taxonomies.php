@@ -422,6 +422,8 @@ class WPRM_Api_Manage_Taxonomies {
 		$total_terms = wp_count_terms( array( 'taxonomy' => $taxonomy, 'hide_empty' => false ) );
 		$rows = $query->terms ? array_values( $query->terms ) : array();
 
+		self::prime_taxonomy_manage_caches( $rows, $type );
+
 		// Get total counts (all post statuses) for returned terms
 		if ( ! empty( $rows ) ) {
 			global $wpdb;
@@ -547,9 +549,12 @@ class WPRM_Api_Manage_Taxonomies {
 						$row->group = get_term_meta( $row->term_id, 'wprmp_ingredient_group', true );
 						$row->product = class_exists( 'WPRMPP_Meta' ) ? WPRMPP_Meta::get_product_from_term_id( $row->term_id ) : false;
 						break;
-					case 'ingredient_unit':
-						$row->plural = get_term_meta( $row->term_id, 'wprm_ingredient_unit_plural', true );
-						break;
+						case 'ingredient_unit':
+							$row->plural = get_term_meta( $row->term_id, 'wprm_ingredient_unit_plural', true );
+							$row->connector = get_term_meta( $row->term_id, 'wprm_ingredient_unit_connector', true );
+							$row->connector_spacing = WPRM_Ingredient_Display::sanitize_connector_spacing( get_term_meta( $row->term_id, 'wprm_ingredient_unit_connector_spacing', true ) );
+							$row->connector_pluralizes_ingredient = '1' === get_term_meta( $row->term_id, 'wprm_ingredient_unit_connector_pluralizes_ingredient', true );
+							break;
 					case 'equipment':
 						$row->affiliate_html = get_term_meta( $row->term_id, 'wprmp_equipment_affiliate_html', true );
 						$row->amazon_asin = get_term_meta( $row->term_id, 'wprmp_amazon_asin', true );
@@ -590,6 +595,60 @@ class WPRM_Api_Manage_Taxonomies {
 		);
 
 		return rest_ensure_response( $data );
+	}
+
+	/**
+	 * Prime caches for related objects used while hydrating manage rows.
+	 *
+	 * @since    10.0.0
+	 * @param    array  $rows Term rows returned for the current manage page.
+	 * @param    string $type Manage taxonomy type.
+	 */
+	private static function prime_taxonomy_manage_caches( $rows, $type ) {
+		if ( empty( $rows ) ) {
+			return;
+		}
+
+		$term_ids = wp_list_pluck( $rows, 'term_id' );
+		$term_ids = array_values( array_unique( array_filter( array_map( 'intval', $term_ids ) ) ) );
+
+		if ( empty( $term_ids ) ) {
+			return;
+		}
+
+		update_meta_cache( 'term', $term_ids );
+
+		$meta_key = 'term';
+		if ( 'ingredient' === $type ) {
+			$meta_key = 'ingredient';
+		} elseif ( 'equipment' === $type ) {
+			$meta_key = 'equipment';
+		}
+
+		$attachment_ids = array();
+		foreach ( $term_ids as $term_id ) {
+			$image_id = intval( get_term_meta( $term_id, 'wprmp_' . $meta_key . '_image_id', true ) );
+			if ( $image_id ) {
+				$attachment_ids[] = $image_id;
+			}
+
+			$wpupg_custom_image = intval( get_term_meta( $term_id, 'wpupg_custom_image', true ) );
+			if ( $wpupg_custom_image ) {
+				$attachment_ids[] = $wpupg_custom_image;
+			}
+		}
+
+		$attachment_ids = array_values( array_unique( array_filter( array_map( 'intval', $attachment_ids ) ) ) );
+		if ( ! empty( $attachment_ids ) ) {
+			if ( function_exists( '_prime_post_caches' ) ) {
+				_prime_post_caches( $attachment_ids, false, true );
+			} else {
+				update_meta_cache( 'post', $attachment_ids );
+				foreach ( $attachment_ids as $attachment_id ) {
+					get_post( $attachment_id );
+				}
+			}
+		}
 	}
 
 	/**

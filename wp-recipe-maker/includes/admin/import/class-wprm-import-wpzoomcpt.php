@@ -433,56 +433,102 @@ class WPRM_Import_Wpzoomcpt extends WPRM_Import {
 		update_post_meta( $id, 'wprm_imported_to', $wprm_id );
 
 		// Migrate ratings.
+		$rating_post_ids = array( $id );
+
+		if ( $parent_post_id && $id !== $parent_post_id ) {
+			$rating_post_ids[] = $parent_post_id;
+		}
+
+		$this->migrate_ratings( $rating_post_ids, $wprm_id );
+	}
+
+	/**
+	 * Migrate ratings associated with WPZOOM source posts.
+	 *
+	 * @since    10.0.0
+	 * @param	 array $post_ids Source post IDs to check.
+	 * @param	 mixed $wprm_id ID of the WPRM recipe to migrate ratings to.
+	 */
+	private function migrate_ratings( $post_ids, $wprm_id ) {
+		$post_ids = array_filter( array_unique( array_map( 'intval', $post_ids ) ) );
+
+		if ( ! $post_ids ) {
+			return;
+		}
+
+		// Migrate WPZOOM user and comment ratings from their rating table.
 		global $wpdb;
 		$table_name = $wpdb->prefix . 'wpzoom_rating_stars';
 
-		$ratings = $wpdb->get_results( $wpdb->prepare(
-			"SELECT * FROM `%1s`
-			WHERE recipe_id = %d
-			OR post_id = %d",
-			array(
-				$table_name,
-				$id,
-				$id,
-			)
-		) );
+		if ( $table_name === $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) ) {
+			$migrated_rating_ids = array();
 
-		$parent_post_ratings = array();
+			foreach ( $post_ids as $post_id ) {
+				$ratings = $wpdb->get_results( $wpdb->prepare(
+					"SELECT * FROM `%1s`
+					WHERE recipe_id = %d
+					OR post_id = %d",
+					array(
+						$table_name,
+						$post_id,
+						$post_id,
+					)
+				) );
 
-		if ( $parent_post_id && $id !== $parent_post_id ) {
-			$parent_post_ratings = $wpdb->get_results( $wpdb->prepare(
-				"SELECT * FROM `%1s`
-				WHERE recipe_id = %d
-				OR post_id = %d",
-				array(
-					$table_name,
-					$parent_post_id,
-					$parent_post_id,
-				)
-			) );
+				foreach ( $ratings as $rating ) {
+					if ( isset( $rating->id ) && in_array( intval( $rating->id ), $migrated_rating_ids, true ) ) {
+						continue;
+					}
+
+					if ( isset( $rating->id ) ) {
+						$migrated_rating_ids[] = intval( $rating->id );
+					}
+
+					if ( '1' === $rating->approved ) {
+						$comment_id = intval( $rating->comment_id );
+						$user_id = intval( $rating->user_id );
+						$rating_value = intval( $rating->rating );
+
+						// Only use recipe ID if there is no comment ID.
+						$recipe_id = 0 < $comment_id ? 0 : $wprm_id;
+
+						$wprm_rating = array(
+							'date' => $rating->rate_date,
+							'recipe_id' => $recipe_id,
+							'comment_id' => $comment_id,
+							'user_id' => $user_id,
+							'ip' => $rating->ip,
+							'rating' => $rating_value,
+						);
+
+						WPRM_Rating_Database::add_or_update_rating( $wprm_rating );
+					}
+				}
+			}
 		}
 
-		$all_ratings = array_merge( $ratings, $parent_post_ratings );
+		// Migrate WPZOOM comment ratings stored as comment meta.
+		foreach ( $post_ids as $post_id ) {
+			$comments = get_comments( array(
+				'post_id' => $post_id,
+				'status' => array( 'all', 'trash' ),
+				'meta_key' => 'wpzoom-rcb-comment-rating',
+			) );
 
-		foreach ( $all_ratings as $rating ) {
-			if ( '1' === $rating->approved ) {
-				$comment_id = intval( $rating->comment_id );
-				$user_id = intval( $rating->user_id );
-				$rating_value = intval( $rating->rating );
+			foreach ( $comments as $comment ) {
+				$comment_rating = intval( get_comment_meta( $comment->comment_ID, 'wpzoom-rcb-comment-rating', true ) );
 
-				// Only use recipe ID if there is no comment ID.
-				$recipe_id = 0 < $comment_id ? 0 : $wprm_id;
+				if ( $comment_rating && 0 < $comment_rating && $comment_rating <= 5 ) {
+					$rating = array(
+						'date' => $comment->comment_date,
+						'comment_id' => $comment->comment_ID,
+						'user_id' => $comment->user_id,
+						'ip' => $comment->comment_author_IP,
+						'rating' => $comment_rating,
+					);
 
-				$wprm_rating = array(
-					'date' => $rating->rate_date,
-					'recipe_id' => $recipe_id,
-					'comment_id' => $comment_id,
-					'user_id' => $user_id,
-					'ip' => $rating->ip,
-					'rating' => $rating_value,
-				);
-
-				WPRM_Rating_Database::add_or_update_rating( $wprm_rating );
+					WPRM_Rating_Database::add_or_update_rating( $rating );
+				}
 			}
 		}
 	}

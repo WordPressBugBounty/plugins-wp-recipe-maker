@@ -3,12 +3,15 @@ import React, { Component, Fragment } from 'react';
 import '../../../css/admin/modal/input-fields.scss';
 
 import { __wprm } from 'Shared/Translations';
+import Icon from 'Shared/Icon';
 import Header from '../general/Header';
 import Footer from '../general/Footer';
 
 import FieldText from '../fields/FieldText';
 import FieldTextarea from '../fields/FieldTextarea';
 import FieldAsyncCreatableSingle from '../fields/FieldAsyncCreatableSingle';
+import FieldCheckbox from '../fields/FieldCheckbox';
+import FieldDropdown from '../fields/FieldDropdown';
 
 export default class InputFields extends Component {
     constructor(props) {
@@ -29,6 +32,14 @@ export default class InputFields extends Component {
                 </Header>
                 <div className="wprm-admin-modal-input-fields-container">
                     {
+                        this.props.args.warning
+                        &&
+                        <div className="wprm-admin-modal-input-fields-warning">
+                            <Icon type="warning" color="#996800" />
+                            <span>{ this.props.args.warning }</span>
+                        </div>
+                    }
+                    {
                         this.state.fields.map( (field, index) => {
                             let FieldComponent = FieldText;
                             const type = field.hasOwnProperty( 'type' ) ? field.type : 'text';
@@ -40,27 +51,44 @@ export default class InputFields extends Component {
                                 case 'async-creatable-single':
                                     FieldComponent = FieldAsyncCreatableSingle;
                                     break;
+                                case 'checkbox':
+                                    FieldComponent = FieldCheckbox;
+                                    break;
+                                case 'dropdown':
+                                    FieldComponent = FieldDropdown;
+                                    break;
                             }
+
+                            const fieldInput = (
+                                <FieldComponent
+                                    { ...field }
+                                    value={ field.value }
+                                    onChange={ (value) => {
+                                        let newFields = [ ...this.state.fields ];
+
+                                        newFields[ index ].value = value;
+
+                                        this.setState({
+                                            fields: newFields,
+                                        });
+                                    }}
+                                />
+                            );
 
                             return (
                                 <Fragment key={ index }>
                                     {
+                                        field.hasOwnProperty( 'label' ) && 'checkbox' === type
+                                        ?
+                                        <label className="wprm-admin-modal-input-fields-checkbox-label">
+                                            { fieldInput }
+                                            <span>{ field.label }</span>
+                                        </label>
+                                        :
                                         field.hasOwnProperty( 'label' )
                                         && <div className="wprm-admin-modal-input-fields-field-label">{ field.label }</div>
                                     }
-                                    <FieldComponent
-                                        { ...field }
-                                        value={ field.value }
-                                        onChange={ (value) => {
-                                            let newFields = [ ...this.state.fields ];
-
-                                            newFields[ index ].value = value;
-
-                                            this.setState({
-                                                fields: newFields,
-                                            });
-                                        }}
-                                    />
+                                    { ( 'checkbox' !== type || ! field.hasOwnProperty( 'label' ) ) && fieldInput }
                                 </Fragment>
                             )
                         })

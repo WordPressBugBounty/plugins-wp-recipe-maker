@@ -17,6 +17,107 @@ textarea.wprm-setting-input {
     width: 100%;
 }
 
+.wprm-setting-jupiter-access-token {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    .wprm-setting-jupiter-access-token-notice {
+        padding: 8px 10px;
+        border-left: 4px solid #dba617;
+        background: #fff8e5;
+    }
+
+    .wprm-setting-jupiter-access-token-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 20px;
+    }
+
+    .wprm-setting-jupiter-access-token-endpoint,
+    .wprm-setting-jupiter-access-token-generated {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .wprm-setting-jupiter-access-token-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    textarea {
+        font-family: monospace;
+    }
+}
+
+.wprm-setting-app-access-tokens {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    .wprm-setting-app-access-tokens-notice {
+        padding: 8px 10px;
+        border-left: 4px solid #dba617;
+        background: #fff8e5;
+    }
+
+    .wprm-setting-app-access-tokens-table {
+        border-collapse: collapse;
+
+        th, td {
+            text-align: left;
+            padding: 4px 16px 4px 0;
+        }
+    }
+
+    .wprm-setting-app-access-tokens-generated {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .wprm-setting-app-access-tokens-qr {
+        background: #fff;
+        padding: 10px;
+        align-self: flex-start;
+        border: 1px solid #ddd;
+    }
+
+    .wprm-setting-app-access-tokens-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+
+        input {
+            min-width: 250px;
+        }
+    }
+
+    textarea {
+        font-family: monospace;
+    }
+}
+
+.wprm-setting-amazon-queue {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    .wprm-setting-amazon-queue-status {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .wprm-setting-amazon-queue-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+}
+
 .wprm-setting-unit-conversion-units {
     width: 100%;
 

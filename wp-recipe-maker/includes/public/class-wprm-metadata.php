@@ -19,6 +19,15 @@
  */
 class WPRM_Metadata {
 	/**
+	 * Version for the recipe metadata cache format/hash.
+	 *
+	 * @since    10.8.1
+	 * @access   private
+	 * @var      int METADATA_CACHE_VERSION Version for the recipe metadata cache.
+	 */
+	const METADATA_CACHE_VERSION = 1;
+
+	/**
 	 * List of recipes we've already outputted the metadata for.
 	 *
 	 * @since    5.3.0
@@ -38,6 +47,71 @@ class WPRM_Metadata {
 
 		add_filter( 'wpseo_schema_graph_pieces', array( __CLASS__, 'wpseo_schema_graph_pieces' ), 1, 2 );
 		add_filter( 'wpseo_schema_graph', array( __CLASS__, 'wpseo_schema_graph' ), 99, 2 );
+
+		if ( defined( 'WPRM_POST_TYPE' ) ) {
+			add_action( 'save_post_' . WPRM_POST_TYPE, array( __CLASS__, 'invalidate_metadata_for_recipe' ), 10, 1 );
+		}
+
+		add_action( 'comment_post', array( __CLASS__, 'invalidate_metadata_for_comment' ), 99, 1 );
+		add_action( 'edit_comment', array( __CLASS__, 'invalidate_metadata_for_comment' ), 99, 1 );
+		add_action( 'transition_comment_status', array( __CLASS__, 'invalidate_metadata_for_comment_status_change' ), 99, 3 );
+		add_action( 'trashed_comment', array( __CLASS__, 'invalidate_metadata_for_comment' ), 99, 1 );
+		add_action( 'spammed_comment', array( __CLASS__, 'invalidate_metadata_for_comment' ), 99, 1 );
+		add_action( 'unspammed_comment', array( __CLASS__, 'invalidate_metadata_for_comment' ), 99, 1 );
+		add_action( 'deleted_comment', array( __CLASS__, 'invalidate_metadata_for_comment' ), 99, 2 );
+	}
+
+	/**
+	 * Invalidate cached metadata for a recipe.
+	 *
+	 * @since	10.8.1
+	 * @param	int $recipe_id Recipe ID.
+	 */
+	public static function invalidate_metadata_for_recipe( $recipe_id ) {
+		$recipe_id = intval( $recipe_id );
+
+		if ( $recipe_id && defined( 'WPRM_POST_TYPE' ) && WPRM_POST_TYPE === get_post_type( $recipe_id ) ) {
+			delete_post_meta( $recipe_id, 'wprm_metadata_cache' );
+		}
+	}
+
+	/**
+	 * Invalidate cached metadata for recipes affected by a comment.
+	 *
+	 * @since	10.8.1
+	 * @param	int|object $comment Comment ID or object.
+	 * @param	object     $deleted_comment Optional deleted comment object.
+	 */
+	public static function invalidate_metadata_for_comment( $comment, $deleted_comment = null ) {
+		if ( $deleted_comment && is_object( $deleted_comment ) ) {
+			$comment = $deleted_comment;
+		} elseif ( ! is_object( $comment ) ) {
+			$comment = get_comment( $comment );
+		}
+
+		if ( ! $comment || ! isset( $comment->comment_post_ID ) ) {
+			return;
+		}
+
+		$recipe_ids = self::get_recipe_ids_for_comment_post( $comment->comment_post_ID );
+
+		foreach ( $recipe_ids as $recipe_id ) {
+			self::invalidate_metadata_for_recipe( $recipe_id );
+		}
+	}
+
+	/**
+	 * Invalidate cached metadata when comment status changes.
+	 *
+	 * @since	10.8.1
+	 * @param	string $new_status New comment status.
+	 * @param	string $old_status Old comment status.
+	 * @param	object $comment    Comment object.
+	 */
+	public static function invalidate_metadata_for_comment_status_change( $new_status, $old_status, $comment ) {
+		if ( $new_status !== $old_status ) {
+			self::invalidate_metadata_for_comment( $comment );
+		}
 	}
 
 	/**
@@ -281,7 +355,185 @@ class WPRM_Metadata {
 	 * @param	object $recipe Recipe to get the sanitized metadata for.
 	 */
 	public static function get_sanitized_metadata( $recipe ) {
-		return self::sanitize_metadata( self::get_metadata( $recipe ) );
+		if ( ! self::metadata_cache_enabled( $recipe ) ) {
+			return self::sanitize_metadata( self::get_metadata( $recipe ) );
+		}
+
+		$recipe_id = self::get_recipe_id( $recipe );
+		if ( ! $recipe_id ) {
+			return self::sanitize_metadata( self::get_metadata( $recipe ) );
+		}
+
+		$hash = self::get_metadata_cache_hash( $recipe );
+		$cache = get_post_meta( $recipe_id, 'wprm_metadata_cache', true );
+
+		if ( is_array( $cache ) && isset( $cache['hash'], $cache['metadata'] ) && hash_equals( $hash, (string) $cache['hash'] ) ) {
+			return $cache['metadata'];
+		}
+
+		$metadata = self::sanitize_metadata( self::get_metadata( $recipe ) );
+
+		update_post_meta(
+			$recipe_id,
+			'wprm_metadata_cache',
+			array(
+				'version' => self::METADATA_CACHE_VERSION,
+				'hash' => $hash,
+				'metadata' => $metadata,
+				'updated' => time(),
+			)
+		);
+
+		return $metadata;
+	}
+
+	/**
+	 * Check if metadata caching should be used for a recipe.
+	 *
+	 * @since	10.8.1
+	 * @param	object $recipe Recipe to get the metadata for.
+	 */
+	private static function metadata_cache_enabled( $recipe ) {
+		return (bool) apply_filters( 'wprm_recipe_metadata_cache_enabled', true, $recipe );
+	}
+
+	/**
+	 * Get recipe ID from a recipe object.
+	 *
+	 * @since	10.8.1
+	 * @param	object $recipe Recipe object.
+	 */
+	private static function get_recipe_id( $recipe ) {
+		if ( is_object( $recipe ) && method_exists( $recipe, 'id' ) ) {
+			return intval( $recipe->id() );
+		}
+
+		return 0;
+	}
+
+	/**
+	 * Get hash for the current metadata cache dependencies.
+	 *
+	 * @since	10.8.1
+	 * @param	object $recipe Recipe to get the metadata for.
+	 */
+	private static function get_metadata_cache_hash( $recipe ) {
+		$recipe_id = self::get_recipe_id( $recipe );
+		$parent_post_id = 0;
+		$settings = array();
+
+		if ( is_object( $recipe ) && method_exists( $recipe, 'parent_post_id' ) ) {
+			$parent_post_id = intval( $recipe->parent_post_id() );
+		}
+
+		foreach ( self::get_metadata_cache_settings() as $setting ) {
+			$settings[ $setting ] = WPRM_Settings::get( $setting );
+		}
+
+		$hash_data = array(
+			'cache_version' => self::METADATA_CACHE_VERSION,
+			'plugin_version' => defined( 'WPRM_VERSION' ) ? WPRM_VERSION : '',
+			'wp_version' => get_bloginfo( 'version' ),
+			'home_url' => home_url(),
+			'permalink_structure' => get_option( 'permalink_structure' ),
+			'locale' => function_exists( 'determine_locale' ) ? determine_locale() : get_locale(),
+			'recipe_id' => $recipe_id,
+			'recipe_modified' => $recipe_id ? get_post_modified_time( 'U', true, $recipe_id ) : 0,
+			'recipe_version' => $recipe_id ? get_post_meta( $recipe_id, 'wprm_version', true ) : '',
+			'parent_post_id' => $parent_post_id,
+			'parent_modified' => $parent_post_id ? get_post_modified_time( 'U', true, $parent_post_id ) : 0,
+			'rating_count' => $recipe_id ? get_post_meta( $recipe_id, 'wprm_rating_count', true ) : '',
+			'rating_average' => $recipe_id ? get_post_meta( $recipe_id, 'wprm_rating_average', true ) : '',
+			'video_metadata_updated' => $recipe_id ? get_post_meta( $recipe_id, 'wprm_video_metadata_updated', true ) : '',
+			'settings' => $settings,
+			'filters' => array(
+				'wprm_recipe_field' => self::get_filter_signature( 'wprm_recipe_field' ),
+				'wprm_recipe_metadata' => self::get_filter_signature( 'wprm_recipe_metadata' ),
+				'wprm_recipe_metadata_cache_hash_data' => self::get_filter_signature( 'wprm_recipe_metadata_cache_hash_data' ),
+				'wpml_translate_single_string' => self::get_filter_signature( 'wpml_translate_single_string' ),
+			),
+		);
+
+		$hash_data = apply_filters( 'wprm_recipe_metadata_cache_hash_data', $hash_data, $recipe );
+
+		return md5( wp_json_encode( $hash_data ) );
+	}
+
+	/**
+	 * Get settings that can affect metadata output.
+	 *
+	 * @since	10.8.1
+	 */
+	private static function get_metadata_cache_settings() {
+		return apply_filters(
+			'wprm_recipe_metadata_cache_settings',
+			array(
+				'metadata_include_ingredient_notes',
+				'metadata_restrict_ingredient_length',
+				'metadata_instruction_name',
+				'metadata_review_include',
+				'metadata_review_append_featured',
+				'metadata_youtube_api_key',
+				'nutrition_default_serving_unit',
+				'post_type_structure',
+				'post_type_comments',
+				'post_type_permalink_priority',
+				'features_comment_ratings',
+				'features_user_ratings',
+				'yoast_seo_integration',
+				'rank_math_integration',
+			)
+		);
+	}
+
+	/**
+	 * Get signature of registered filters.
+	 *
+	 * @since	10.8.1
+	 * @param	string $hook Hook to get the filter signature for.
+	 */
+	private static function get_filter_signature( $hook ) {
+		global $wp_filter;
+
+		if ( ! isset( $wp_filter[ $hook ] ) || ! is_object( $wp_filter[ $hook ] ) || ! isset( $wp_filter[ $hook ]->callbacks ) ) {
+			return '';
+		}
+
+		$signature = array();
+
+		foreach ( $wp_filter[ $hook ]->callbacks as $priority => $callbacks ) {
+			foreach ( $callbacks as $callback_id => $callback ) {
+				$signature[] = $priority . ':' . $callback_id . ':' . $callback['accepted_args'];
+			}
+		}
+
+		return implode( '|', $signature );
+	}
+
+	/**
+	 * Get recipes affected by comments on a post.
+	 *
+	 * @since	10.8.1
+	 * @param	int $post_id Post ID comments belong to.
+	 */
+	private static function get_recipe_ids_for_comment_post( $post_id ) {
+		$post_id = intval( $post_id );
+		$recipe_ids = array();
+
+		if ( ! $post_id || ! defined( 'WPRM_POST_TYPE' ) ) {
+			return $recipe_ids;
+		}
+
+		if ( WPRM_POST_TYPE === get_post_type( $post_id ) ) {
+			$recipe_ids[] = $post_id;
+		}
+
+		$recipe_ids_from_post = WPRM_Recipe_Manager::get_recipe_ids_from_post( $post_id );
+		if ( $recipe_ids_from_post ) {
+			$recipe_ids = array_merge( $recipe_ids, $recipe_ids_from_post );
+		}
+
+		return array_values( array_unique( array_map( 'intval', $recipe_ids ) ) );
 	}
 
 	/**

@@ -1,4 +1,5 @@
 import React, { Fragment } from 'react';
+const { hooks } = WPRecipeMakerAdmin['wp-recipe-maker/dist/shared'];
 
 import Icon from 'Shared/Icon';
 import { __wprm } from 'Shared/Translations';
@@ -47,10 +48,32 @@ const FieldInstructionMedia = (props) => {
 
     const { video } = props;
     const hasImage = props.image > 0;
+    const extensionIcons = hooks.applyFilters( 'modalRecipeInstructionMediaIcons', [], props, {
+        hasImage,
+        video,
+    } );
+    const imageLinkIcon = hooks.applyFilters( 'modalRecipeInstructionImageLinkIcon', {
+        type: 'link',
+        title: __wprm( 'Add Image Link' ),
+        required: 'premium',
+        onClick: () => {},
+    }, props, {
+        hasImage,
+        video,
+    } );
 
     return (
         <div className="wprm-admin-modal-field-instruction-after-container-media">
             <div className="wprm-admin-modal-field-instruction-after-container-media-icons">
+                { extensionIcons }
+                {
+                    hasImage
+                    &&
+                    <Icon
+                        key="instruction-image-link"
+                        { ...imageLinkIcon }
+                    />
+                }
                 <Icon
                     type="photo"
                     title={ hasImage ? __wprm( 'Remove Image' ) : __wprm( 'Add Instruction Image' ) }

@@ -28,6 +28,7 @@ import IconList from '../../../icons/settings/list.svg';
 import IconLock from '../../../icons/settings/lock.svg';
 import IconMeasureApple from '../../../icons/settings/measure-apple.svg';
 import IconModal from '../../../icons/settings/modal.svg';
+import IconMonitorMobile from '../../../icons/settings/monitor-mobile.svg';
 import IconPainting from '../../../icons/settings/painting.svg';
 import IconPalette from '../../../icons/settings/palette.svg';
 import IconPlug from '../../../icons/settings/plug.svg';
@@ -79,6 +80,7 @@ const icons = {
     lock: IconLock,
     'measure-apple': IconMeasureApple,
     modal: IconModal,
+    'monitor-mobile': IconMonitorMobile,
     painting: IconPainting,
     palette: IconPalette,
     plug: IconPlug,

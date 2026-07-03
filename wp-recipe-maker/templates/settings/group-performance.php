@@ -22,6 +22,13 @@ $performance = array(
 					'default' => false,
 				),
 				array(
+					'id' => 'assets_use_split_js',
+					'name' => __( 'Load Public JavaScript on Demand', 'wp-recipe-maker' ),
+					'description' => __( 'Load a small public JavaScript bundle first and load optional features when they are needed. Disable to use the legacy combined public JavaScript bundle if you experience compatibility issues.', 'wp-recipe-maker' ),
+					'type' => 'toggle',
+					'default' => true,
+				),
+				array(
 					'id' => 'load_admin_assets_everywhere',
 					'name' => __( 'Load admin assets everywhere', 'wp-recipe-maker' ),
 					'description' => __( 'By default only loads admin assets on edit post pages. Enable to increase compatibility.', 'wp-recipe-maker' ),

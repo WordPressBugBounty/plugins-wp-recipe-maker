@@ -17,17 +17,15 @@ window.WPRecipeMaker.cookPal = {
 
 		setTimeout( () => {
 			clearInterval( checkInterval );
-		}, 10000 );
+			}, 10000 );
 
-		document.addEventListener( 'click', function( e ) {
-			for ( let target = e.target; target && target !== this; target = target.parentNode ) {
-				if ( target.matches( '.wprm-recipe-cookpal' ) ) {
+			document.addEventListener( 'click', function( e ) {
+				const target = e.target.closest ? e.target.closest( '.wprm-recipe-cookpal' ) : false;
+				if ( target ) {
 					WPRecipeMaker.cookPal.onClick( e );
-					break;
 				}
-			}
-		}, false );
-	},
+			}, false );
+		},
 	hasButton: () => {
 		return !! document.getElementById( 'cookpal-chat-button' );
 	},

@@ -3,16 +3,14 @@ import animateScrollTo from 'animated-scroll-to';
 window.WPRecipeMaker = typeof window.WPRecipeMaker === "undefined" ? {} : window.WPRecipeMaker;
 
 window.WPRecipeMaker.jump = {
-	init: () => {
-		document.addEventListener( 'click', function(e) {
-			for ( var target = e.target; target && target != this; target = target.parentNode ) {
-				if ( target.matches( '.wprm-recipe-jump, .wprm-recipe-jump-to-comments, .wprm-recipe-jump-video, .wprm-jump-smooth-scroll, .wprm-recipe-jump-to-section' ) ) {
+		init: () => {
+			document.addEventListener( 'click', function(e) {
+				const target = e.target.closest ? e.target.closest( '.wprm-recipe-jump, .wprm-recipe-jump-to-comments, .wprm-recipe-jump-video, .wprm-jump-smooth-scroll, .wprm-recipe-jump-to-section' ) : false;
+				if ( target ) {
 					WPRecipeMaker.jump.onClick( target, e );
-					break;
 				}
-			}
-		}, false );
-	},
+			}, false );
+		},
 	onClick: ( el, e ) => {
         const target = el.getAttribute('href');
 

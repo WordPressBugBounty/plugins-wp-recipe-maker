@@ -559,7 +559,11 @@ class WPRM_Blocks {
 		$shortcode_tag = 'wprm-' . $atts['part'];
 
 		if ( shortcode_exists( $shortcode_tag ) ) {
-			$output .= do_shortcode( '[' . $shortcode_tag . ' id="' . $atts['id'] . '"]' );
+			$output = do_shortcode( '[' . $shortcode_tag . ' id="' . $atts['id'] . '"]' );
+
+			if ( $output ) {
+				WPRM_Assets::load();
+			}
 		}
 
 		return $output;
@@ -573,7 +577,13 @@ class WPRM_Blocks {
 	 */
 	public static function render_nutrition_label_block( $atts ) {
 		$atts = self::parse_atts( $atts );
-		return WPRM_SC_Nutrition_Label::shortcode( $atts );
+		$output = WPRM_SC_Nutrition_Label::shortcode( $atts );
+
+		if ( $output ) {
+			WPRM_Assets::load();
+		}
+
+		return $output;
 	}
 
 	/**
@@ -584,7 +594,13 @@ class WPRM_Blocks {
 	 */
 	public static function render_jump_to_recipe_block( $atts ) {
 		$atts = self::parse_atts( $atts );
-		return WPRM_SC_Jump::shortcode( $atts );
+		$output = WPRM_SC_Jump::shortcode( $atts );
+
+		if ( $output ) {
+			WPRM_Assets::load();
+		}
+
+		return $output;
 	}
 
 	/**
@@ -595,7 +611,13 @@ class WPRM_Blocks {
 	 */
 	public static function render_jump_to_video_block( $atts ) {
 		$atts = self::parse_atts( $atts );
-		return WPRM_SC_Jump_Video::shortcode( $atts );
+		$output = WPRM_SC_Jump_Video::shortcode( $atts );
+
+		if ( $output ) {
+			WPRM_Assets::load();
+		}
+
+		return $output;
 	}
 
 	/**
@@ -606,7 +628,13 @@ class WPRM_Blocks {
 	 */
 	public static function render_print_recipe_block( $atts ) {
 		$atts = self::parse_atts( $atts );
-		return WPRM_SC_Print::shortcode( $atts );
+		$output = WPRM_SC_Print::shortcode( $atts );
+
+		if ( $output ) {
+			WPRM_Assets::load();
+		}
+
+		return $output;
 	}
 }
 

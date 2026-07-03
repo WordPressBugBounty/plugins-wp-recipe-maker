@@ -1,6 +1,48 @@
 {
     "news": [
         {
+            "date": "2026-07-03",
+            "label": "Release",
+            "title": "WP Recipe Maker 10.7.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-10-7-0/"
+        },
+        {
+            "date": "2026-06-30",
+            "label": "Blog",
+            "title": "How to Correctly Attribute a Recipe",
+            "url": "https://bootstrapped.ventures/recipe-attribution/"
+        },
+        {
+            "date": "2026-06-26",
+            "label": "Blog",
+            "title": "How to Export WordPress Recipes to Clean PDFs",
+            "url": "https://bootstrapped.ventures/export-recipes-to-pdf-wordpress/"
+        },
+        {
+            "date": "2026-06-17",
+            "label": "Blog",
+            "title": "Why Recipes Fail and How Small Errors Stack Up",
+            "url": "https://bootstrapped.ventures/why-recipe-failed/"
+        },
+        {
+            "date": "2026-06-05",
+            "label": "Blog",
+            "title": "How to Cook Seasonally with Simple Recipe Ideas",
+            "url": "https://bootstrapped.ventures/seasonal-recipe/"
+        },
+        {
+            "date": "2026-06-03",
+            "label": "Blog",
+            "title": "How to Write Recipe Headnotes for Food Bloggers",
+            "url": "https://bootstrapped.ventures/recipe-headnote/"
+        },
+        {
+            "date": "2026-05-28",
+            "label": "Blog",
+            "title": "Best Food Podcasts Helping You Learn While You Cook",
+            "url": "https://bootstrapped.ventures/best-food-podcasts/"
+        },
+        {
             "date": "2026-05-21",
             "label": "Blog",
             "title": "Why You Should Weigh Ingredients Instead of Using Cups",

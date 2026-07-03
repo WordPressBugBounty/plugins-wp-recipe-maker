@@ -105,7 +105,7 @@ class WPRM_SC_Time extends WPRM_Template_Shortcode {
 		if ( $days > 0 ) {
 			$output .= '<span class="wprm-recipe-details wprm-recipe-details-days wprm-recipe-' . $type . ' wprm-recipe-' . $type . '-days">';
 			$output .= $days;
-			$output .= '<span class="sr-only screen-reader-text wprm-screen-reader-text"> ';
+			$output .= '<span class="sr-only screen-reader-text wprm-screen-reader-text" data-nosnippet> ';
 			$output .= $days != 1 ? __( 'days', 'wp-recipe-maker' ) : __( 'day', 'wp-recipe-maker' );
 			$output .= '</span>';
 			$output .= '</span> <span class="wprm-recipe-details-unit wprm-recipe-details-unit-days wprm-recipe-' . $type . '-unit wprm-recipe-' . $type . 'unit-days" aria-hidden="true">';
@@ -125,7 +125,7 @@ class WPRM_SC_Time extends WPRM_Template_Shortcode {
 			}
 			$output .= '<span class="wprm-recipe-details wprm-recipe-details-hours wprm-recipe-' . $type . ' wprm-recipe-' . $type . '-hours">';
 			$output .= $hours;
-			$output .= '<span class="sr-only screen-reader-text wprm-screen-reader-text"> ';
+			$output .= '<span class="sr-only screen-reader-text wprm-screen-reader-text" data-nosnippet> ';
 			$output .= $hours != 1 ? __( 'hours', 'wp-recipe-maker' ) : __( 'hour', 'wp-recipe-maker' );
 			$output .= '</span>';
 			$output .= '</span> <span class="wprm-recipe-details-unit wprm-recipe-details-unit-hours wprm-recipe-' . $type . '-unit wprm-recipe-' . $type . 'unit-hours" aria-hidden="true">';
@@ -145,7 +145,7 @@ class WPRM_SC_Time extends WPRM_Template_Shortcode {
 			}
 			$output .= '<span class="wprm-recipe-details wprm-recipe-details-minutes wprm-recipe-' . $type . ' wprm-recipe-' . $type . '-minutes">';
 			$output .= $minutes;
-			$output .= '<span class="sr-only screen-reader-text wprm-screen-reader-text"> ';
+			$output .= '<span class="sr-only screen-reader-text wprm-screen-reader-text" data-nosnippet> ';
 			$output .= $minutes != 1 ? __( 'minutes', 'wp-recipe-maker' ) : __( 'minute', 'wp-recipe-maker' );
 			$output .= '</span>';
 			$output .= '</span> <span class="wprm-recipe-details-unit wprm-recipe-details-minutes wprm-recipe-' . $type . '-unit wprm-recipe-' . $type . 'unit-minutes" aria-hidden="true">';

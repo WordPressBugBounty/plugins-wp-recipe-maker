@@ -5,6 +5,7 @@ import { useFocused, useSlate } from 'slate-react';
 import he from 'he';
 
 import { __wprm } from 'Shared/Translations';
+import Helpers from 'Shared/Helpers';
 import InlineIngredientsHelper from './InlineIngredientsHelper';
 import { parseQuantity, formatQuantity } from 'Shared/quantities';
 
@@ -259,8 +260,11 @@ const InlineIngredientsInner = (props) => {
                                             if ( splitAmount ) {
                                                 const parts = [ splitAmount ];
                                                 if ( splitUnit ) { parts.push( splitUnit ); }
-                                                if ( splitName ) { parts.push( splitName ); }
-                                                splitString = parts.join( ' ' );
+                                                splitString = Helpers.joinAmountUnitAndName(
+                                                    parts.join( ' ' ),
+                                                    splitName,
+                                                    Helpers.getIngredientConnectorData( ingredient )
+                                                );
                                             } else {
                                                 const parts = [ `${percentage}%` ];
                                                 if ( splitName ) { parts.push( splitName ); }
