@@ -253,14 +253,25 @@ class WPRM_List {
 	public function items() {
 		$items_array = self::unserialize( $this->meta( 'wprm_items', array() ) );
 
+		if ( ! is_array( $items_array ) ) {
+			$items_array = array();
+		}
+
+		$items_array = array_values( $items_array );
+
 		// Make sure each item has a unique ID.
 		$uid = 0;
 		foreach ( $items_array as $index => $item ) {
+			if ( ! is_array( $item ) ) {
+				unset( $items_array[ $index ] );
+				continue;
+			}
+
 			$items_array[ $index ]['uid'] = $uid;
 			$uid++;
 		}
 
-		return $items_array;
+		return array_values( $items_array );
 	}
 
 	/**

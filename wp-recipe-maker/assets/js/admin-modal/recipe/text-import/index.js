@@ -56,7 +56,7 @@ export default class TextImport extends Component {
         const textArea = this.textInput.current;
         let selection = textArea.value.substring( textArea.selectionStart, textArea.selectionEnd );
 
-        selection = selection ? selection : false;
+        selection = selection ? this.cleanUpText( selection ) : false;
 
         if ( 'equipment' === field || 'ingredients' === field || 'instructions' === field ) {
             selection = this.getSeperateFields( selection, field );
@@ -275,13 +275,8 @@ export default class TextImport extends Component {
                         </div>
                         <textarea
                             ref={this.textInput}
-                            value={this.state.text}
+                            defaultValue={this.state.text}
                             placeholder={ __wprm( 'Paste or type recipe' ) }
-                            onChange={(e) => {
-                                this.setState({
-                                    text: this.cleanUpText( e.target.value ),
-                                });
-                            }}
                         />
                     </div>
                     <h2>{ __wprm( '2. Fine-tune selections' ) }</h2>

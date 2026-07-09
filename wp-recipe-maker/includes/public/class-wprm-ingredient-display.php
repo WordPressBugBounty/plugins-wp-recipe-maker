@@ -67,8 +67,8 @@ class WPRM_Ingredient_Display {
 			$locale = function_exists( 'get_locale' ) ? get_locale() : '';
 		}
 
-		$language = strtolower( substr( str_replace( '-', '_', (string) $locale ), 0, 2 ) );
-		$languages = apply_filters( 'wprm_ingredient_unit_connector_locale_languages', array(
+		$language = self::get_language_from_locale( $locale );
+		$languages = self::apply_filters( 'wprm_ingredient_unit_connector_locale_languages', array(
 			'ca',
 			'es',
 			'fr',
@@ -77,8 +77,81 @@ class WPRM_Ingredient_Display {
 			'pt',
 			'ro',
 		) );
+		$languages = is_array( $languages ) ? $languages : array();
 
 		return in_array( $language, $languages, true );
+	}
+
+	/**
+	 * Get settings used to resolve connector elision before ingredient names.
+	 *
+	 * @since	10.3.0
+	 * @param	string|false $locale Locale to check.
+	 */
+	public static function get_connector_elision_settings( $locale = false ) {
+		if ( false === $locale ) {
+			$locale = function_exists( 'get_locale' ) ? get_locale() : '';
+		}
+
+		$language = self::get_language_from_locale( $locale );
+		$rules = self::apply_filters( 'wprm_ingredient_unit_connector_elision_rules', array(
+			'ca' => array(
+				'connectors' => array(
+					'de' => "d'",
+				),
+				'allow_h_elision' => true,
+			),
+			'fr' => array(
+				'connectors' => array(
+					'de' => "d'",
+				),
+				'allow_h_elision' => true,
+			),
+			'it' => array(
+				'connectors' => array(
+					'di' => "d'",
+				),
+				'allow_h_elision' => false,
+			),
+		) );
+		$rules = is_array( $rules ) ? $rules : array();
+		$languages = self::apply_filters( 'wprm_ingredient_unit_connector_elision_locale_languages', array_keys( $rules ) );
+		$languages = is_array( $languages ) ? $languages : array();
+		$language = in_array( $language, $languages, true ) ? $language : '';
+		$language_rules = $language && isset( $rules[ $language ] ) && is_array( $rules[ $language ] ) ? $rules[ $language ] : array();
+		$connectors = isset( $language_rules['connectors'] ) && is_array( $language_rules['connectors'] ) ? $language_rules['connectors'] : array();
+		$normalized_connectors = array();
+		foreach ( $connectors as $connector => $elided_connector ) {
+			if ( is_scalar( $connector ) && is_scalar( $elided_connector ) ) {
+				$normalized_connectors[ strtolower( trim( (string) $connector ) ) ] = trim( (string) $elided_connector );
+			}
+		}
+		$connectors = $normalized_connectors;
+		$allow_h_elision = isset( $language_rules['allow_h_elision'] ) ? (bool) $language_rules['allow_h_elision'] : false;
+
+		$h_aspire_words = self::apply_filters( 'wprm_ingredient_unit_connector_elision_h_aspire_words', array(
+			'hachis',
+			'haddock',
+			'haddocks',
+			'halva',
+			'hamburger',
+			'hamburgers',
+			'hareng',
+			'harengs',
+			'haricot',
+			'haricots',
+			'harissa',
+			'homard',
+			'homards',
+		) );
+		$h_aspire_words = is_array( $h_aspire_words ) ? array_values( array_unique( array_filter( array_map( array( __CLASS__, 'normalize_connector_word' ), $h_aspire_words ) ) ) ) : array();
+
+		return array(
+			'language' => $language,
+			'connectors' => $connectors,
+			'allow_h_elision' => $allow_h_elision,
+			'h_aspire_words' => $h_aspire_words,
+		);
 	}
 
 	/**
@@ -208,8 +281,9 @@ class WPRM_Ingredient_Display {
 	 * @param	string $name_output Ingredient name HTML.
 	 * @param	array  $ingredient  Ingredient data.
 	 * @param	int    $system      Unit system.
+	 * @param	array  $options     Display options.
 	 */
-	public static function join_amount_unit_and_name_html( $amount_unit, $name_output, $ingredient, $system = 1 ) {
+	public static function join_amount_unit_and_name_html( $amount_unit, $name_output, $ingredient, $system = 1, $options = array() ) {
 		$amount_unit = self::trim_join_whitespace( $amount_unit );
 
 		if ( '' === $amount_unit || '' === $name_output ) {
@@ -222,7 +296,12 @@ class WPRM_Ingredient_Display {
 			return $amount_unit . '&#32;' . $name_output;
 		}
 
+		$connector_data = self::resolve_connector_data_for_name( $connector_data, $name_output, $ingredient, $system );
 		$spacing = self::get_connector_spacing( $connector_data['connector_spacing'], true );
+		if ( is_array( $options ) && ! empty( $options['suppress_connector_before_spacing'] ) ) {
+			$spacing['before'] = '';
+		}
+
 		$connector = '<span class="wprm-recipe-ingredient-connector" data-spacing="' . esc_attr( $connector_data['connector_spacing'] ) . '">' . $spacing['before'] . esc_html( $connector_data['connector'] ) . $spacing['after'] . '</span>';
 
 		return $amount_unit . $connector . $name_output;
@@ -251,6 +330,7 @@ class WPRM_Ingredient_Display {
 			return $amount_unit . ' ' . $name;
 		}
 
+		$connector_data = self::resolve_connector_data_for_name( $connector_data, $name, $ingredient, $system );
 		$spacing = self::get_connector_spacing( $connector_data['connector_spacing'], false );
 
 		return $amount_unit . $spacing['before'] . $connector_data['connector'] . $spacing['after'] . $name;
@@ -322,6 +402,168 @@ class WPRM_Ingredient_Display {
 	}
 
 	/**
+	 * Resolve connector data for the ingredient name that follows it.
+	 *
+	 * @since	10.3.0
+	 * @param	array  $connector_data Connector data.
+	 * @param	string $name_output    Ingredient name output.
+	 * @param	array  $ingredient     Ingredient data.
+	 * @param	int    $system         Unit system.
+	 */
+	private static function resolve_connector_data_for_name( $connector_data, $name_output, $ingredient, $system ) {
+		$original_connector_data = $connector_data;
+		$name = self::get_plain_ingredient_name( $name_output );
+
+		if ( self::should_elide_connector( $connector_data, $name ) ) {
+			$settings = self::get_connector_elision_settings();
+			$connector = strtolower( trim( (string) $connector_data['connector'] ) );
+			$connector_data['connector'] = isset( $settings['connectors'][ $connector ] ) ? $settings['connectors'][ $connector ] : "d'";
+			$connector_data['connector_spacing'] = 'space-before';
+		}
+
+		return self::apply_filters( 'wprm_ingredient_unit_connector_data_for_name', $connector_data, $original_connector_data, $name, $ingredient, $system );
+	}
+
+	/**
+	 * Check if the connector should be elided before this ingredient name.
+	 *
+	 * @since	10.3.0
+	 * @param	array  $connector_data Connector data.
+	 * @param	string $name           Ingredient name text.
+	 */
+	private static function should_elide_connector( $connector_data, $name ) {
+		if ( ! is_array( $connector_data ) || empty( $connector_data['connector'] ) || '' === $name ) {
+			return false;
+		}
+
+		$settings = self::get_connector_elision_settings();
+		if ( empty( $settings['language'] ) ) {
+			return false;
+		}
+
+		$connector = strtolower( trim( (string) $connector_data['connector'] ) );
+		if ( empty( $settings['connectors'][ $connector ] ) ) {
+			return false;
+		}
+
+		$word = self::get_first_ingredient_word( $name );
+		if ( '' === $word ) {
+			return false;
+		}
+
+		$normalized_word = self::normalize_connector_word( $word );
+		if ( 'fr' === $settings['language'] && in_array( $normalized_word, $settings['h_aspire_words'], true ) ) {
+			return false;
+		}
+
+		$pattern = ! empty( $settings['allow_h_elision'] ) ? '/^[aeiouy]|^h[aeiouy]/' : '/^[aeiouy]/';
+
+		return 1 === preg_match( $pattern, $normalized_word );
+	}
+
+	/**
+	 * Get the first word of an ingredient name for connector grammar checks.
+	 *
+	 * @since	10.3.0
+	 * @param	string $name Ingredient name.
+	 */
+	private static function get_first_ingredient_word( $name ) {
+		$name = trim( (string) $name );
+
+		if ( '' === $name ) {
+			return '';
+		}
+
+		$name = preg_replace( '/^[^\p{L}]+/u', '', $name );
+
+		if ( preg_match( '/^[\p{L}\']+/u', $name, $matches ) ) {
+			return $matches[0];
+		}
+
+		return '';
+	}
+
+	/**
+	 * Strip markup and helper shortcodes from an ingredient name.
+	 *
+	 * @since	10.3.0
+	 * @param	string $name_output Ingredient name output.
+	 */
+	private static function get_plain_ingredient_name( $name_output ) {
+		$name = is_scalar( $name_output ) ? (string) $name_output : '';
+		$name = preg_replace( '/\[\/?adjustable\]/i', '', $name );
+		$name = function_exists( 'wp_strip_all_tags' ) ? wp_strip_all_tags( $name ) : strip_tags( $name );
+		$name = html_entity_decode( $name, ENT_QUOTES, 'UTF-8' );
+
+		return trim( $name );
+	}
+
+	/**
+	 * Normalize a word for connector grammar comparisons.
+	 *
+	 * @since	10.3.0
+	 * @param	string $word Word to normalize.
+	 */
+	private static function normalize_connector_word( $word ) {
+		$word = trim( (string) $word );
+		$word = function_exists( 'mb_strtolower' ) ? mb_strtolower( $word, 'UTF-8' ) : strtolower( $word );
+		$word = function_exists( 'remove_accents' ) ? remove_accents( $word ) : strtr( $word, array(
+			'à' => 'a',
+			'á' => 'a',
+			'â' => 'a',
+			'ä' => 'a',
+			'æ' => 'ae',
+			'ç' => 'c',
+			'è' => 'e',
+			'é' => 'e',
+			'ê' => 'e',
+			'ë' => 'e',
+			'ì' => 'i',
+			'í' => 'i',
+			'î' => 'i',
+			'ï' => 'i',
+			'ò' => 'o',
+			'ó' => 'o',
+			'ô' => 'o',
+			'ö' => 'o',
+			'œ' => 'oe',
+			'ù' => 'u',
+			'ú' => 'u',
+			'û' => 'u',
+			'ü' => 'u',
+			'ÿ' => 'y',
+		) );
+
+		return $word;
+	}
+
+	/**
+	 * Apply WordPress filters if available.
+	 *
+	 * @since	10.3.0
+	 * @param	string $tag   Filter tag.
+	 * @param	mixed  $value Value to filter.
+	 * @param	mixed  ...$args Additional filter arguments.
+	 */
+	private static function apply_filters( $tag, $value, ...$args ) {
+		if ( function_exists( 'apply_filters' ) ) {
+			return apply_filters( $tag, $value, ...$args );
+		}
+
+		return $value;
+	}
+
+	/**
+	 * Get a two-letter language code from a locale.
+	 *
+	 * @since	10.3.0
+	 * @param	string $locale Locale to parse.
+	 */
+	private static function get_language_from_locale( $locale ) {
+		return strtolower( substr( str_replace( '-', '_', (string) $locale ), 0, 2 ) );
+	}
+
+	/**
 	 * Get before and after spacing for a connector.
 	 *
 	 * @since	10.3.0
@@ -329,7 +571,7 @@ class WPRM_Ingredient_Display {
 	 * @param	bool   $html    Whether to return HTML spaces.
 	 */
 	private static function get_connector_spacing( $spacing, $html = true ) {
-		$space = $html ? '&#32;' : ' ';
+		$space = $html ? '&nbsp;' : ' ';
 		$spacing = self::sanitize_connector_spacing( $spacing );
 
 		switch ( $spacing ) {

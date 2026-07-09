@@ -74,6 +74,7 @@ export default class InputFields extends Component {
                                     }}
                                 />
                             );
+                            const fieldNotice = field.notice ? ( 'function' === typeof field.notice ? field.notice( this.state.fields, index ) : field.notice ) : '';
 
                             return (
                                 <Fragment key={ index }>
@@ -89,6 +90,11 @@ export default class InputFields extends Component {
                                         && <div className="wprm-admin-modal-input-fields-field-label">{ field.label }</div>
                                     }
                                     { ( 'checkbox' !== type || ! field.hasOwnProperty( 'label' ) ) && fieldInput }
+                                    {
+                                        fieldNotice
+                                        &&
+                                        <div className="wprm-admin-modal-input-fields-field-notice">{ fieldNotice }</div>
+                                    }
                                 </Fragment>
                             )
                         })

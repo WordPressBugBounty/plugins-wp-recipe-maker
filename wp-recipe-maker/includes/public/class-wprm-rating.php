@@ -370,4 +370,57 @@ class WPRM_Rating {
 
 		return $formatted;
 	}
+
+	/**
+	 * Safely replace string placeholders in a translated format.
+	 *
+	 * @since    10.7.1
+	 * @param	 string $format Translated format.
+	 * @param	 string $fallback Fallback format.
+	 * @param	 mixed  $replacements Replacements to use.
+	 */
+	public static function safe_format_i18n( $format, $fallback, $replacements ) {
+		$format = is_scalar( $format ) ? (string) $format : '';
+		$fallback = is_scalar( $fallback ) ? (string) $fallback : '';
+		$replacements = is_array( $replacements ) ? $replacements : array( $replacements );
+
+		$replacements = array_map(
+			function( $replacement ) {
+				return is_scalar( $replacement ) ? (string) $replacement : '';
+			},
+			$replacements
+		);
+
+		$using_numbered_placeholders = preg_match( '/%\d+\$s/', $format );
+
+		if ( $using_numbered_placeholders ) {
+			foreach ( array_keys( $replacements ) as $index ) {
+				if ( false === strpos( $format, '%' . ( $index + 1 ) . '$s' ) ) {
+					$format = $fallback;
+					$using_numbered_placeholders = false;
+					break;
+				}
+			}
+		} elseif ( substr_count( $format, '%s' ) < count( $replacements ) ) {
+			$format = $fallback;
+		}
+
+		if ( $using_numbered_placeholders ) {
+			foreach ( $replacements as $index => $replacement ) {
+				$format = str_replace( '%' . ( $index + 1 ) . '$s', $replacement, $format );
+			}
+		} else {
+			foreach ( $replacements as $replacement ) {
+				$placeholder = strpos( $format, '%s' );
+
+				if ( false === $placeholder ) {
+					break;
+				}
+
+				$format = substr_replace( $format, $replacement, $placeholder, 2 );
+			}
+		}
+
+		return $format;
+	}
 }

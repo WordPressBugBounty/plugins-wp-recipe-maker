@@ -5,6 +5,76 @@ export default {
     stripHtml( text = '' ) {
         return String( text ).replace( /(<([^>]+)>)/ig, '' ).trim();
     },
+    getConnectorElisionSettings() {
+        const adminSettings = typeof wprm_admin !== 'undefined' && wprm_admin.settings ? wprm_admin.settings : false;
+        const publicSettings = typeof wprm_public !== 'undefined' && wprm_public.settings ? wprm_public.settings : false;
+        const settings = adminSettings || publicSettings || {};
+
+        return settings.ingredient_unit_connector_elision || {};
+    },
+    normalizeConnectorWord( word = '' ) {
+        let normalized = String( word ).trim().toLowerCase();
+
+        if ( normalized.normalize ) {
+            normalized = normalized.normalize( 'NFD' ).replace( /[\u0300-\u036f]/g, '' );
+        }
+
+        return normalized
+            .replace( /œ/g, 'oe' )
+            .replace( /æ/g, 'ae' );
+    },
+    getFirstIngredientWord( name = '' ) {
+        const cleaned = this.stripAdjustableShortcodes( this.stripHtml( name ) )
+            .replace( /^[^A-Za-zÀ-ÖØ-öø-ÿŒœÆæ]+/, '' );
+        const match = cleaned.match( /^[A-Za-zÀ-ÖØ-öø-ÿŒœÆæ']+/ );
+
+        return match ? match[0] : '';
+    },
+    shouldElideConnector( connectorData = {}, name = '' ) {
+        if ( ! connectorData.connector ) {
+            return false;
+        }
+
+        const settings = this.getConnectorElisionSettings();
+        if ( ! settings.language ) {
+            return false;
+        }
+
+        const connector = String( connectorData.connector ).trim().toLowerCase();
+        const connectors = settings.connectors && 'object' === typeof settings.connectors ? settings.connectors : {};
+        if ( ! connectors[ connector ] ) {
+            return false;
+        }
+
+        const word = this.getFirstIngredientWord( name );
+        if ( ! word ) {
+            return false;
+        }
+
+        const normalizedWord = this.normalizeConnectorWord( word );
+        const hAspireWords = Array.isArray( settings.h_aspire_words ) ? settings.h_aspire_words : [];
+
+        if ( 'fr' === settings.language && hAspireWords.includes( normalizedWord ) ) {
+            return false;
+        }
+
+        return settings.allow_h_elision ? /^[aeiouy]|^h[aeiouy]/.test( normalizedWord ) : /^[aeiouy]/.test( normalizedWord );
+    },
+    resolveConnectorDataForName( connectorData = false, name = '' ) {
+        if ( ! connectorData || ! connectorData.connector || ! this.shouldElideConnector( connectorData, name ) ) {
+            return connectorData;
+        }
+
+        const settings = this.getConnectorElisionSettings();
+        const connector = String( connectorData.connector ).trim().toLowerCase();
+        const connectors = settings.connectors && 'object' === typeof settings.connectors ? settings.connectors : {};
+
+        return {
+            ...connectorData,
+            connector: connectors[ connector ] || "d'",
+            connector_spacing: 'space-before',
+        };
+    },
     getConnectorSpacing( spacing = 'space-both' ) {
         switch ( spacing ) {
             case 'space-before':
@@ -59,6 +129,7 @@ export default {
         }
 
         if ( connectorData && connectorData.connector ) {
+            connectorData = this.resolveConnectorDataForName( connectorData, name );
             const spacing = this.getConnectorSpacing( connectorData.connector_spacing );
             return amountUnit + spacing.before + connectorData.connector + spacing.after + name;
         }

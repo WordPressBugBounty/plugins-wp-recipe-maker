@@ -6,6 +6,7 @@ import Media from 'Modal/general/Media';
 import TextFilter from '../general/TextFilter';
 import bulkEditCheckbox from '../general/bulkEditCheckbox';
 import Api from 'Shared/Api';
+import Helpers from 'Shared/Helpers';
 import Icon from 'Shared/Icon';
 import Tooltip from 'Shared/Tooltip';
 import { __wprm } from 'Shared/Translations';
@@ -25,6 +26,29 @@ export default {
             const option = connectorSpacingOptions.find( ( option ) => option.value === value );
             return option ? option.label : connectorSpacingOptions[0].label;
         };
+        const getConnectorElisionNotice = ( connector = '' ) => {
+            const normalized = he.decode( `${ connector }`.replace( /<[^>]*>/g, '' ) ).trim().toLowerCase();
+            const settings = Helpers.getConnectorElisionSettings();
+            const connectors = settings.connectors && 'object' === typeof settings.connectors ? settings.connectors : {};
+
+            if ( ! normalized || ! Object.keys( connectors ).length ) {
+                return '';
+            }
+
+            if ( connectors[ normalized ] ) {
+                return `${ __wprm( 'WPRM can automatically show' ) } "${ connectors[ normalized ] }" ${ __wprm( 'before matching ingredient names. Keep the base connector here so other ingredients can still show' ) } "${ normalized }".`;
+            }
+
+            const baseConnector = Object.keys( connectors ).find( ( base ) => {
+                return String( connectors[ base ] ).toLowerCase() === normalized;
+            });
+
+            if ( baseConnector ) {
+                return `${ __wprm( 'Use' ) } "${ baseConnector }" ${ __wprm( 'as the connector. WPRM will automatically show' ) } "${ connectors[ baseConnector ] }" ${ __wprm( 'before matching ingredient names where appropriate.' ) }`;
+            }
+
+            return '';
+        };
         const openConnectorModal = ( row ) => {
             WPRM_Modal.open( 'input-fields', {
                 header: __wprm( 'Change Connector' ),
@@ -33,6 +57,7 @@ export default {
                     {
                         label: __wprm( 'Connector' ),
                         value: row.original.connector || '',
+                        notice: ( fields ) => getConnectorElisionNotice( fields[0].value ),
                     },
                     {
                         label: __wprm( 'Connector Spacing' ),

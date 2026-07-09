@@ -18,7 +18,11 @@ if ( WPRM_Settings::get( 'performance_use_combined_stars' ) ) :
 
 	$svg = WPRM_URL . 'assets/icons/rating/' . $star_icon . $rating . '.svg';
 	// translators: %s: number of stars for this recipe.
-	$alt = sprintf( _n( '%s star', '%s stars', $rating, 'wp-recipe-maker' ), $rating );
+	$alt = WPRM_Rating::safe_format_i18n(
+		_n( '%s star', '%s stars', $rating, 'wp-recipe-maker' ),
+		1 === intval( $rating ) ? '%s star' : '%s stars',
+		$rating
+	);
 
 	$svg = apply_filters( 'wprm_rating_stars_svg_url', $svg, $rating );
 

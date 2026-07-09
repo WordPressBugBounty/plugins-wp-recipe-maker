@@ -1,6 +1,18 @@
 {
     "news": [
         {
+            "date": "2026-07-09",
+            "label": "Blog",
+            "title": "Best Food Hashtags for Instagram and TikTok",
+            "url": "https://bootstrapped.ventures/food-hashtag/"
+        },
+        {
+            "date": "2026-07-06",
+            "label": "Blog",
+            "title": "Food Blog Communities That Actually Help You Grow",
+            "url": "https://bootstrapped.ventures/food-blog-community/"
+        },
+        {
             "date": "2026-07-03",
             "label": "Release",
             "title": "WP Recipe Maker 10.7.0",

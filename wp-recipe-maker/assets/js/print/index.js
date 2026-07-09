@@ -75,14 +75,26 @@ window.WPRMPrint = {
 
         if ( args ) {
             args = JSON.parse( args );
+            this.maybeSetStoredArgs( args );
+        }
+    },
+    maybeSetStoredArgs( args ) {
+        if ( ! args ) {
+            return;
+        }
 
-            if ( args && args.hasOwnProperty( 'id' ) ) {
-                const firstRecipe = document.querySelector( '#wprm-print-recipe-0' );
-                const firstRecipeId = firstRecipe && firstRecipe.dataset.hasOwnProperty( 'recipeId' ) ? parseInt( firstRecipe.dataset.recipeId ) : false;
+        if ( args.hasOwnProperty( 'id' ) ) {
+            const firstRecipe = document.querySelector( '#wprm-print-recipe-0' );
+            const firstRecipeId = firstRecipe && firstRecipe.dataset.hasOwnProperty( 'recipeId' ) ? parseInt( firstRecipe.dataset.recipeId ) : false;
 
-                if ( firstRecipeId && firstRecipeId === parseInt( args.id ) ) {
-                    this.setArgs( args );
-                }
+            if ( firstRecipeId && firstRecipeId === parseInt( args.id ) ) {
+                this.setArgs( args );
+            }
+        } else if ( args.hasOwnProperty( 'collection' ) && args.hasOwnProperty( 'recipes' ) ) {
+            const collectionPrintApp = document.querySelector( '#wprm-recipe-collections-print-app' );
+
+            if ( collectionPrintApp ) {
+                this.setArgs( args );
             }
         }
     },

@@ -51,12 +51,17 @@ class WPRM_List_Saver {
 		// List Items.
 		if ( isset( $list['items'] ) ) {
 			$sanitized_items = array();
+			$items = is_array( $list['items'] ) ? array_values( $list['items'] ) : array();
 
 			$nbr_items = 0;
 			$nbr_items_internal = 0;
 			$nbr_items_external = 0;
 
-			foreach ( $list['items'] as $item ) {
+			foreach ( $items as $item ) {
+				if ( ! is_array( $item ) || ! isset( $item['type'] ) || ! isset( $item['data'] ) || ! is_array( $item['data'] ) ) {
+					continue;
+				}
+
 				$valid_item = false;
 				$data = $item['data'];
 

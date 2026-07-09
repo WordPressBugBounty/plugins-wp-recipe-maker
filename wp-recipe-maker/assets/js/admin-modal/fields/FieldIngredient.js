@@ -6,6 +6,7 @@ import he from 'he';
 const isTabHotkey = isKeyHotkey('tab');
 
 import Api from 'Shared/Api';
+import Helpers from 'Shared/Helpers';
 import Icon from 'Shared/Icon';
 import Tooltip from 'Shared/Tooltip';
 import { __wprm } from 'Shared/Translations';
@@ -47,6 +48,30 @@ const hasConnectorApi = () => {
         && Api.modal
         && 'function' === typeof Api.modal.getIngredientUnitConnector
     );
+};
+
+const getConnectorElisionNotice = (connector = '') => {
+    const normalized = getPlainText( connector ).toLowerCase();
+    const settings = Helpers.getConnectorElisionSettings();
+    const connectors = settings.connectors && 'object' === typeof settings.connectors ? settings.connectors : {};
+
+    if ( ! normalized || ! Object.keys( connectors ).length ) {
+        return '';
+    }
+
+    if ( connectors[ normalized ] ) {
+        return `${ __wprm( 'WPRM can automatically show' ) } "${ connectors[ normalized ] }" ${ __wprm( 'before matching ingredient names. Keep the base connector here so other ingredients can still show' ) } "${ normalized }".`;
+    }
+
+    const baseConnector = Object.keys( connectors ).find( ( base ) => {
+        return String( connectors[ base ] ).toLowerCase() === normalized;
+    });
+
+    if ( baseConnector ) {
+        return `${ __wprm( 'Use' ) } "${ baseConnector }" ${ __wprm( 'as the connector. WPRM will automatically show' ) } "${ connectors[ baseConnector ] }" ${ __wprm( 'before matching ingredient names where appropriate.' ) }`;
+    }
+
+    return '';
 };
  
 const handle = (provided) => (
@@ -107,7 +132,9 @@ const ingredient = (props, provided) => {
     const unitName = getPlainText( unit );
 
     const hasSplits = props.splits && props.splits.length > 0;
-    const connector = props.unitConnectorData && props.unitConnectorData.connector ? props.unitConnectorData.connector : '';
+    const connectorData = props.unitConnectorData && props.unitConnectorData.connector ? props.unitConnectorData : false;
+    const displayConnectorData = connectorData ? Helpers.resolveConnectorDataForName( connectorData, props.name ) : false;
+    const connector = displayConnectorData && displayConnectorData.connector ? displayConnectorData.connector : '';
     const showConnector = props.showConnectorControl;
     const connectorDisabled = ! unitName || props.unitConnectorLoading;
     const connectorTooltip = unitName ? connectorButtonTooltip : __wprm( 'Add a unit before setting a connector.' );
@@ -381,6 +408,7 @@ export default class FieldIngredient extends Component {
                     {
                         label: __wprm( 'Connector' ),
                         value: connectorData.connector,
+                        notice: ( fields ) => getConnectorElisionNotice( fields[0].value ),
                     },
                     {
                         label: __wprm( 'Connector Spacing' ),

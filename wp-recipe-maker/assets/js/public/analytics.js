@@ -212,7 +212,7 @@ window.WPRecipeMaker.analytics = {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json',
 			};
-	
+
 			// Only require nonce when logged in to prevent caching problems for regular visitors.
 			if ( 0 < parseInt( wprm_public.user ) ) {
 				headers['X-WP-Nonce'] = wprm_public.api_nonce;
@@ -228,7 +228,7 @@ window.WPRecipeMaker.analytics = {
 					postId,
 					type,
 					meta,
-					uid: getCookieValue( 'wprm_analytics_visitor' ),
+					uid: getAnalyticsVisitorId(),
 					nonce: wprm_public.nonce,
 				}),
 			});
@@ -294,4 +294,36 @@ function ready( fn ) {
 function getCookieValue( a ) {
     var b = document.cookie.match('(^|;)\\s*' + a + '\\s*=\\s*([^;]+)');
     return b ? b.pop() : '';
+}
+
+function getAnalyticsVisitorId() {
+	let visitorId = getCookieValue( 'wprm_analytics_visitor' );
+
+	if ( ! visitorId ) {
+		visitorId = generateAnalyticsVisitorId();
+		setCookieValue( 'wprm_analytics_visitor', visitorId );
+	}
+
+	return visitorId;
+}
+
+function generateAnalyticsVisitorId() {
+	if ( window.crypto && window.crypto.getRandomValues ) {
+		const values = new Uint32Array( 2 );
+		window.crypto.getRandomValues( values );
+
+		return Date.now().toString( 36 ) + values[0].toString( 36 ) + values[1].toString( 36 );
+	}
+
+	return Date.now().toString( 36 ) + Math.random().toString( 36 ).substring( 2, 12 );
+}
+
+function setCookieValue( name, value ) {
+	let cookie = name + '=' + encodeURIComponent( value ) + '; expires=Tue, 19 Jan 2038 03:14:07 GMT; path=/; SameSite=Lax';
+
+	if ( 'https:' === window.location.protocol ) {
+		cookie += '; Secure';
+	}
+
+	document.cookie = cookie;
 }
