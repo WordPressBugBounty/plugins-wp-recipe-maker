@@ -514,6 +514,7 @@ class WPRM_Settings {
 	private static function get_settings_change_log_entries( $old_settings, $new_settings ) {
 		$changes = array();
 		$details = self::get_details();
+		$defaults = self::get_defaults();
 
 		$keys = array_unique(
 			array_merge(
@@ -531,8 +532,9 @@ class WPRM_Settings {
 				continue;
 			}
 
-			$old_value = $old_exists ? $old_settings[ $setting_id ] : null;
-			$new_value = $new_exists ? $new_settings[ $setting_id ] : null;
+			$default_exists = array_key_exists( $setting_id, $defaults );
+			$old_value = $old_exists ? $old_settings[ $setting_id ] : ( $default_exists ? $defaults[ $setting_id ] : null );
+			$new_value = $new_exists ? $new_settings[ $setting_id ] : ( $default_exists ? $defaults[ $setting_id ] : null );
 
 			if ( maybe_serialize( $old_value ) === maybe_serialize( $new_value ) ) {
 				continue;

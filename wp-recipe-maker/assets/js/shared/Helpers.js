@@ -58,7 +58,22 @@ export default {
             return false;
         }
 
-        return settings.allow_h_elision ? /^[aeiouy]|^h[aeiouy]/.test( normalizedWord ) : /^[aeiouy]/.test( normalizedWord );
+        const elisionWords = Array.isArray( settings.elision_words ) ? settings.elision_words : [];
+        if ( elisionWords.includes( normalizedWord ) ) {
+            return true;
+        }
+
+        const elisionVowels = 'string' === typeof settings.elision_vowels ? settings.elision_vowels : 'aeiouy';
+        if ( elisionVowels.includes( normalizedWord.charAt( 0 ) ) ) {
+            return true;
+        }
+
+        const secondLetter = normalizedWord.charAt( 1 );
+
+        return !! secondLetter
+            && settings.allow_h_elision
+            && 'h' === normalizedWord.charAt( 0 )
+            && elisionVowels.includes( secondLetter );
     },
     resolveConnectorDataForName( connectorData = false, name = '' ) {
         if ( ! connectorData || ! connectorData.connector || ! this.shouldElideConnector( connectorData, name ) ) {

@@ -128,20 +128,49 @@ class WPRM_Version {
 	public static function migration_needed_to( $version ) {
 		// If we checked it before and a migration wasn't necessary then, no need to check again.
 		$checked_versions = get_option( 'wprm_versions_checked', array() );
-		if ( in_array( $version, $checked_versions ) ) {
+		if ( in_array( $version, $checked_versions, true ) ) {
 			return false;
+		}
+
+		// If we already know a migration is needed, avoid running the resource-intensive query again.
+		$migration_needed_versions = get_option( 'wprm_versions_migration_needed', array() );
+		if ( in_array( $version, $migration_needed_versions, true ) ) {
+			return true;
 		}
 
 		// Need to do an actual check (resource intensive, checks all recipes).
 		$migration_needed = self::check_if_all_recipes_migrated_to( $version );
 
-		// No migration needed? Store this result!
-		if ( ! $migration_needed ) {
+		if ( $migration_needed ) {
+			$migration_needed_versions[] = $version;
+			update_option( 'wprm_versions_migration_needed', $migration_needed_versions, false );
+		} else {
+			self::mark_migration_checked( $version );
+		}
+
+		return $migration_needed;
+	}
+
+	/**
+	 * Mark a migration as checked and no longer needed.
+	 *
+	 * @since	10.8.0
+	 * @param	string $version Version number that was checked.
+	 */
+	public static function mark_migration_checked( $version ) {
+		$checked_versions = get_option( 'wprm_versions_checked', array() );
+		if ( ! in_array( $version, $checked_versions, true ) ) {
 			$checked_versions[] = $version;
 			update_option( 'wprm_versions_checked', $checked_versions, false );
 		}
 
-		return $migration_needed;
+		$migration_needed_versions = get_option( 'wprm_versions_migration_needed', array() );
+		$version_key = array_search( $version, $migration_needed_versions, true );
+
+		if ( false !== $version_key ) {
+			unset( $migration_needed_versions[ $version_key ] );
+			update_option( 'wprm_versions_migration_needed', array_values( $migration_needed_versions ), false );
+		}
 	}
 
 	/**
@@ -154,10 +183,12 @@ class WPRM_Version {
 		$version_as_number = self::convert_to_number( $version );
 
 		$args = array(
-			'post_type' => WPRM_POST_TYPE,
-			'post_status' => 'any',
+			'post_type'      => WPRM_POST_TYPE,
+			'post_status'    => 'any',
 			'posts_per_page' => 1,
-			'meta_query' => array(
+			'no_found_rows'  => true,
+			'orderby'        => 'none',
+			'meta_query'     => array(
 				'relation' => 'OR',
 				array(
 					'key'		=> 'wprm_version',
@@ -173,7 +204,7 @@ class WPRM_Version {
 		);
 
 		$query = new WP_Query( $args );
-		return 0 < $query->found_posts;
+		return ! empty( $query->posts );
 	}
 }
 

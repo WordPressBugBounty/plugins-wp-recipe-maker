@@ -158,6 +158,10 @@ class WPRM_Api_Manage_Taxonomies {
 			case 'count':
 				$args['orderby'] = 'count';
 				break;
+			case 'total_count':
+				$args['orderby'] = 'none';
+				$args['wprm_orderby_total_count'] = true;
+				break;
 			case 'plural':
 				$args['orderby'] = 'meta_value';
 				$args['meta_key'] = 'wprm_' . $type . '_plural';
@@ -652,12 +656,38 @@ class WPRM_Api_Manage_Taxonomies {
 	}
 
 	/**
-	 * Filter the where taxonomies query.
+	 * Filter the taxonomy query clauses.
 	 *
 	 * @since	5.0.0
 	 */
 	public static function api_manage_taxonomies_query( $pieces, $taxonomies, $args ) {
 		global $wpdb;
+
+		$order_by_total_count = isset( $args['wprm_orderby_total_count'] ) && $args['wprm_orderby_total_count'];
+		if ( $order_by_total_count && 'count' !== $args['fields'] ) {
+			$taxonomy = isset( $taxonomies[0] ) ? sanitize_key( $taxonomies[0] ) : '';
+
+			if ( $taxonomy ) {
+				// Calculate the all-status count before pagination so sorting works across the complete result set.
+				$pieces['join'] .= $wpdb->prepare(
+					" LEFT JOIN (
+						SELECT tr.term_taxonomy_id, COUNT(p.ID) AS total_count
+						FROM {$wpdb->term_relationships} tr
+						INNER JOIN {$wpdb->term_taxonomy} count_tt ON count_tt.term_taxonomy_id = tr.term_taxonomy_id
+						INNER JOIN {$wpdb->posts} p ON p.ID = tr.object_id
+						WHERE count_tt.taxonomy = %s
+						AND p.post_status != 'trash'
+						GROUP BY tr.term_taxonomy_id
+					) wprm_total_counts ON wprm_total_counts.term_taxonomy_id = tt.term_taxonomy_id",
+					$taxonomy
+				);
+
+				$order = isset( $pieces['order'] ) && 'DESC' === strtoupper( $pieces['order'] ) ? 'DESC' : 'ASC';
+				$pieces['fields'] .= ', COALESCE(wprm_total_counts.total_count, 0) AS wprm_total_count';
+				$pieces['orderby'] = "ORDER BY wprm_total_count {$order}, t.term_id {$order}";
+				$pieces['order'] = '';
+			}
+		}
 		
 		$id_search = isset( $args['wprm_search_id'] ) ? $args['wprm_search_id'] : false;
 		if ( $id_search ) {

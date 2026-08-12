@@ -26,6 +26,8 @@ const getShortcodeId = (entry) => {
 
 // Shortcodes that should be marked as "new" in the Add Blocks view
 const newShortcodes = [
+    // New in 10.8.0
+    'wprm-recipe-analytics',
     // New in 10.1.0
     'wprm-recipe-share-options-popup',
     'wprm-recipe-mastodon-share',
@@ -97,6 +99,7 @@ const shortcodeGroups = {
             { id: 'wprm-recipe-nutrition', description: 'Display nutrition information' },
             { id: 'wprm-recipe-url', description: 'Display the recipe URL' },
             { id: 'wprm-recipe-custom-field', description: 'Display the value of one of your custom fields' },
+            { id: 'wprm-recipe-analytics', name: 'Analytics', description: 'Display a tracked interaction count for the current recipe' },
         ],
     },
     roundup: {

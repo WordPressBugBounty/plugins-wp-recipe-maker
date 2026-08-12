@@ -1914,6 +1914,9 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 			}
 		}
 
+		// Allow extensions to customize the final instruction image output.
+		$img = apply_filters( 'wprm_recipe_instruction_image_output', $img, $instruction );
+
 		return $img;
 	}
 	

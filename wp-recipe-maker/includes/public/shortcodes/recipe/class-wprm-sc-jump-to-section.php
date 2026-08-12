@@ -263,7 +263,7 @@ class WPRM_SC_Jump_To_Section extends WPRM_Template_Shortcode {
 
 		foreach ( $sections as $section ) {
 			// Get text for section.
-			$text = trim( $atts[ $section . '_text' ] );
+			$text = WPRM_i18n::maybe_translate( trim( $atts[ $section . '_text' ] ) );
 			
 			// Get optional icon.
 			$icon = '';

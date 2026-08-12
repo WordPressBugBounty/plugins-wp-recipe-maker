@@ -35,6 +35,7 @@ class WPRM_Assets {
 	 */
 	public static function init() {
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue' ), 1 );
+		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'maybe_load_for_blocks' ), 99 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin' ), 1 );
 		add_action( 'amp_post_template_css', array( __CLASS__, 'amp_style' ) );
 		add_action( 'enqueue_block_editor_assets', array( __CLASS__, 'block_editor_assets' ) );
@@ -69,6 +70,43 @@ class WPRM_Assets {
 		
 		if ( false === WPRM_Settings::get( 'only_load_assets_when_needed' ) ) {
 			self::load();
+		}
+	}
+
+	/**
+	 * Load public assets early when a WPRM block is present in the main query.
+	 *
+	 * Dynamic blocks render after styles have usually been printed in the page
+	 * head. Detecting their saved block markup here keeps conditional loading
+	 * enabled while ensuring the stylesheets are available in time.
+	 *
+	 * @since	10.8.1
+	 */
+	public static function maybe_load_for_blocks() {
+		if ( false === WPRM_Settings::get( 'only_load_assets_when_needed' ) ) {
+			return;
+		}
+
+		global $wp_query;
+
+		$posts = isset( $wp_query->posts ) && is_array( $wp_query->posts ) ? $wp_query->posts : array();
+
+		// Some custom queries do not expose the queried post through the posts array.
+		if ( ! $posts && function_exists( 'get_queried_object' ) ) {
+			$queried_object = get_queried_object();
+
+			if ( is_object( $queried_object ) && isset( $queried_object->post_content ) ) {
+				$posts[] = $queried_object;
+			}
+		}
+
+		foreach ( $posts as $post ) {
+			$content = is_object( $post ) && isset( $post->post_content ) && is_string( $post->post_content ) ? $post->post_content : '';
+
+			if ( $content && preg_match( '/<!--\s+wp:wp-recipe-maker\//', $content ) ) {
+				self::load();
+				return;
+			}
 		}
 	}
 
@@ -132,6 +170,7 @@ class WPRM_Assets {
 	public static function localize_public() {
 		return array(
 			'user' => get_current_user_id(),
+			'assets_url' => WPRM_URL . 'dist/',
 			'endpoints' => array(
 				'analytics' => rtrim( get_rest_url( null, 'wp-recipe-maker/v1/analytics' ), '/' ),
 				'integrations' => rtrim( get_rest_url( null, 'wp-recipe-maker/v1/integrations' ), '/' ),

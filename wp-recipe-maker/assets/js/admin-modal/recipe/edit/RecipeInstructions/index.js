@@ -9,6 +9,7 @@ import { __wprm } from 'Shared/Translations';
 import Icon from 'Shared/Icon';
 import Helpers from 'Shared/Helpers';
 import { parseQuantity, formatQuantity } from 'Shared/quantities';
+import { getIngredientUnitForAmount } from '../../ingredient-unit';
 
 import EditMode from '../../../general/EditMode';
 import FieldContainer from '../../../fields/FieldContainer';
@@ -232,7 +233,7 @@ export default class RecipeInstructions extends Component {
                                 const allowFractions = typeof wprm_admin !== 'undefined' && wprm_admin.settings ? ( wprm_admin.settings.fractions_enabled || false ) : false;
                                 splitAmount = formatQuantity( calculated, decimals, allowFractions );
                             }
-                            const splitUnit = ingredient.unit || '';
+                            const splitUnit = getIngredientUnitForAmount( ingredient, parseQuantity( splitAmount ) );
                             const splitName = ingredient.name || '';
                             const splitString = splitAmount ? `  └ ${ Helpers.joinAmountUnitAndName(
                                 [ splitAmount, splitUnit ].filter( Boolean ).join( ' ' ),

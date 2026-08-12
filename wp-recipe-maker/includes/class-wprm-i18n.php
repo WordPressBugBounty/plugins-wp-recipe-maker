@@ -53,6 +53,7 @@ class WPRM_i18n {
 			'Ingredients' => __( 'Ingredients', 'wp-recipe-maker' ),
 			'Materials' => __( 'Materials', 'wp-recipe-maker' ),
 			'Instructions' => __( 'Instructions', 'wp-recipe-maker' ),
+			'Method' => __( 'Method', 'wp-recipe-maker' ),
 			'Video' => __( 'Video', 'wp-recipe-maker' ),
 			'Notes' => __( 'Notes', 'wp-recipe-maker' ),
 			'Nutrition' => __( 'Nutrition', 'wp-recipe-maker' ),
@@ -72,6 +73,7 @@ class WPRM_i18n {
 			'Jump to Recipe' => __( 'Jump to Recipe', 'wp-recipe-maker' ),
 			'Print Recipe' => __( 'Print Recipe', 'wp-recipe-maker' ),
 			'Read More' => __( 'Read More', 'wp-recipe-maker' ),
+			'Check out this recipe' => __( 'Check out this recipe', 'wp-recipe-maker' ),
 			'Rate this Recipe' => __( 'Rate this Recipe', 'wp-recipe-maker' ),
 		);
 

@@ -25,7 +25,7 @@ class WPRM_Metadata {
 	 * @access   private
 	 * @var      int METADATA_CACHE_VERSION Version for the recipe metadata cache.
 	 */
-	const METADATA_CACHE_VERSION = 1;
+	const METADATA_CACHE_VERSION = 2;
 
 	/**
 	 * List of recipes we've already outputted the metadata for.
@@ -450,6 +450,7 @@ class WPRM_Metadata {
 				'wprm_recipe_field' => self::get_filter_signature( 'wprm_recipe_field' ),
 				'wprm_recipe_metadata' => self::get_filter_signature( 'wprm_recipe_metadata' ),
 				'wprm_recipe_metadata_cache_hash_data' => self::get_filter_signature( 'wprm_recipe_metadata_cache_hash_data' ),
+				'wprm_video_metadata_description' => self::get_filter_signature( 'wprm_video_metadata_description' ),
 				'wpml_translate_single_string' => self::get_filter_signature( 'wpml_translate_single_string' ),
 			),
 		);
@@ -555,6 +556,48 @@ class WPRM_Metadata {
 	}
 
 	/**
+	 * Remove URLs from a video description before including it in the metadata.
+	 *
+	 * @since    10.8.2
+	 * @param    mixed  $video_metadata Video metadata to sanitize.
+	 * @param    object $recipe         Recipe the video belongs to.
+	 */
+	public static function sanitize_video_metadata_description( $video_metadata, $recipe = false ) {
+		if ( ! is_array( $video_metadata ) || ! isset( $video_metadata['description'] ) || ! is_string( $video_metadata['description'] ) ) {
+			return $video_metadata;
+		}
+
+		$original_description = $video_metadata['description'];
+		$description = preg_replace( '~(?:https?://|www\.)[^\s<]+~i', '', $original_description );
+
+		if ( null === $description ) {
+			$description = $original_description;
+		} elseif ( $description !== $original_description ) {
+			$description = str_replace( array( "\r\n", "\r" ), "\n", $description );
+			$description = preg_replace( '/[ \t]+/', ' ', $description );
+			$description = preg_replace( '/ *\n */', "\n", $description );
+			$description = preg_replace( '/\n{3,}/', "\n\n", $description );
+			$description = trim( $description );
+		}
+
+		$description = apply_filters(
+			'wprm_video_metadata_description',
+			$description,
+			$original_description,
+			$video_metadata,
+			$recipe
+		);
+
+		if ( is_string( $description ) && '' !== trim( $description ) ) {
+			$video_metadata['description'] = $description;
+		} else {
+			unset( $video_metadata['description'] );
+		}
+
+		return $video_metadata;
+	}
+
+	/**
 	 * Get the metadata for a recipe.
 	 *
 	 * @since    1.0.0
@@ -636,7 +679,7 @@ class WPRM_Metadata {
 		// Recipe video.
 		$check_video_parts = false;
 		if ( $recipe->video_metadata() ) {
-			$metadata['video'] = $recipe->video_metadata();
+			$metadata['video'] = self::sanitize_video_metadata_description( $recipe->video_metadata(), $recipe );
 			$metadata['video']['@type'] = 'VideoObject';
 			$check_video_parts = true;
 		}
@@ -820,7 +863,7 @@ class WPRM_Metadata {
 						}
 
 						if ( $video_metadata ) {
-							$metadata_instruction['video'] = $video_metadata;
+							$metadata_instruction['video'] = self::sanitize_video_metadata_description( $video_metadata, $recipe );
 							$metadata_instruction['video']['@type'] = 'VideoObject';
 						}
 					}

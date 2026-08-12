@@ -1,4 +1,4 @@
-import React, { Fragment, useState } from 'react';
+import React, { Fragment, useRef } from 'react';
 
 import '../../../../css/admin/modal/recipe/fields/import.scss';
 
@@ -8,10 +8,10 @@ import FieldContainer from '../../fields/FieldContainer';
 import FieldTextarea from '../../fields/FieldTextarea';
  
 const RecipeImport = (props) => {
-    const [text, setText] = useState('');
+    const textInput = useRef(null);
 
     const openImportModal = (mode) => {
-        const trimmedText = text.trim();
+        const trimmedText = textInput.current.value.trim();
 
         if ( ! trimmedText ) {
             alert( __wprm( 'Paste or type recipe and click the import button' ) );
@@ -37,12 +37,9 @@ const RecipeImport = (props) => {
         <Fragment>
             <FieldContainer label={ __wprm( 'Import from Text' ) }>
                 <div className="wprm-admin-modal-recipe-import-field">
-                    <FieldTextarea
+                    <textarea
+                        ref={ textInput }
                         placeholder={ __wprm( 'Paste or type recipe and click the import button' ) }
-                        value={ text }
-                        onChange={ (value) => {
-                            setText( value );
-                        }}
                     />
                     <div className="wprm-admin-modal-recipe-import-actions">
                         <Button

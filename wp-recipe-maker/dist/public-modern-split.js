@@ -625,6 +625,18 @@ function ready(fn) {
 
 /***/ }),
 
+/***/ 6563:
+/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
+
+/* global __webpack_public_path__ */
+
+const publicAssetsUrl = window.wprm_public && window.wprm_public.assets_url;
+if (publicAssetsUrl) {
+  __webpack_require__.p = publicAssetsUrl;
+}
+
+/***/ }),
+
 /***/ 1104:
 /***/ (() => {
 
@@ -5620,7 +5632,7 @@ function animateScrollTo(numberOrCoordsOrElement, userOptions = {}) {
 /******/ 		// This function allow to reference async chunks
 /******/ 		__webpack_require__.u = (chunkId) => {
 /******/ 			// return url for filenames based on template
-/******/ 			return "" + {"1":"../../wp-recipe-maker-premium/dist/public-feature-add-to-collection","10":"../../wp-recipe-maker-premium/dist/public-feature-add-to-shopping-list","83":"../../wp-recipe-maker-premium/dist/public-feature-saved-collection","215":"public-feature-media-toggle","292":"../../wp-recipe-maker-premium/dist/public-feature-recipe-collections-jump-to-section","297":"public-feature-instacart","349":"../../wp-recipe-maker-premium/dist/public-feature-recipe-collections-app","576":"../../wp-recipe-maker-premium/dist/public-feature-recipe-submission","582":"../../wp-recipe-maker-premium/dist/public-feature-product-modal","615":"public-feature-debug","631":"public-feature-my-shopping-help","765":"public-feature-cookpal","790":"public-feature-slickstream","794":"public-feature-jump-to-section","796":"public-feature-pinterest","830":"../../wp-recipe-maker-premium/dist/public-feature-shopping-list","864":"../../wp-recipe-maker-premium/dist/public-feature-unit-conversion","868":"../../wp-recipe-maker-premium/dist/public-feature-product-icon","911":"public-feature-grow","929":"../../wp-recipe-maker-premium/dist/public-feature-recipe-collections-print","939":"public-feature-video","990":"public-feature-expandable"}[chunkId] + ".js";
+/******/ 			return "" + {"1":"../../wp-recipe-maker-premium/dist/public-feature-add-to-collection","10":"../../wp-recipe-maker-premium/dist/public-feature-add-to-shopping-list","83":"../../wp-recipe-maker-premium/dist/public-feature-saved-collection","215":"public-feature-media-toggle","292":"../../wp-recipe-maker-premium/dist/public-feature-recipe-collections-jump-to-section","297":"public-feature-instacart","349":"../../wp-recipe-maker-premium/dist/public-feature-recipe-collections-app","576":"../../wp-recipe-maker-premium/dist/public-feature-recipe-submission","582":"../../wp-recipe-maker-premium/dist/public-feature-product-modal","615":"public-feature-debug","631":"public-feature-my-shopping-help","765":"public-feature-cookpal","790":"public-feature-slickstream","794":"public-feature-jump-to-section","796":"public-feature-pinterest","830":"../../wp-recipe-maker-premium/dist/public-feature-shopping-list","864":"../../wp-recipe-maker-premium/dist/public-feature-unit-conversion","868":"../../wp-recipe-maker-premium/dist/public-feature-product-icon","911":"public-feature-grow","929":"../../wp-recipe-maker-premium/dist/public-feature-recipe-collections-print","939":"public-feature-video","990":"public-feature-expandable"}[chunkId] + "." + {"1":"e447db5d","10":"02365086","83":"150fbe56","215":"fe2362f2","292":"afe5226d","297":"ff223b1c","349":"ad3e2a15","576":"b4c0038e","582":"9c7fd14e","615":"259714f0","631":"65ac3c8e","765":"5d1b1889","790":"da098418","794":"84c91255","796":"e9036a90","830":"f8c127ab","864":"f58d1731","868":"d9b0e0c7","911":"a9d38223","929":"d4840b16","939":"167c84f7","990":"b6dd24a4"}[chunkId] + ".js";
 /******/ 		};
 /******/ 	})();
 /******/ 	
@@ -5826,6 +5838,8 @@ var __webpack_exports__ = {};
 (() => {
 "use strict";
 
+// EXTERNAL MODULE: ./wp-recipe-maker/assets/js/public/public-path.js
+var public_path = __webpack_require__(6563);
 // EXTERNAL MODULE: ./wp-recipe-maker/assets/js/public/analytics.js
 var analytics = __webpack_require__(3524);
 ;// ./wp-recipe-maker/assets/js/public/comment-rating.js
@@ -6063,6 +6077,7 @@ var tippy_esm = __webpack_require__(4181);
 
 
 window.WPRecipeMaker = typeof window.WPRecipeMaker === "undefined" ? {} : window.WPRecipeMaker;
+const fadedNotesSelector = ['.wprm-recipe-ingredient-notes-faded', '.wprm-recipe-ingredient-notes-smaller-faded', '.wprm-recipe-equipment-notes-faded', '.wprm-recipe-equipment-notes-smaller-faded'].join(', ');
 window.WPRecipeMaker.tooltip = {
   init() {
     WPRecipeMaker.tooltip.addTooltips();
@@ -6085,19 +6100,49 @@ window.WPRecipeMaker.tooltip = {
       // Check for tooltip.
       const tooltip = container.dataset.hasOwnProperty('tooltip') ? container.dataset.tooltip : false;
       if (tooltip) {
-        container.role = "button"; // Needed for accessibility.
-
+        // Preserve the native semantics of links and form controls.
+        if (!container.matches('a[href], button, input, select, textarea, summary')) {
+          container.role = "button";
+        }
         const hasHtml = container.dataset.hasOwnProperty('tooltipHtml') && '1' === container.dataset.tooltipHtml;
+        const isInstructionImage = container.classList.contains('wprm-recipe-instruction-image-tooltip');
+        const instructionImage = isInstructionImage ? container.querySelector('img') : false;
         let content = tooltip;
         if (hasHtml) {
           // Strip HTML tags.
           content = content.replace(/<[^>]*>/g, '');
         }
+
+        // Keep the tooltip outside faded notes so their opacity does not affect it.
+        const fadedNotes = container.closest(fadedNotesSelector);
         (0,tippy_esm/* default */.Ay)(container, {
           theme: 'wprm',
           content,
           allowHTML: false,
           interactive: true,
+          ...(instructionImage ? {
+            arrow: false,
+            placement: 'top',
+            getReferenceClientRect: () => {
+              const imageRect = instructionImage.getBoundingClientRect();
+              const x = imageRect.left + imageRect.width / 2;
+              const y = imageRect.top + imageRect.height / 2;
+              return {
+                width: 0,
+                height: 0,
+                top: y,
+                right: x,
+                bottom: y,
+                left: x
+              };
+            },
+            offset: ({
+              popper
+            }) => [0, -popper.height / 2]
+          } : {}),
+          ...(fadedNotes ? {
+            appendTo: () => fadedNotes.parentElement || document.body
+          } : {}),
           onCreate(instance) {
             // Prevents the tooltip from breaking ingredients into multiple lines.
             instance.popper.style.display = 'inline-block';
@@ -6158,6 +6203,7 @@ function tooltip_ready(fn) {
   }
 }
 ;// ./wp-recipe-maker/assets/js/public-modern-split.js
+
 window.WPRecipeMaker = typeof window.WPRecipeMaker === 'undefined' ? {} : window.WPRecipeMaker;
 
 
@@ -6262,15 +6308,21 @@ const detectFeatures = (root = document) => {
     loaders.video();
   }
 };
+const pendingFeatureDetectionRoots = new Set();
 let detectScheduled = false;
 const scheduleFeatureDetection = (root = document) => {
+  pendingFeatureDetectionRoots.add(root || document);
   if (detectScheduled) {
     return;
   }
   detectScheduled = true;
   window.setTimeout(() => {
     detectScheduled = false;
-    detectFeatures(root);
+    const roots = Array.from(pendingFeatureDetectionRoots);
+    pendingFeatureDetectionRoots.clear();
+    for (const detectionRoot of roots) {
+      detectFeatures(detectionRoot);
+    }
   }, 0);
 };
 const observeFeatureDom = () => {
@@ -6281,8 +6333,8 @@ const observeFeatureDom = () => {
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) {
         if (node.nodeType === 1) {
-          scheduleFeatureDetection(node);
-          return;
+          scheduleFeatureDetection(mutation.target);
+          break;
         }
       }
     }

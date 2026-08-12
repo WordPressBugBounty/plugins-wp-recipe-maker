@@ -3,9 +3,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: WP Recipe Maker 1.10.1\n"
+"Project-Id-Version: WP Recipe Maker 10.8.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-recipe-maker\n"
-"POT-Creation-Date: 2026-05-18 08:39+0000\n"
+"POT-Creation-Date: 2026-08-12 09:28+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -1049,10 +1049,6 @@ msgstr ""
 msgid "Analytics"
 msgstr ""
 
-#: templates/admin/translations.php:14
-msgid "and"
-msgstr ""
-
 #: templates/admin/translations.php:959
 msgid ""
 "and let visitors switch between them. We integrate with an API that helps "
@@ -1415,12 +1411,6 @@ msgstr ""
 
 #: includes/public/shortcodes/recipe/class-wprm-sc-instructions.php:1120
 msgid "Before Instructions"
-msgstr ""
-
-#: templates/admin/translations.php:15
-msgid ""
-"before using Suggest Tags. The AI needs this information to provide useful "
-"tag suggestions."
 msgstr ""
 
 #: templates/admin/menu/import/import-overview.php:145
@@ -7554,10 +7544,6 @@ msgstr ""
 msgid "Please consider %link%!"
 msgstr ""
 
-#: templates/admin/translations.php:570
-msgid "Please fill in the"
-msgstr ""
-
 #: templates/admin/translations.php:571
 msgid "Please review and update the nutrition facts if necessary."
 msgstr ""
@@ -8278,10 +8264,6 @@ msgstr ""
 
 #: templates/admin/translations.php:1040
 msgid "recipe-slug"
-msgstr ""
-
-#: templates/admin/translations.php:1085
-msgid "recipe?"
 msgstr ""
 
 #: templates/admin/translations.php:626
@@ -12202,12 +12184,6 @@ msgstr ""
 msgid "Your Amazon Product Advertising API (PA-API) credentials."
 msgstr ""
 
-#: templates/settings/group-amazon.php:296
-msgid ""
-"Your credential version based on region: 2.1 for North America, 2.2 for "
-"Europe, 2.3 for Far East."
-msgstr ""
-
 #: templates/admin/translations.php:954
 msgid "Your Custom Fields"
 msgstr ""
@@ -12226,6 +12202,502 @@ msgstr ""
 
 #: templates/admin/translations.php:1077
 msgid "← Columns"
+msgstr ""
+
+
+#: includes/admin/class-wprm-ai-assistant.php:119
+msgid "Use AI inside the Template Editor to suggest recipe card HTML and CSS changes you can review before saving."
+msgstr ""
+
+#: includes/admin/class-wprm-ai-assistant.php:122
+msgid "Open Template Editor"
+msgstr ""
+
+#: includes/admin/class-wprm-ai-assistant.php:173
+msgid "The AI Assistant is disabled."
+msgstr ""
+
+#: includes/class-wprm-i18n.php:56
+msgid "Method"
+msgstr ""
+
+#: includes/class-wprm-i18n.php:76
+msgid "Check out this recipe"
+msgstr ""
+
+#: includes/public/api/class-wprm-api-app-recipes.php:98
+msgid "Could not find a recipe with this ID."
+msgstr ""
+
+#: includes/public/api/class-wprm-api-app.php:106
+#: includes/public/api/class-wprm-api-app.php:158
+msgid "The companion app requires WP Recipe Maker Premium."
+msgstr ""
+
+#: includes/public/api/class-wprm-api-app.php:128
+msgid "Invalid companion app access token."
+msgstr ""
+
+#: includes/public/api/class-wprm-api-app.php:168
+msgid "The maximum number of companion app tokens has been reached. Revoke an existing token first."
+msgstr ""
+
+#: includes/public/api/class-wprm-api-app.php:177
+msgid "Unnamed device"
+msgstr ""
+
+#: includes/public/api/class-wprm-api-integrations.php:129
+msgid "The Jupiter integration is not active on this site."
+msgstr ""
+
+#: includes/public/api/class-wprm-api-integrations.php:137
+#: includes/public/api/class-wprm-api-integrations.php:185
+msgid "Ingredient links require WP Recipe Maker Premium."
+msgstr ""
+
+#: includes/public/api/class-wprm-api-integrations.php:147
+msgid "Invalid Jupiter access token."
+msgstr ""
+
+#: includes/public/api/class-wprm-api-integrations.php:177
+msgid "Activate Jupiter before generating an access token."
+msgstr ""
+
+#: includes/public/api/class-wprm-api-integrations.php:293
+msgid "Invalid ingredient link item."
+msgstr ""
+
+#: includes/public/api/class-wprm-api-integrations.php:303
+msgid "Could not find or create the ingredient term."
+msgstr ""
+
+#: includes/public/class-wprm-analytics.php:71
+msgid "Tumblr Share"
+msgstr ""
+
+#: includes/public/class-wprm-analytics.php:80
+msgid "Product Add to Cart"
+msgstr ""
+
+#: includes/public/class-wprm-analytics.php:81
+msgid "Add Products to Cart"
+msgstr ""
+
+#: includes/public/shortcodes/recipe/class-wprm-sc-analytics.php:44
+msgid "Number of days to count, including today. Use 0 for all data still stored according to the Analytics retention setting."
+msgstr ""
+
+#: includes/public/shortcodes/recipe/class-wprm-sc-analytics.php:49
+#, php-format
+msgid "Use %count% where the formatted analytics count should appear."
+msgstr ""
+
+#: templates/admin/translations.php:14
+msgid " and "
+msgstr ""
+
+#: templates/admin/translations.php:15
+msgid " before using Suggest Tags. The AI needs this information to provide useful tag suggestions."
+msgstr ""
+
+#: templates/admin/translations.php:48
+msgid "Add all Items from Other List"
+msgstr ""
+
+#: templates/admin/translations.php:49
+msgid "Add Items"
+msgstr ""
+
+#: templates/admin/translations.php:61
+msgid "Add a unit before setting a connector."
+msgstr ""
+
+#: templates/admin/translations.php:69
+msgid "Adding Items..."
+msgstr ""
+
+#: templates/admin/translations.php:152
+msgid "Change Connector"
+msgstr ""
+
+#: templates/admin/translations.php:197
+msgid "Connector Spacing"
+msgstr ""
+
+#: templates/admin/translations.php:198
+msgid "Connector"
+msgstr ""
+
+#: templates/admin/translations.php:496
+msgid "No spaces"
+msgstr ""
+
+#: templates/admin/translations.php:579
+msgid "Please fill in the "
+msgstr ""
+
+#: templates/admin/translations.php:601
+msgid "Pluralize ingredient after connector"
+msgstr ""
+
+#: templates/admin/translations.php:723
+msgid "Set Connector"
+msgstr ""
+
+#: templates/admin/translations.php:726
+msgid "Set or change the connector between this unit and the ingredient name."
+msgstr ""
+
+#: templates/admin/translations.php:729
+msgid "Space after only"
+msgstr ""
+
+#: templates/admin/translations.php:730
+msgid "Space before and after"
+msgstr ""
+
+#: templates/admin/translations.php:731
+msgid "Space before only"
+msgstr ""
+
+#: templates/admin/translations.php:787
+msgid "The selected list could not be loaded."
+msgstr ""
+
+#: templates/admin/translations.php:788
+msgid "The selected list does not have any items to add."
+msgstr ""
+
+#: templates/admin/translations.php:798
+msgid "This connector is saved for the ingredient unit. Setting or changing it will affect all recipes using this unit."
+msgstr ""
+
+#: templates/admin/translations.php:804
+msgid "This list cannot be added to itself."
+msgstr ""
+
+#: templates/admin/translations.php:824
+msgid "pluralizes ingredient"
+msgstr ""
+
+#: templates/admin/translations.php:931
+msgid "We could not find or create this ingredient unit."
+msgstr ""
+
+#: templates/admin/translations.php:1106
+msgid " recipe?"
+msgstr ""
+
+#: templates/admin/translations.php:1120
+msgid "%"
+msgstr ""
+
+#: templates/admin/translations.php:1121
+msgid "AI Proposal Comparison"
+msgstr ""
+
+#: templates/admin/translations.php:1123
+msgid "After"
+msgstr ""
+
+#: templates/admin/translations.php:1124
+msgid "Apply"
+msgstr ""
+
+#: templates/admin/translations.php:1125
+msgid "Before"
+msgstr ""
+
+#: templates/admin/translations.php:1126
+msgid "CSS"
+msgstr ""
+
+#: templates/admin/translations.php:1127
+msgid "Compare AI proposal"
+msgstr ""
+
+#: templates/admin/translations.php:1128
+msgid "Describe the template changes you want."
+msgstr ""
+
+#: templates/admin/translations.php:1129
+msgid "Discard"
+msgstr ""
+
+#: templates/admin/translations.php:1130
+msgid "Do not import image"
+msgstr ""
+
+#: templates/admin/translations.php:1131
+msgid "Do you want to send this example to support@bootstrapped.ventures?"
+msgstr ""
+
+#: templates/admin/translations.php:1132
+msgid "External"
+msgstr ""
+
+#: templates/admin/translations.php:1133
+msgid "Generating proposal..."
+msgstr ""
+
+#: templates/admin/translations.php:1134
+msgid "HTML"
+msgstr ""
+
+#: templates/admin/translations.php:1135
+msgid "Hide AI notes"
+msgstr ""
+
+#: templates/admin/translations.php:1136
+msgid "Image URLs found"
+msgstr ""
+
+#: templates/admin/translations.php:1137
+msgid "Not happy with the result? Send us the example!"
+msgstr ""
+
+#: templates/admin/translations.php:1138
+msgid "Percentages must sum to 100%. Current total: "
+msgstr ""
+
+#: templates/admin/translations.php:1139
+msgid "Show AI notes"
+msgstr ""
+
+#: templates/admin/translations.php:1140
+msgid "Something went wrong. Please try again."
+msgstr ""
+
+#: templates/admin/translations.php:1141
+msgid "Suggest Changes"
+msgstr ""
+
+#: templates/admin/translations.php:1143
+msgid "The AI Assistant is still in beta and being actively improved."
+msgstr ""
+
+#: templates/admin/translations.php:1144
+msgid "The AI response did not include a valid template proposal."
+msgstr ""
+
+#: templates/admin/translations.php:1145
+msgid "WP Recipe Maker can also be used for recipe roundup posts (for example \"Easy Valentine's Day Menu\" or \"10 Scary Halloween Recipes\"),"
+msgstr ""
+
+#: templates/admin/translations.php:1146
+msgid "WPRM can automatically show"
+msgstr ""
+
+#: templates/admin/translations.php:1147
+msgid "Want to learn more about the AI features?"
+msgstr ""
+
+#: templates/admin/translations.php:1148
+msgid "We would love to get this example from you so we can improve the system. This will open an email to our support team with your prompt and the full AI response included."
+msgstr ""
+
+#: templates/admin/translations.php:1149
+msgid "as the connector. WPRM will automatically show"
+msgstr ""
+
+#: templates/admin/translations.php:1150
+msgid "before matching ingredient names where appropriate."
+msgstr ""
+
+#: templates/admin/translations.php:1151
+msgid "before matching ingredient names. Keep the base connector here so other ingredients can still show"
+msgstr ""
+
+#: templates/settings/group-ai-assistant.php:72
+msgid "Enable AI Assistant"
+msgstr ""
+
+#: templates/settings/group-ai-assistant.php:73
+msgid "Show AI Assistant tools and AI related buttons throughout the plugin."
+msgstr ""
+
+#: templates/settings/group-amazon.php:296
+msgid "Your credential version based on region: 2.1 or 3.1 for North America, 2.2 or 3.2 for Europe, 2.3 or 3.3 for Far East."
+msgstr ""
+
+#: templates/settings/group-app.php:6
+msgid "Companion App"
+msgstr ""
+
+#: templates/settings/group-app.php:10
+msgid "Companion App Access"
+msgstr ""
+
+#: templates/settings/group-app.php:11
+msgid "Access your recipes and analytics on the go with the WP Recipe Maker companion app. The companion app is currently in beta and only available to selected users. Generate an access token for each device and add it in the app by scanning the QR code."
+msgstr ""
+
+#: templates/settings/group-app.php:16
+msgid "Access Tokens"
+msgstr ""
+
+#: templates/settings/group-app.php:17
+msgid "A token gives the app read access to all of your recipes, including drafts and private recipes. Revoke a token at any time to remove access for that device."
+msgstr ""
+
+#: templates/settings/group-integrations.php:61
+msgid "Jupiter Access Token"
+msgstr ""
+
+#: templates/settings/group-integrations.php:62
+msgid "Generate a token to let Jupiter read and update global ingredient links through the WP Recipe Maker API."
+msgstr ""
+
+#: templates/settings/group-performance.php:26
+msgid "Load Public JavaScript on Demand"
+msgstr ""
+
+#: templates/settings/group-performance.php:27
+msgid "Load a small public JavaScript bundle first and load optional features when they are needed. Disable to use the legacy combined public JavaScript bundle if you experience compatibility issues."
+msgstr ""
+
+#: templates/settings/group-permissions.php:141
+msgid "Access to AI Assistant Page"
+msgstr ""
+
+#: templates/settings/group-recipe-defaults.php:169
+msgid "Ingredient Unit Connectors"
+msgstr ""
+
+#: templates/settings/group-recipe-defaults.php:170
+msgid "Show a small connector control between the unit and ingredient name fields. In Auto mode this is enabled for site languages that commonly use ingredient connectors."
+msgstr ""
+
+#: templates/settings/group-recipe-defaults.php:173
+msgid "Auto (based on site language)"
+msgstr ""
+
+#: templates/settings/group-recipe-defaults.php:174
+msgid "Show"
+msgstr ""
+
+#: templates/settings/group-recipe-defaults.php:175
+msgid "Hide"
+msgstr ""
+
+#: assets/js/blocks/jump-to-recipe/index.js:20
+msgid "A button to jump to a WPRM Recipe on the same page."
+msgstr ""
+
+#: assets/js/blocks/jump-to-video/index.js:20
+msgid "A button to jump to a WPRM Recipe Video on the same page."
+msgstr ""
+
+#: assets/js/blocks/list/index.js:38
+msgid "WPRM Roundup List"
+msgstr ""
+
+#: assets/js/blocks/list/index.js:39
+msgid "Display a recipe roundup list with optional itemlist metadata."
+msgstr ""
+
+#: assets/js/blocks/list/index.js:96
+msgid "List Details"
+msgstr ""
+
+#: assets/js/blocks/list/index.js:98
+msgid "List ID"
+msgstr ""
+
+#: assets/js/blocks/list/index.js:131
+msgid "Create new List"
+msgstr ""
+
+#: assets/js/blocks/list/index.js:136
+#: assets/js/blocks/list/index.js:144
+msgid "Insert existing List"
+msgstr ""
+
+#: assets/js/blocks/list/index.js:152
+#: assets/js/blocks/list/index.js:164
+msgid "Create new from existing List"
+msgstr ""
+
+#: assets/js/blocks/nutrition-label/index.js:24
+msgid "The nutrition label for a WPRM Recipe."
+msgstr ""
+
+#: assets/js/blocks/print-recipe/index.js:20
+msgid "A button to print a WPRM Recipe."
+msgstr ""
+
+#: assets/js/blocks/recipe-part/index.js:35
+#: assets/js/blocks/recipe-part/index.js:100
+msgid "Recipe Part"
+msgstr ""
+
+#: assets/js/blocks/recipe-part/index.js:36
+msgid "Display a specific recipe part"
+msgstr ""
+
+#: assets/js/blocks/recipe-part/index.js:82
+msgid "Recipe Part Details"
+msgstr ""
+
+#: assets/js/blocks/recipe-part/index.js:85
+msgid "Leave blank to use the first recipe on the page"
+msgstr ""
+
+#: assets/js/blocks/recipe-roundup/index.js:42
+msgid "WPRM Recipe Roundup Item"
+msgstr ""
+
+#: assets/js/blocks/recipe-roundup/index.js:43
+msgid "Output your Recipe Roundup as ItemList metadata."
+msgstr ""
+
+#: assets/js/blocks/recipe-roundup/index.js:178
+#: assets/js/blocks/recipe-roundup/Sidebar.js:98
+msgid "Edit Roundup Item"
+msgstr ""
+
+#: assets/js/blocks/recipe-roundup/index.js:200
+msgid "Select Recipe"
+msgstr ""
+
+#: assets/js/blocks/recipe-roundup/Sidebar.js:56
+msgid "Number of Roundup Recipes"
+msgstr ""
+
+#: assets/js/blocks/recipe-roundup/Sidebar.js:62
+msgid "Roundup Item"
+msgstr ""
+
+#: assets/js/blocks/recipe-roundup/Sidebar.js:78
+msgid "Recipe Link"
+msgstr ""
+
+#: assets/js/blocks/recipe-snippet/index.js:35
+msgid "Recipe Snippet"
+msgstr ""
+
+#: assets/js/blocks/recipe-snippet/index.js:36
+msgid "Displays the recipe snippet template. Usually used for a Jump to Recipe button at the top of the post content."
+msgstr ""
+
+#: assets/js/blocks/recipe-snippet/index.js:86
+msgid "Recipe Snippet Details"
+msgstr ""
+
+#: assets/js/blocks/recipe-snippet/index.js:88
+msgid "Recipe Snippet Template"
+msgstr ""
+
+#: assets/js/blocks/recipe/index.js:40
+msgid "WPRM Recipe"
+msgstr ""
+
+#: assets/js/blocks/recipe/index.js:41
+msgid "Display a recipe box with recipe metadata."
+msgstr ""
+
+#: assets/js/blocks/recipe/index.js:124
+msgid "Recipe Details"
 msgstr ""
 
 #: templates/admin/translations.php:1078

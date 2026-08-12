@@ -5,6 +5,7 @@ import he from 'he';
 import Helpers from 'Shared/Helpers';
 import { __wprm } from 'Shared/Translations';
 import { parseQuantity, formatQuantity } from 'Shared/quantities';
+import { getIngredientUnitForAmount } from '../recipe/ingredient-unit';
 
 const FieldInstructionIngredients = (props) => {
     const ingredients = props.hasOwnProperty( 'ingredients' ) ? props.ingredients : [];
@@ -107,7 +108,7 @@ const FieldInstructionIngredients = (props) => {
                                         const allowFractions = typeof wprm_admin !== 'undefined' && wprm_admin.settings ? ( wprm_admin.settings.fractions_enabled || false ) : false;
                                         splitAmount = formatQuantity( calculated, decimals, allowFractions );
                                     }
-                                    const splitUnit = ingredient.unit || '';
+                                    const splitUnit = getIngredientUnitForAmount( ingredient, parseQuantity( splitAmount ) );
                                     const splitName = ingredient.name || '';
                                     const splitString = splitAmount ? Helpers.joinAmountUnitAndName(
                                         [ splitAmount, splitUnit ].filter( Boolean ).join( ' ' ),
@@ -160,7 +161,7 @@ const FieldInstructionIngredients = (props) => {
                                         const allowFractions = typeof wprm_admin !== 'undefined' && wprm_admin.settings ? ( wprm_admin.settings.fractions_enabled || false ) : false;
                                         splitAmount = formatQuantity( calculated, decimals, allowFractions );
                                     }
-                                    const splitUnit = ingredient.unit || '';
+                                    const splitUnit = getIngredientUnitForAmount( ingredient, parseQuantity( splitAmount ) );
                                     const splitName = ingredient.name || '';
                                     const splitString = splitAmount ? Helpers.joinAmountUnitAndName(
                                         [ splitAmount, splitUnit ].filter( Boolean ).join( ' ' ),

@@ -5,6 +5,13 @@ import '../../css/public/tooltip.scss';
 
 window.WPRecipeMaker = typeof window.WPRecipeMaker === "undefined" ? {} : window.WPRecipeMaker;
 
+const fadedNotesSelector = [
+    '.wprm-recipe-ingredient-notes-faded',
+    '.wprm-recipe-ingredient-notes-smaller-faded',
+    '.wprm-recipe-equipment-notes-faded',
+    '.wprm-recipe-equipment-notes-smaller-faded',
+].join( ', ' );
+
 window.WPRecipeMaker.tooltip = {
 	init() {
 		WPRecipeMaker.tooltip.addTooltips();
@@ -32,9 +39,14 @@ window.WPRecipeMaker.tooltip = {
             const tooltip = container.dataset.hasOwnProperty( 'tooltip' ) ? container.dataset.tooltip : false;
 
             if ( tooltip ) {
-                container.role = "button"; // Needed for accessibility.
+                // Preserve the native semantics of links and form controls.
+                if ( ! container.matches( 'a[href], button, input, select, textarea, summary' ) ) {
+                    container.role = "button";
+                }
 
                 const hasHtml = container.dataset.hasOwnProperty( 'tooltipHtml' ) && '1' === container.dataset.tooltipHtml;
+                const isInstructionImage = container.classList.contains( 'wprm-recipe-instruction-image-tooltip' );
+                const instructionImage = isInstructionImage ? container.querySelector( 'img' ) : false;
 
                 let content = tooltip;
                 if ( hasHtml ) {
@@ -42,11 +54,36 @@ window.WPRecipeMaker.tooltip = {
                     content = content.replace( /<[^>]*>/g, '' );
                 }
 
+                // Keep the tooltip outside faded notes so their opacity does not affect it.
+                const fadedNotes = container.closest( fadedNotesSelector );
+
                 tippy( container, {
                     theme: 'wprm',
                     content,
                     allowHTML: false,
                     interactive: true,
+                    ...( instructionImage ? {
+                        arrow: false,
+                        placement: 'top',
+                        getReferenceClientRect: () => {
+                            const imageRect = instructionImage.getBoundingClientRect();
+                            const x = imageRect.left + imageRect.width / 2;
+                            const y = imageRect.top + imageRect.height / 2;
+
+                            return {
+                                width: 0,
+                                height: 0,
+                                top: y,
+                                right: x,
+                                bottom: y,
+                                left: x,
+                            };
+                        },
+                        offset: ( { popper } ) => [ 0, - popper.height / 2 ],
+                    } : {} ),
+                    ...( fadedNotes ? {
+                        appendTo: () => fadedNotes.parentElement || document.body,
+                    } : {} ),
                     onCreate(instance) {
                         // Prevents the tooltip from breaking ingredients into multiple lines.
                         instance.popper.style.display = 'inline-block';

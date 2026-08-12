@@ -18,6 +18,14 @@
  * @author     Brecht Vandersmissen <brecht@bootstrapped.ventures>
  */
 class WPRM_Analytics {
+	/**
+	 * Request cache for per-recipe action counts.
+	 *
+	 * @since    10.8.0
+	 * @access   private
+	 * @var      array $action_count_cache Cached action counts for the current request.
+	 */
+	private static $action_count_cache = array();
 
 	/**
 	 * Register actions and filters.
@@ -38,7 +46,7 @@ class WPRM_Analytics {
 	* @return	array Array of action types.
 	*/
 	public static function get_types() {
-		return array(
+		$types = array(
 			'print' => __( 'Print', 'wp-recipe-maker' ),
 
 			'equipment-link' => __( 'Equipment Link', 'wp-recipe-maker' ),
@@ -60,6 +68,7 @@ class WPRM_Analytics {
 			'twitter-share-button' => __( 'Twitter Share', 'wp-recipe-maker' ),
 			'bluesky-share-button' => __( 'Bluesky Share', 'wp-recipe-maker' ),
 			'mastodon-share-button' => __( 'Mastodon Share', 'wp-recipe-maker' ),
+			'tumblr-share-button' => __( 'Tumblr Share', 'wp-recipe-maker' ),
 			'text-share-button' => __( 'Text Share', 'wp-recipe-maker' ),
 			'whatsapp-share-button' => __( 'WhatsApp Share', 'wp-recipe-maker' ),
 			'email-share-button' => __( 'Email Share', 'wp-recipe-maker' ),
@@ -67,9 +76,50 @@ class WPRM_Analytics {
 			'favorite-button' => __( 'Favorite Button', 'wp-recipe-maker' ),
 			'add-to-collections-button' => __( 'Add to Recipe Collections', 'wp-recipe-maker' ),
 			'add-to-shopping-list-button' => __( 'Add to Quick Access Shopping List', 'wp-recipe-maker' ),
+			'cook-mode-button' => __( 'Cook Mode', 'wp-recipe-maker' ),
 			'product-add-to-cart' => __( 'Product Add to Cart', 'wp-recipe-maker' ),
 			'add-products-to-cart' => __( 'Add Products to Cart', 'wp-recipe-maker' ),
 		);
+
+		return apply_filters( 'wprm_analytics_types', $types );
+	}
+
+	/**
+	 * Get the number of actions of a specific type for a single recipe.
+	 *
+	 * This is the supported public accessor for displaying recipe analytics.
+	 * Counts only include data still present according to the analytics retention
+	 * setting.
+	 *
+	 * @since    10.8.0
+	 * @param    int    $recipe_id Recipe to get the count for.
+	 * @param    string $type Action type to count.
+	 * @param    array  $args Optional count arguments. Supports "start" and "unique".
+	 * @return   int Number of matching actions.
+	 */
+	public static function get_action_count_for_recipe( $recipe_id, $type, $args = array() ) {
+		$recipe_id = intval( $recipe_id );
+		$type = sanitize_key( $type );
+		$types = self::get_types();
+
+		if ( ! $recipe_id || ! array_key_exists( $type, $types ) ) {
+			return 0;
+		}
+
+		$args = wp_parse_args( $args, array(
+			'start' => false,
+			'unique' => false,
+		) );
+
+		$start = false === $args['start'] ? false : (string) $args['start'];
+		$unique = (bool) $args['unique'];
+		$cache_key = implode( '|', array( $recipe_id, $type, false === $start ? '' : $start, $unique ? '1' : '0' ) );
+
+		if ( ! array_key_exists( $cache_key, self::$action_count_cache ) ) {
+			self::$action_count_cache[ $cache_key ] = WPRM_Analytics_Database::get_action_count_for_recipe( $recipe_id, $type, $start, $unique );
+		}
+
+		return self::$action_count_cache[ $cache_key ];
 	}
 
 	/**

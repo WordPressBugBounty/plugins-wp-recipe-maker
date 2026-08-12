@@ -5,7 +5,29 @@ window.WPRMPrint = {
     args: {},
     setArgs( args ) {
         this.args = args;
+        this.maybeSetBackUrl( args );
         document.dispatchEvent( new Event( 'wprmPrintArgs' ) );
+    },
+	maybeSetBackUrl( args ) {
+        if ( ! args || 'string' !== typeof args.backUrl || ! args.backUrl ) {
+            return;
+        }
+
+        const backButton = document.querySelector( '#wprm-print-button-back' );
+
+        if ( ! backButton ) {
+            return;
+        }
+
+        try {
+            const backUrl = new URL( args.backUrl, window.location.href );
+
+            if ( backUrl.origin === window.location.origin ) {
+                backButton.href = backUrl.href;
+            }
+        } catch {
+            // Keep the server-rendered fallback URL.
+        }
     },
 	init() {
         this.checkToggles();
@@ -96,6 +118,8 @@ window.WPRMPrint = {
             if ( collectionPrintApp ) {
                 this.setArgs( args );
             }
+        } else if ( 'shopping-list' === args.type && document.body.classList.contains( 'wprm-print-shopping-list' ) ) {
+            this.setArgs( args );
         }
     },
     removeLinks() {

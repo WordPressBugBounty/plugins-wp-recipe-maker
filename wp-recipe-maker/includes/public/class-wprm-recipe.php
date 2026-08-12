@@ -137,6 +137,7 @@ class WPRM_Recipe {
 		$recipe['unit_system'] = $this->unit_system( true );
 
 		if ( 'api' === $context ) {
+			$recipe = $this->add_ingredient_unit_forms( $recipe );
 			$recipe['rating'] = WPRM_Rating::get_ratings_summary_for( $this->id() );
 			$recipe['parent_post_id'] = $this->parent_post_id();
 		} elseif ( 'export' === $context ) {
@@ -183,6 +184,81 @@ class WPRM_Recipe {
 		}
 
 		return apply_filters( 'wprm_recipe_data', $recipe, $this, $context );
+	}
+
+	/**
+	 * Add singular and plural unit forms to recipe data used by the editor.
+	 *
+	 * @since	10.7.2
+	 * @param	array $recipe Recipe data.
+	 */
+	private function add_ingredient_unit_forms( $recipe ) {
+		$add_forms = function( $ingredient ) {
+			if ( ! is_array( $ingredient ) ) {
+				return $ingredient;
+			}
+
+			$add_unit_forms = function( $values ) {
+				static $unit_forms = array();
+
+				if ( ! is_array( $values ) || empty( $values['unit_id'] ) ) {
+					return $values;
+				}
+
+				$unit_id = intval( $values['unit_id'] );
+
+				if ( ! isset( $unit_forms[ $unit_id ] ) ) {
+					$unit_term = get_term( $unit_id, 'wprm_ingredient_unit' );
+					$unit_plural = get_term_meta( $unit_id, 'wprm_ingredient_unit_plural', true );
+
+					$unit_forms[ $unit_id ] = $unit_term && ! is_wp_error( $unit_term ) && $unit_plural
+						? array(
+							'singular' => $unit_term->name,
+							'plural' => $unit_plural,
+						)
+						: false;
+				}
+
+				if ( $unit_forms[ $unit_id ] ) {
+					$values['unit_singular'] = $unit_forms[ $unit_id ]['singular'];
+					$values['unit_plural'] = $unit_forms[ $unit_id ]['plural'];
+				}
+
+				return $values;
+			};
+
+			$ingredient = $add_unit_forms( $ingredient );
+
+			if ( isset( $ingredient['converted'] ) && is_array( $ingredient['converted'] ) ) {
+				foreach ( $ingredient['converted'] as $system => $converted ) {
+					$ingredient['converted'][ $system ] = $add_unit_forms( $converted );
+				}
+			}
+
+			return $ingredient;
+		};
+
+		if ( isset( $recipe['ingredients'] ) && is_array( $recipe['ingredients'] ) ) {
+			foreach ( $recipe['ingredients'] as $group_index => $group ) {
+				if ( ! isset( $group['ingredients'] ) || ! is_array( $group['ingredients'] ) ) {
+					continue;
+				}
+
+				foreach ( $group['ingredients'] as $ingredient_index => $ingredient ) {
+					$recipe['ingredients'][ $group_index ]['ingredients'][ $ingredient_index ] = $add_forms( $ingredient );
+				}
+			}
+		}
+
+		if ( isset( $recipe['ingredients_flat'] ) && is_array( $recipe['ingredients_flat'] ) ) {
+			foreach ( $recipe['ingredients_flat'] as $index => $ingredient ) {
+				if ( isset( $ingredient['type'] ) && 'ingredient' === $ingredient['type'] ) {
+					$recipe['ingredients_flat'][ $index ] = $add_forms( $ingredient );
+				}
+			}
+		}
+
+		return $recipe;
 	}
 
 	/**

@@ -31,8 +31,8 @@ class WP_Recipe_Maker {
 	 * @since    1.0.0
 	 */
 	private function define_constants() {
-		define( 'WPRM_VERSION', '10.7.1' );
-		define( 'WPRM_PREMIUM_VERSION_RECOMMENDED', '10.7.0' );
+		define( 'WPRM_VERSION', '10.8.0' );
+		define( 'WPRM_PREMIUM_VERSION_RECOMMENDED', '10.8.0' );
 		define( 'WPRM_PREMIUM_VERSION_REQUIRED', '7.0.0' );
 		define( 'WPRM_POST_TYPE', 'wprm_recipe' );
 		define( 'WPRM_IDEA_POST_TYPE', 'wprm_idea' );

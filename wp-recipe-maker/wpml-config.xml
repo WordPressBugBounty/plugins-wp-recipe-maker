@@ -1,21 +1,37 @@
 <wpml-config>
   <gutenberg-blocks>
-    <gutenberg-block type="wp-recipe-maker/recipe" translate="0">
-        <key name="id" type="post-ids" sub-type="wprm_recipe" />
+    <gutenberg-block type="wp-recipe-maker/recipe-roundup-item" translate="1">
+      <key name="id" type="post-ids" />
+      <key name="name" />
+      <key name="summary" />
+      <key name="button" />
     </gutenberg-block>
-  </gutenberg-blocks>    
+    <gutenberg-block type="wp-recipe-maker/recipe" translate="0">
+      <key name="id" type="post-ids" sub-type="wprm_recipe" />
+    </gutenberg-block>
+  </gutenberg-blocks>
   <shortcodes>
+    <shortcode>
+      <tag ignore-content="1">wprm-recipe-roundup-item</tag>
+      <attributes>
+        <attribute type="post-ids">id</attribute>
+        <attribute>name</attribute>
+        <attribute>summary</attribute>
+        <attribute>button</attribute>
+      </attributes>
+    </shortcode>
     <shortcode>
       <tag ignore-content="1">wprm-recipe</tag>
       <attributes>
         <attribute type="post-ids">id</attribute>
       </attributes>
     </shortcode>
-  </shortcodes>    
+  </shortcodes>
   <custom-types>
     <custom-type translate="1">wprm_recipe</custom-type>
-  </custom-types>    
+  </custom-types>
   <custom-fields>
+    <custom-field action="copy" type="post-ids">wprm_parent_post_id</custom-field>
     <custom-field action="copy">wprm_type</custom-field>
     <custom-field action="copy">wprm_pin_image_id</custom-field>
     <custom-field action="copy">wprm_pin_image_repin_id</custom-field>
@@ -64,6 +80,13 @@
     <taxonomy translate="1">wprm_keyword</taxonomy>
     <taxonomy translate="1">wprm_glossary_term</taxonomy>
   </taxonomies>
+  <custom-term-fields>
+    <custom-term-field action="translate">wprm_term_label</custom-term-field>
+    <custom-term-field action="translate">wprmp_term_link</custom-term-field>
+    <custom-term-field action="copy">wprmp_term_link_nofollow</custom-term-field>
+    <custom-term-field action="copy" type="post-ids" sub-type="attachment">wprmp_term_image_id</custom-term-field>
+    <custom-term-field action="copy" type="post-ids" sub-type="easy_affiliate_link">wprmp_term_eafl</custom-term-field>
+  </custom-term-fields>
   <admin-texts>
     <key name="wprmp_nutrition_label_layout">
       <key name="blocks">

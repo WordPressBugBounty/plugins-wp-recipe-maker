@@ -1,6 +1,8 @@
 const { __ } = wp.i18n;
 const {
+    Button,
     PanelBody,
+    PanelRow,
     TextControl,
     TextareaControl,
     SelectControl,
@@ -17,7 +19,7 @@ if ( wp.hasOwnProperty( 'blockEditor' ) ) {
 }
 
 function Sidebar( props ) {
-    const { attributes, setAttributes, name, onChangeName, description, onChangeDescription, recipeRoundupCount } = props;
+    const { attributes, setAttributes, name, onChangeName, description, onChangeDescription, recipeRoundupCount, onEdit } = props;
 
     let templateOptions = [
         { label: 'Use default from settings', value: '' },
@@ -36,7 +38,7 @@ function Sidebar( props ) {
 
     return (
         <InspectorControls>
-            <p>
+            <p style={ { marginLeft: '16px', marginRight: '16px' } }>
                 <a href="https://help.bootstrapped.ventures/article/182-itemlist-metadata-for-recipe-roundup-posts" target="_blank">{ __( 'Learn more', 'wp-recipe-maker' ) }</a>
             </p>
             <PanelBody title={ __( 'Recipe Roundup', 'wp-recipe-maker' ) }>
@@ -57,7 +59,7 @@ function Sidebar( props ) {
                 />
 
             </PanelBody>
-            <PanelBody title={ __( 'Recipe Details', 'wp-recipe-maker' ) }>
+            <PanelBody title={ __( 'Roundup Item', 'wp-recipe-maker' ) }>
                 {
                     attributes.id
                     ?
@@ -88,6 +90,14 @@ function Sidebar( props ) {
                         template,
                     }) }
                 />
+                <PanelRow>
+                    <Button
+                        variant="secondary"
+                        onClick={ onEdit }
+                    >
+                        { __( 'Edit Roundup Item', 'wp-recipe-maker' ) }
+                    </Button>
+                </PanelRow>
             </PanelBody>
         </InspectorControls>
     )

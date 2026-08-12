@@ -96,6 +96,10 @@ class WPRM_Tools_Find_Ingredient_Units {
 					}
 				}
 
+				if ( 0 === count( $posts_left ) ) {
+					WPRM_Version::mark_migration_checked( '7.6.0' );
+				}
+
 				wp_send_json_success( array(
 					'posts_processed' => $posts_processed,
 					'posts_left' => $posts_left,

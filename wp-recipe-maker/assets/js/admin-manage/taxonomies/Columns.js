@@ -307,7 +307,6 @@ export default {
                 Header: __wprm( 'Total' ),
                 id: 'total_count',
                 accessor: 'total_count',
-                sortable: false,
                 filterable: false,
                 width: 70,
                 Cell: row => {

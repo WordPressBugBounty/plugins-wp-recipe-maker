@@ -287,11 +287,14 @@ class WPRM_Api_Modal {
 		}
 
 		$connector_data = WPRM_Ingredient_Display::get_unit_connector_data( $term_id );
+		$plural = get_term_meta( $term_id, 'wprm_ingredient_unit_plural', true );
 
 		return rest_ensure_response( array(
 			'term_id' => intval( $term_id ),
 			'found' => true,
 			'name' => $term->name,
+			'singular' => $term->name,
+			'plural' => $plural,
 			'connector' => $connector_data['connector'],
 			'connector_spacing' => $connector_data['connector_spacing'],
 			'connector_pluralizes_ingredient' => $connector_data['connector_pluralizes_ingredient'],

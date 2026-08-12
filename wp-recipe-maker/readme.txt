@@ -5,7 +5,7 @@ Tags: recipe, recipes, food, cooking, schema
 Requires at least: 4.4
 Tested up to: 7.0
 Requires PHP: 7.2
-Stable tag: 10.7.1
+Stable tag: 10.8.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -141,6 +141,16 @@ Please report security bugs found in the source code of the WP Recipe Maker plug
 7. Our Template Editor allows you to completely customize the look and feel.
 
 == Changelog ==
+= 10.8.0 =
+* Feature: Recipe Analytics shortcode
+* Improvement: Sortable Total column on manage page
+* Improvement: Edit roundup edit button in sidebar
+* Improvement: Better WPML compatibility for custom term fields and roundup blocks
+* Fix: Typing lag in import from text field
+* Fix: Prevent missing styles when only loading assets when needed
+* Fix: Manage page loading issue with 20.000+ recipes
+* Fix: Glossary terms tooltip when using faded ingredient notes
+
 = 10.7.1 =
 * Improvement: Automatically adapt ingredient connectors like "de" and "di" before vowel sounds
 * Fix: Connector spacing in ingredient table style layout
@@ -581,6 +591,9 @@ Please report security bugs found in the source code of the WP Recipe Maker plug
 For earlier versions, please refer to [our full changelog](https://help.bootstrapped.ventures/article/124-wp-recipe-maker-changelog).
 
 == Upgrade notice ==
+= 10.8.0 =
+Some great new features and improvements
+
 = 10.7.1 =
 Some small fixes
 

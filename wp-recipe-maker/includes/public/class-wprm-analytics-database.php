@@ -25,7 +25,7 @@ class WPRM_Analytics_Database {
 	 * @access   private
 	 * @var      mixed $database_version Current version of the analytics database structure.
 	 */
-	private static $database_version = '1.0';
+	private static $database_version = '1.1';
 
 	/**
 	 * Register actions and filters.
@@ -72,7 +72,8 @@ class WPRM_Analytics_Database {
 		visitor longtext NULL,
 		created_at datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
 		PRIMARY KEY (id),
-		KEY created_at (created_at)
+		KEY created_at (created_at),
+		KEY recipe_type_created_at (recipe_id, type, created_at)
 		) $charset_collate;";
 
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
@@ -350,6 +351,55 @@ class WPRM_Analytics_Database {
 		) );
 
 		return $actions;
+	}
+
+	/**
+	 * Get the number of actions of a specific type for a single recipe.
+	 *
+	 * @since    10.8.0
+	 * @param    int    $recipe_id Recipe to get the count for.
+	 * @param    string $type Action type to count.
+	 * @param    mixed  $start Optional start of the range, anything DateTime understands. All retained data when false.
+	 * @param    bool   $unique Whether to count unique visitors instead of all actions.
+	 * @return   int Number of matching actions.
+	 */
+	public static function get_action_count_for_recipe( $recipe_id, $type, $start = false, $unique = false ) {
+		global $wpdb;
+		$table_name = self::get_table_name();
+
+		$recipe_id = intval( $recipe_id );
+		$type = sanitize_key( $type );
+
+		if ( ! $recipe_id || ! $type ) {
+			return 0;
+		}
+
+		$query_start = '';
+		$query_args = array( $table_name, $recipe_id, $type );
+
+		if ( false !== $start ) {
+			try {
+				$start_datetime = new DateTime( $start );
+			} catch ( Exception $e ) {
+				return 0;
+			}
+
+			$query_start = ' AND created_at >= %s';
+			$query_args[] = $start_datetime->format( 'Y-m-d 00:00:00' );
+		}
+
+		$count_expression = $unique ? 'count(distinct visitor_id)' : 'count(*)';
+		$count = $wpdb->get_var( $wpdb->prepare(
+			"SELECT
+				$count_expression
+			FROM `%1s`
+			WHERE
+				recipe_id = %d
+				AND type = %s" . $query_start,
+			$query_args
+		) );
+
+		return intval( $count );
 	}
 }
 

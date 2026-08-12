@@ -117,7 +117,7 @@ class WPRM_AI_Assistant {
 			'template_editor' => array(
 				'name' => __( 'Template Editor', 'wp-recipe-maker' ),
 				'description' => __( 'Use AI inside the Template Editor to suggest recipe card HTML and CSS changes you can review before saving.', 'wp-recipe-maker' ),
-				'documentation_url' => 'https://help.bootstrapped.ventures/article/53-template-editor',
+				'documentation_url' => 'https://help.bootstrapped.ventures/wp-recipe-maker/ai-assistent/template-editor-ai-assistant/',
 				'button' => array(
 					'label' => __( 'Open Template Editor', 'wp-recipe-maker' ),
 					'url' => $documentation_url,

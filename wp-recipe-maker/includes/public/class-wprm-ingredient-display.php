@@ -106,6 +106,14 @@ class WPRM_Ingredient_Display {
 					'de' => "d'",
 				),
 				'allow_h_elision' => true,
+				'elision_vowels' => 'aeiou',
+				'elision_words' => array(
+					'yeuse',
+					'yeuses',
+					'yeux',
+					'ypérite',
+					'ypérites',
+				),
 			),
 			'it' => array(
 				'connectors' => array(
@@ -128,6 +136,10 @@ class WPRM_Ingredient_Display {
 		}
 		$connectors = $normalized_connectors;
 		$allow_h_elision = isset( $language_rules['allow_h_elision'] ) ? (bool) $language_rules['allow_h_elision'] : false;
+		$elision_vowels = isset( $language_rules['elision_vowels'] ) && is_scalar( $language_rules['elision_vowels'] ) ? strtolower( (string) $language_rules['elision_vowels'] ) : 'aeiouy';
+		$elision_vowels = preg_replace( '/[^a-z]/', '', $elision_vowels );
+		$elision_words = isset( $language_rules['elision_words'] ) && is_array( $language_rules['elision_words'] ) ? $language_rules['elision_words'] : array();
+		$elision_words = array_values( array_unique( array_filter( array_map( array( __CLASS__, 'normalize_connector_word' ), $elision_words ) ) ) );
 
 		$h_aspire_words = self::apply_filters( 'wprm_ingredient_unit_connector_elision_h_aspire_words', array(
 			'hachis',
@@ -150,6 +162,8 @@ class WPRM_Ingredient_Display {
 			'language' => $language,
 			'connectors' => $connectors,
 			'allow_h_elision' => $allow_h_elision,
+			'elision_vowels' => $elision_vowels,
+			'elision_words' => $elision_words,
 			'h_aspire_words' => $h_aspire_words,
 		);
 	}
@@ -456,9 +470,21 @@ class WPRM_Ingredient_Display {
 			return false;
 		}
 
-		$pattern = ! empty( $settings['allow_h_elision'] ) ? '/^[aeiouy]|^h[aeiouy]/' : '/^[aeiouy]/';
+		if ( in_array( $normalized_word, $settings['elision_words'], true ) ) {
+			return true;
+		}
 
-		return 1 === preg_match( $pattern, $normalized_word );
+		$first_letter = substr( $normalized_word, 0, 1 );
+		if ( false !== strpos( $settings['elision_vowels'], $first_letter ) ) {
+			return true;
+		}
+
+		$second_letter = substr( $normalized_word, 1, 1 );
+
+		return '' !== $second_letter
+			&& ! empty( $settings['allow_h_elision'] )
+			&& 'h' === $first_letter
+			&& false !== strpos( $settings['elision_vowels'], $second_letter );
 	}
 
 	/**

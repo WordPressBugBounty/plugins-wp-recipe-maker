@@ -4,8 +4,10 @@ import '../../../../css/admin/modal/split-ingredient.scss';
 
 import Header from '../../general/Header';
 import Footer from '../../general/Footer';
+import Api from 'Shared/Api';
 import { __wprm } from 'Shared/Translations';
 import Icon from 'Shared/Icon';
+import { getIngredientUnitCacheKey, getIngredientUnitForAmount } from '../ingredient-unit';
 
 import FieldContainer from '../../fields/FieldContainer';
 import FieldText from '../../fields/FieldText';
@@ -20,6 +22,7 @@ export default class SplitIngredient extends Component {
 
         this.state = {
             splits: JSON.parse(JSON.stringify(splits)),
+            unitDataVersion: 0,
         };
 
         this.addSplit = this.addSplit.bind(this);
@@ -27,6 +30,53 @@ export default class SplitIngredient extends Component {
         this.updateSplit = this.updateSplit.bind(this);
         this.save = this.save.bind(this);
         this.hasValidSplits = this.hasValidSplits.bind(this);
+    }
+
+    componentDidMount() {
+        this.unitDataMounted = true;
+        this.loadUnitData();
+    }
+
+    componentWillUnmount() {
+        this.unitDataMounted = false;
+    }
+
+    loadUnitData() {
+        const ingredient = this.props.ingredient || this.props.args?.ingredient || {};
+        const units = [
+            ingredient.unit || '',
+            ingredient.converted && ingredient.converted[2] ? ingredient.converted[2].unit || '' : '',
+        ].filter( Boolean );
+
+        if ( ! Api || ! Api.modal || 'function' !== typeof Api.modal.getIngredientUnitConnector || 0 === units.length ) {
+            return;
+        }
+
+        window.wprm_admin_modal_ingredient_unit_connectors = window.wprm_admin_modal_ingredient_unit_connectors || {};
+
+        const requests = [ ...new Set( units ) ].map((unit) => {
+            const cacheKey = getIngredientUnitCacheKey( unit );
+
+            if ( window.wprm_admin_modal_ingredient_unit_connectors.hasOwnProperty( cacheKey ) ) {
+                return Promise.resolve();
+            }
+
+            return Api.modal.getIngredientUnitConnector( unit ).then((data) => {
+                window.wprm_admin_modal_ingredient_unit_connectors[ cacheKey ] = data && data.found ? data : false;
+            }).catch(() => {
+                window.wprm_admin_modal_ingredient_unit_connectors[ cacheKey ] = false;
+            });
+        });
+
+        Promise.all( requests ).then(() => {
+            if ( ! this.unitDataMounted ) {
+                return;
+            }
+
+            this.setState((state) => ({
+                unitDataVersion: state.unitDataVersion + 1,
+            }));
+        });
     }
 
     hasValidSplits() {
@@ -108,9 +158,12 @@ export default class SplitIngredient extends Component {
             }
         }
         
+        const formattedAmount = formatQuantity(splitAmount, decimals, allowFractions);
+        const formattedAmountParsed = parseQuantity(formattedAmount);
+
         return {
-            amount: formatQuantity(splitAmount, decimals, allowFractions),
-            unit: parentUnit
+            amount: formattedAmount,
+            unit: getIngredientUnitForAmount( ingredient, formattedAmountParsed, useConverted ? 2 : false )
         };
     }
 

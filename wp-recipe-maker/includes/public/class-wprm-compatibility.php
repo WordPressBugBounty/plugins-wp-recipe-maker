@@ -48,6 +48,7 @@ class WPRM_Compatibility {
 		add_filter( 'wp-optimize-minify-default-exclusions', array( __CLASS__, 'cache_js_excludes' ) );
 		add_filter( 'perfmatters_minify_js_exclusions', array( __CLASS__, 'cache_js_excludes' ) );
 		add_filter( 'sgo_js_minify_exclude', array( __CLASS__, 'cache_js_excludes' ) );
+		add_filter( 'sgo_javascript_combine_exclude', array( __CLASS__, 'siteground_combine_js_excludes' ) );
 		add_filter( 'js_do_concat', array( __CLASS__, 'jetpack_boost_exclude' ), 10, 2 );
 
 		// Jupiter.
@@ -158,6 +159,26 @@ class WPRM_Compatibility {
 				$excludes[] = 'wp-recipe-maker-premium/dist/public-feature-';
 				$excludes[] = 'wp-recipe-maker-premium/dist/public-recipe-collections-split.js';
 			}
+		}
+
+		return $excludes;
+	}
+
+	/**
+	 * Exclude WPRM script handles from SiteGround's JavaScript combination.
+	 *
+	 * Combined scripts run from SiteGround's uploads directory, which prevents
+	 * Webpack from automatically resolving the location of on-demand chunks.
+	 *
+	 * @since	10.8.1
+	 * @param	array $excludes Script handles excluded from combination.
+	 * @return	array Script handles excluded from combination.
+	 */
+	public static function siteground_combine_js_excludes( $excludes ) {
+		if ( WPRM_Settings::get( 'assets_prevent_caching_optimization' ) && is_array( $excludes ) ) {
+			$excludes[] = 'wprm-public';
+			$excludes[] = 'wprmp-public';
+			$excludes[] = 'wprmprc-public';
 		}
 
 		return $excludes;

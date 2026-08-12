@@ -1,3 +1,5 @@
+import './public/public-path';
+
 window.WPRecipeMaker = typeof window.WPRecipeMaker === 'undefined' ? {} : window.WPRecipeMaker;
 
 import './public/analytics';
@@ -113,8 +115,11 @@ const detectFeatures = ( root = document ) => {
 	}
 };
 
+const pendingFeatureDetectionRoots = new Set();
 let detectScheduled = false;
 const scheduleFeatureDetection = ( root = document ) => {
+	pendingFeatureDetectionRoots.add( root || document );
+
 	if ( detectScheduled ) {
 		return;
 	}
@@ -122,7 +127,13 @@ const scheduleFeatureDetection = ( root = document ) => {
 	detectScheduled = true;
 	window.setTimeout( () => {
 		detectScheduled = false;
-		detectFeatures( root );
+
+		const roots = Array.from( pendingFeatureDetectionRoots );
+		pendingFeatureDetectionRoots.clear();
+
+		for ( const detectionRoot of roots ) {
+			detectFeatures( detectionRoot );
+		}
 	}, 0 );
 };
 
@@ -135,8 +146,8 @@ const observeFeatureDom = () => {
 		for ( const mutation of mutations ) {
 			for ( const node of mutation.addedNodes ) {
 				if ( node.nodeType === 1 ) {
-					scheduleFeatureDetection( node );
-					return;
+					scheduleFeatureDetection( mutation.target );
+					break;
 				}
 			}
 		}

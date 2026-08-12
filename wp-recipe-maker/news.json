@@ -1,6 +1,24 @@
 {
     "news": [
         {
+            "date": "2026-08-10",
+            "label": "Blog",
+            "title": "The Recipe Rebel Case Study",
+            "url": "https://bootstrapped.ventures/the-recipe-rebel-case-study/"
+        },
+        {
+            "date": "2026-08-07",
+            "label": "Blog",
+            "title": "How to Create Recipe Cards in Canva, Word, or WordPress",
+            "url": "https://bootstrapped.ventures/create-recipe-cards/"
+        },
+        {
+            "date": "2026-07-31",
+            "label": "Blog",
+            "title": "No Recipes Case Study",
+            "url": "https://bootstrapped.ventures/no-recipes-case-study/"
+        },
+        {
             "date": "2026-07-09",
             "label": "Blog",
             "title": "Best Food Hashtags for Instagram and TikTok",

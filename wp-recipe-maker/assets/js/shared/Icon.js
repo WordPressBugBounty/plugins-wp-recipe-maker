@@ -26,6 +26,7 @@ import IconHeading3 from '../../icons/admin/heading-3.svg';
 import IconHeading4 from '../../icons/admin/heading-4.svg';
 import IconHeading5 from '../../icons/admin/heading-5.svg';
 import IconHeading6 from '../../icons/admin/heading-6.svg';
+import IconInfo from '../../icons/admin/info.svg';
 import IconItalic from '../../icons/admin/italic.svg';
 import IconLink from '../../icons/admin/link.svg';
 import IconLock from '../../icons/admin/lock.svg';
@@ -77,6 +78,7 @@ const icons = {
     'heading-4': IconHeading4,
     'heading-5': IconHeading5,
     'heading-6': IconHeading6,
+    info: IconInfo,
     italic: IconItalic,
     link: IconLink,
     lock: IconLock,

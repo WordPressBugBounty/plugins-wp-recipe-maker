@@ -153,27 +153,30 @@ registerBlockType( 'wp-recipe-maker/recipe-roundup-item', {
             });
         }
 
+        const openRoundupEditor = () => {
+            WPRM_Modal.open( 'roundup', {
+                fields: {
+                    roundup: attributes,
+                },
+                insertCallback: modalCallback,
+            } );
+        };
+
         return (
             <div { ...blockProps }>{
                 attributes.id || attributes.link
                 ?
                 <Fragment>
-                    <Sidebar {...props} />
+                    <Sidebar
+                        {...props}
+                        onEdit={ openRoundupEditor }
+                    />
                     <BlockControls>
                         <ToolbarGroup>
                             <ToolbarButton
                                 icon="edit"
-                                label={ __( 'Edit Recipe', 'wp-recipe-maker' ) }
-                                onClick={ () => {
-                                    WPRM_Modal.open( 'roundup', {
-                                        fields: {
-                                            roundup: attributes,
-                                        },
-                                        insertCallback: ( fields ) => {
-                                            modalCallback( fields );
-                                        },
-                                    } );
-                                } }
+                                label={ __( 'Edit Roundup Item', 'wp-recipe-maker' ) }
+                                onClick={ openRoundupEditor }
                             />
                         </ToolbarGroup>
                     </BlockControls>
