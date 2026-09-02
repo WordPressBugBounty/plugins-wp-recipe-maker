@@ -18,6 +18,14 @@
  * @author     Brecht Vandersmissen <brecht@bootstrapped.ventures>
  */
 class WPRM_Instacart {
+	/**
+	 * Version for cached Instacart recipe payloads.
+	 *
+	 * @since    10.8.1
+	 * @access   private
+	 * @var      int RECIPE_CACHE_VERSION Version for cached recipe payloads.
+	 */
+	const RECIPE_CACHE_VERSION = 2;
 
 	/**
 	 * Register actions and filters.
@@ -92,8 +100,10 @@ class WPRM_Instacart {
 
 		foreach ( $existing_combinations as $combination => $result ) {
 			if ( $combination === $servings_system_combination ) {
-				// Use cached result if it's less than a month old.
-				if ( strtotime( '-1 month' ) < $result['timestamp'] ) {
+				$cache_version = isset( $result['version'] ) ? intval( $result['version'] ) : 1;
+
+				// Use cached result if it has the current payload format and is less than a month old.
+				if ( self::RECIPE_CACHE_VERSION === $cache_version && strtotime( '-1 month' ) < $result['timestamp'] ) {
 					$link = self::get_link_from_response( $result['response'] );
 
 					// Make sure the link is valid.
@@ -108,6 +118,7 @@ class WPRM_Instacart {
 		$api_data = array(
 			'title' => sanitize_text_field( $data['title'] ),
 			'image_url' => esc_url( $data['image_url'] ),
+			'servings' => $requested_servings,
 			'ingredients' => array(),
 		);
 
@@ -142,6 +153,7 @@ class WPRM_Instacart {
 		// Store result for future use only when within the logical range (out-of-range requests still get the link but are not cached).
 		if ( $within_cache_range ) {
 			$existing_combinations[ $servings_system_combination ] = array(
+				'version' => self::RECIPE_CACHE_VERSION,
 				'response' => $instacart_response,
 				'timestamp' => time(),
 			);

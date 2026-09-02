@@ -1,6 +1,6 @@
 <?php
 /**
- * Open up recipes for the companion app in the WordPress REST API.
+ * Open up recipes for WPRM Kitchen in the WordPress REST API.
  *
  * @link       https://bootstrapped.ventures
  * @since      10.7.0
@@ -10,7 +10,7 @@
  */
 
 /**
- * Open up recipes for the companion app in the WordPress REST API.
+ * Open up recipes for WPRM Kitchen in the WordPress REST API.
  *
  * @since      10.7.0
  * @package    WP_Recipe_Maker
@@ -53,7 +53,7 @@ class WPRM_Api_App_Recipes {
 	}
 
 	/**
-	 * Handle companion app recipes call to the REST API. Uses the same
+	 * Handle the WPRM Kitchen recipes call to the REST API. Uses the same
 	 * parameters as the manage page (page, pageSize, sorted, filtered).
 	 *
 	 * @since    10.7.0
@@ -83,7 +83,7 @@ class WPRM_Api_App_Recipes {
 	}
 
 	/**
-	 * Handle companion app get recipe call to the REST API.
+	 * Handle the WPRM Kitchen get recipe call to the REST API.
 	 *
 	 * @since    10.7.0
 	 * @param    WP_REST_Request $request Current request.
@@ -114,8 +114,8 @@ class WPRM_Api_App_Recipes {
 	}
 
 	/**
-	 * Handle companion app taxonomies call to the REST API. Returns the
-	 * data needed to construct the recipe filters in the app.
+	 * Handle the WPRM Kitchen taxonomies call to the REST API. Returns the
+	 * data needed to construct recipe filters.
 	 *
 	 * @since    10.7.0
 	 * @param    WP_REST_Request $request Current request.
@@ -163,7 +163,7 @@ class WPRM_Api_App_Recipes {
 	}
 
 	/**
-	 * Get the slim recipe data used for list rows in the companion app.
+	 * Get the slim recipe data used for WPRM Kitchen list rows.
 	 *
 	 * @since    10.7.0
 	 * @param    WPRM_Recipe $recipe Recipe to get the data for.

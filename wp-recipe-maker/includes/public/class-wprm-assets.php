@@ -253,7 +253,7 @@ class WPRM_Assets {
 		wp_enqueue_style( 'wprm-admin', WPRM_URL . 'dist/admin.css', array(), WPRM_VERSION, 'all' );
 
 		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : false;
-		if ( $screen && 'wp-recipe-maker_page_wprm_settings' === $screen->id ) {
+		if ( $screen && in_array( $screen->id, array( 'wp-recipe-maker_page_wprm_settings', 'wp-recipe-maker_page_wprm_kitchen' ), true ) ) {
 			wp_enqueue_style( 'wprm-admin-settings', WPRM_URL . 'dist/admin-settings.css', array(), WPRM_VERSION, 'all' );
 			wp_enqueue_script( 'wprm-admin-settings', WPRM_URL . 'dist/admin-settings.js', array( 'wprm-admin' ), WPRM_VERSION, true );
 		}

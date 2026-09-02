@@ -26,6 +26,8 @@ const getShortcodeId = (entry) => {
 
 // Shortcodes that should be marked as "new" in the Add Blocks view
 const newShortcodes = [
+    // New in 10.9.0
+    'wprm-google-preferred-sources',
     // New in 10.8.0
     'wprm-recipe-analytics',
     // New in 10.1.0
@@ -161,6 +163,7 @@ const shortcodeGroups = {
         group: 'Integrations',
         description: 'Third-party integrations and services for enhanced recipe functionality.',
         shortcodes: [
+            { id: 'wprm-google-preferred-sources', name: 'Google Preferred Sources', description: 'Let readers add the site as a preferred source in Google using the official or a custom styled button' },
             { id: 'wprm-recipe-grow.me', name: 'Grow.me', description: 'A button to add the recipe to Grow.me' },
             { id: 'wprm-recipe-shop-instacart', name: 'Instacart', description: 'A button to shop ingredients on Instacart' },
             { id: 'wprm-recipe-emeals', name: 'eMeals', description: 'A button to shop ingredients on eMeals' },

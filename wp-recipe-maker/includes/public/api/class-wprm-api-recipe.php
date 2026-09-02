@@ -94,7 +94,25 @@ class WPRM_Api_Recipe{
 		$params = $request->get_params();
 		$recipe_data = isset( $params['recipe'] ) ? $params['recipe'] : array();
 
-		$recipe = WPRM_Recipe_Sanitizer::sanitize( $recipe_data );
+		// Ingredient, unit and equipment terms are resolved while sanitizing. Make
+		// sure multilingual plugins perform those lookups in the recipe language,
+		// rather than the language inherited by this REST request.
+		$recipe_language = isset( $recipe_data['language'] ) && $recipe_data['language'] ? sanitize_key( $recipe_data['language'] ) : false;
+		$previous_language = false;
+
+		if ( $recipe_language ) {
+			$previous_language = WPRM_Compatibility::switch_language_context( $recipe_language );
+			WPRM_Compatibility::set_new_term_language_context( $recipe_language );
+		}
+
+		try {
+			$recipe = WPRM_Recipe_Sanitizer::sanitize( $recipe_data );
+		} finally {
+			if ( $recipe_language ) {
+				WPRM_Compatibility::clear_new_term_language_context();
+				WPRM_Compatibility::restore_language_context( $previous_language );
+			}
+		}
 		$recipe_id = $post->ID;
 
 		// Allow recipe image to be passed as URL when no real media ID has been set yet.

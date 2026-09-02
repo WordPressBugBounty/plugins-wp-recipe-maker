@@ -95,6 +95,10 @@ class WPRM_Settings {
 	 */
 	public static function add_submenu_page() {
 		add_submenu_page( 'wprecipemaker', __( 'WPRM Settings', 'wp-recipe-maker' ), __( 'Settings', 'wp-recipe-maker' ), 'manage_options', 'wprm_settings', array( __CLASS__, 'settings_page_template' ) );
+
+		if ( WPRM_KITCHEN_UI_ENABLED ) {
+			add_submenu_page( 'wprecipemaker', __( 'WPRM Kitchen', 'wp-recipe-maker' ), __( 'WPRM Kitchen', 'wp-recipe-maker' ), 'manage_options', 'wprm_kitchen', array( __CLASS__, 'kitchen_page_template' ) );
+		}
 	}
 
 	/**
@@ -110,6 +114,15 @@ class WPRM_Settings {
 		) );
 
 		require_once( WPRM_DIR . 'templates/admin/settings.php' );
+	}
+
+	/**
+	 * Get the dedicated WPRM Kitchen settings page.
+	 *
+	 * @since 10.9.0
+	 */
+	public static function kitchen_page_template() {
+		require_once( WPRM_DIR . 'templates/admin/kitchen.php' );
 	}
 
 	/**
@@ -331,7 +344,6 @@ class WPRM_Settings {
 	public static function supports_settings_component( $component ) {
 		return in_array( $component, array(
 			'amazonQueue',
-			'appAccessTokens',
 			'jupiterAccessToken',
 			'unitConversionUnits',
 		), true );

@@ -63,9 +63,14 @@ const PropertyAccordion = (props) => {
         }
     }
 
-    // State for expanded sections (all collapsed by default)
+    // Unsectioned properties are always visible. If there are none, open the
+    // first section so there are properties available immediately.
+    const hasUnsectionedProperties = groups.some(group => group.headerProperty === null);
+
     // Store the index of the currently expanded section, or null if none
-    const [expandedSection, setExpandedSection] = useState(null);
+    const [expandedSection, setExpandedSection] = useState(
+        groups.length > 0 && ! hasUnsectionedProperties ? 0 : null
+    );
 
     const toggleSection = (index) => {
         setExpandedSection(prev => {
@@ -86,7 +91,7 @@ const PropertyAccordion = (props) => {
                 const hasVisibleProperties = group.properties.length > 0;
                 // Only show header if there are visible properties below it
                 const shouldShowHeader = hasHeader && hasVisibleProperties;
-                // All sections with headers collapsed by default
+                // Headed sections use the accordion state.
                 // Sections without headers are always expanded (no way to expand them otherwise)
                 const isExpanded = shouldShowHeader 
                     ? (expandedSection === groupIndex)

@@ -3,9 +3,9 @@ Contributors: BrechtVds, BirtheVdm
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=QG7KZMGFU325Y
 Tags: recipe, recipes, food, cooking, schema
 Requires at least: 4.4
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.2
-Stable tag: 10.8.0
+Stable tag: 10.8.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -141,6 +141,13 @@ Please report security bugs found in the source code of the WP Recipe Maker plug
 7. Our Template Editor allows you to completely customize the look and feel.
 
 == Changelog ==
+= 10.8.1 =
+* Feature: Google Preferred Sources block
+* Improvement: Pass along servings to Instacart
+* Fix: Recipe modal appearing behind Classic Editor block
+* Fix: Instacart invalid servings issue
+* Fix: Prevent users from syncing parent posts of recipes they cannot edit
+
 = 10.8.0 =
 * Feature: Recipe Analytics shortcode
 * Improvement: Sortable Total column on manage page
@@ -591,6 +598,9 @@ Please report security bugs found in the source code of the WP Recipe Maker plug
 For earlier versions, please refer to [our full changelog](https://help.bootstrapped.ventures/article/124-wp-recipe-maker-changelog).
 
 == Upgrade notice ==
+= 10.8.1 =
+Some small fixes and improvements
+
 = 10.8.0 =
 Some great new features and improvements
 

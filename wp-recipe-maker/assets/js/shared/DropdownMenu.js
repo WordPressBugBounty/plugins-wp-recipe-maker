@@ -73,7 +73,7 @@ const DropdownMenu = (props) => {
                         enabled: true,
                         phase: 'write',
                         fn: ({ state }) => {
-                            state.styles.popper.zIndex = '100000';
+                            state.styles.popper.zIndex = '100004';
                         },
                     },
                     {

@@ -1,6 +1,6 @@
 <?php
 /**
- * Open up the companion app endpoints in the WordPress REST API.
+ * Open up the WPRM Kitchen data endpoints in the WordPress REST API.
  *
  * @link       https://bootstrapped.ventures
  * @since      10.7.0
@@ -10,7 +10,7 @@
  */
 
 /**
- * Open up the companion app endpoints in the WordPress REST API.
+ * Open up the WPRM Kitchen data endpoints in the WordPress REST API.
  *
  * @since      10.7.0
  * @package    WP_Recipe_Maker
@@ -19,25 +19,7 @@
  */
 class WPRM_Api_App {
 	/**
-	 * Option used to store companion app access tokens, keyed by token hash.
-	 *
-	 * @since 10.7.0
-	 * @access private
-	 * @var string
-	 */
-	private static $app_access_option = 'wprm_app_access';
-
-	/**
-	 * Maximum number of companion app tokens that can exist at the same time.
-	 *
-	 * @since 10.7.0
-	 * @access private
-	 * @var int
-	 */
-	private static $max_tokens = 20;
-
-	/**
-	 * Version of the companion app API, only bumped on breaking changes.
+	 * Version of the WPRM Kitchen site API, only bumped on breaking changes.
 	 *
 	 * @since 10.7.0
 	 * @access private
@@ -61,40 +43,21 @@ class WPRM_Api_App {
 	 */
 	public static function api_register_data() {
 		if ( function_exists( 'register_rest_field' ) ) { // Prevent issue with Jetpack.
-			register_rest_route( 'wp-recipe-maker/v1', '/app/tokens', array(
-				'callback' => array( __CLASS__, 'api_get_app_tokens' ),
-				'methods' => 'GET',
-				'permission_callback' => array( __CLASS__, 'api_app_token_admin_permissions' ),
-			));
-			register_rest_route( 'wp-recipe-maker/v1', '/app/tokens', array(
-				'callback' => array( __CLASS__, 'api_generate_app_token' ),
-				'methods' => 'POST',
-				'permission_callback' => array( __CLASS__, 'api_app_token_admin_permissions' ),
-			));
-			register_rest_route( 'wp-recipe-maker/v1', '/app/tokens/(?P<id>[a-f0-9]+)', array(
-				'callback' => array( __CLASS__, 'api_revoke_app_token' ),
-				'methods' => 'DELETE',
-				'permission_callback' => array( __CLASS__, 'api_app_token_admin_permissions' ),
-			));
 			register_rest_route( 'wp-recipe-maker/v1', '/app/info', array(
 				'callback' => array( __CLASS__, 'api_get_app_info' ),
 				'methods' => 'GET',
 				'permission_callback' => array( __CLASS__, 'api_app_token_only_permissions' ),
 			));
+			register_rest_route( 'wp-recipe-maker/v1', '/app/token/current', array(
+				'callback' => array( __CLASS__, 'api_revoke_current_kitchen_token' ),
+				'methods' => 'DELETE',
+				'permission_callback' => array( __CLASS__, 'api_kitchen_token_permissions' ),
+			));
 		}
 	}
 
 	/**
-	 * Required permissions for managing companion app tokens.
-	 *
-	 * @since 10.7.0
-	 */
-	public static function api_app_token_admin_permissions() {
-		return current_user_can( 'manage_options' );
-	}
-
-	/**
-	 * Required permissions for companion app data API calls.
+	 * Required permissions for WPRM Kitchen data API calls.
 	 *
 	 * @since 10.7.0
 	 * @param WP_REST_Request $request Current request.
@@ -103,134 +66,127 @@ class WPRM_Api_App {
 		if ( ! WPRM_Addons::is_active( 'premium' ) ) {
 			return new WP_Error(
 				'wprm_app_premium_required',
-				__( 'The companion app requires WP Recipe Maker Premium.', 'wp-recipe-maker' ),
+				__( 'WPRM Kitchen data access requires WP Recipe Maker Premium.', 'wp-recipe-maker' ),
 				array( 'status' => 403 )
 			);
 		}
 
-		return self::api_app_token_only_permissions( $request );
-	}
+		$result = self::validate_app_token( $request );
 
-	/**
-	 * Token-only permissions, without the premium check. Used for the info
-	 * endpoint so the app can report a missing premium plugin gracefully.
-	 *
-	 * @since 10.7.0
-	 * @param WP_REST_Request $request Current request.
-	 */
-	public static function api_app_token_only_permissions( $request ) {
-		$token = self::get_app_token_from_request( $request );
-		$token_hash = $token ? self::find_valid_app_token_hash( $token ) : false;
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
 
-		if ( ! $token_hash ) {
+		$route = $request->get_route();
+		$required_scope = false !== strpos( $route, '/analytics/' ) ? 'analytics:read' : 'recipes:read';
+
+		if ( ! WPRM_App_Token_Store::has_scope( $result['data'], $required_scope ) ) {
 			return new WP_Error(
-				'wprm_app_invalid_token',
-				__( 'Invalid companion app access token.', 'wp-recipe-maker' ),
-				array( 'status' => 401 )
+				'wprm_app_insufficient_scope',
+				__( 'The WPRM Kitchen token does not grant access to this endpoint.', 'wp-recipe-maker' ),
+				array( 'status' => 403 )
 			);
 		}
 
-		self::update_app_token_last_used( $token_hash );
+		WPRM_App_Token_Store::touch( $result['hash'] );
 
 		return true;
 	}
 
 	/**
-	 * Handle get companion app tokens call to the REST API.
+	 * Token-only permissions, without the premium check. Used for the info
+	 * endpoint so Kitchen can report a missing premium plugin gracefully.
 	 *
 	 * @since 10.7.0
 	 * @param WP_REST_Request $request Current request.
 	 */
-	public static function api_get_app_tokens( $request ) {
-		return rest_ensure_response( self::get_app_tokens_status() );
-	}
+	public static function api_app_token_only_permissions( $request ) {
+		$result = self::validate_app_token( $request );
 
-	/**
-	 * Handle generate companion app token call to the REST API.
-	 *
-	 * @since 10.7.0
-	 * @param WP_REST_Request $request Current request.
-	 */
-	public static function api_generate_app_token( $request ) {
-		if ( ! WPRM_Addons::is_active( 'premium' ) ) {
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		if ( ! WPRM_App_Token_Store::has_scope( $result['data'], 'site:read' ) ) {
 			return new WP_Error(
-				'wprm_app_premium_required',
-				__( 'The companion app requires WP Recipe Maker Premium.', 'wp-recipe-maker' ),
+				'wprm_app_insufficient_scope',
+				__( 'The WPRM Kitchen token does not grant access to this endpoint.', 'wp-recipe-maker' ),
 				array( 'status' => 403 )
 			);
 		}
 
-		$access = self::get_app_access();
+		WPRM_App_Token_Store::touch( $result['hash'] );
 
-		if ( self::$max_tokens <= count( $access ) ) {
+		return true;
+	}
+
+	/**
+	 * Validate the bearer for Kitchen-initiated self-revocation.
+	 *
+	 * @since 10.9.0
+	 * @param WP_REST_Request $request Current request.
+	 * @return true|WP_Error
+	 */
+	public static function api_kitchen_token_permissions( $request ) {
+		$result = self::validate_app_token( $request );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		if ( empty( $result['data']['kind'] ) || 'kitchen' !== $result['data']['kind'] ) {
 			return new WP_Error(
-				'wprm_app_too_many_tokens',
-				__( 'The maximum number of companion app tokens has been reached. Revoke an existing token first.', 'wp-recipe-maker' ),
-				array( 'status' => 400 )
+				'wprm_app_kitchen_token_required',
+				__( 'This endpoint only accepts the active WPRM Kitchen token.', 'wp-recipe-maker' ),
+				array( 'status' => 403 )
 			);
 		}
 
-		$params = $request->get_params();
-		$name = isset( $params['name'] ) ? sanitize_text_field( wp_unslash( (string) $params['name'] ) ) : '';
-
-		if ( '' === $name ) {
-			$name = __( 'Unnamed device', 'wp-recipe-maker' );
-		}
-
-		$token = self::generate_app_token_secret();
-
-		$access[ self::hash_app_token( $token ) ] = array(
-			'id' => self::generate_app_token_id( $access ),
-			'name' => $name,
-			'created_at' => current_time( 'mysql' ),
-			'created_by' => get_current_user_id(),
-			'last_used_at' => '',
-		);
-
-		update_option( self::$app_access_option, $access, false );
-
-		$status = self::get_app_tokens_status();
-		$status['token'] = $token;
-
-		return rest_ensure_response( $status );
+		return true;
 	}
 
 	/**
-	 * Handle revoke companion app token call to the REST API.
+	 * Let Kitchen revoke exactly its current bearer and linked local metadata.
 	 *
-	 * @since 10.7.0
+	 * @since 10.9.0
 	 * @param WP_REST_Request $request Current request.
+	 * @return WP_REST_Response|WP_Error
 	 */
-	public static function api_revoke_app_token( $request ) {
-		$id = sanitize_key( $request['id'] );
-		$access = self::get_app_access();
-
-		foreach ( $access as $token_hash => $token_data ) {
-			if ( isset( $token_data['id'] ) && $id === $token_data['id'] ) {
-				unset( $access[ $token_hash ] );
-			}
+	public static function api_revoke_current_kitchen_token( $request ) {
+		$result = self::validate_app_token( $request );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		if ( empty( $result['data']['kind'] ) || 'kitchen' !== $result['data']['kind'] ) {
+			return new WP_Error(
+				'wprm_app_kitchen_token_required',
+				__( 'This endpoint only accepts the active WPRM Kitchen token.', 'wp-recipe-maker' ),
+				array( 'status' => 403 )
+			);
 		}
 
-		if ( $access ) {
-			update_option( self::$app_access_option, $access, false );
-		} else {
-			delete_option( self::$app_access_option );
+		if ( ! WPRM_App_Token_Store::revoke_by_hash( $result['hash'] ) ) {
+			return new WP_Error(
+				'wprm_app_invalid_token',
+				__( 'Invalid WPRM Kitchen access token.', 'wp-recipe-maker' ),
+				array( 'status' => 401 )
+			);
 		}
 
-		return rest_ensure_response( self::get_app_tokens_status() );
+		WPRM_Api_App_Kitchen::handle_token_self_revocation( $result['data'] );
+
+		return rest_ensure_response( array( 'revoked' => true ) );
 	}
 
 	/**
-	 * Handle get companion app info call to the REST API.
+	 * Handle get WPRM Kitchen site info call to the REST API.
 	 *
 	 * @since 10.7.0
 	 * @param WP_REST_Request $request Current request.
 	 */
 	public static function api_get_app_info( $request ) {
 		$token = self::get_app_token_from_request( $request );
-		$token_hash = self::find_valid_app_token_hash( $token );
-		$access = self::get_app_access();
-		$token_name = $token_hash && isset( $access[ $token_hash ]['name'] ) ? $access[ $token_hash ]['name'] : '';
+		$found = WPRM_App_Token_Store::find( $token );
+		$token_name = $found && isset( $found['data']['name'] ) ? $found['data']['name'] : '';
 
 		$recipe_count = 0;
 		$counts = wp_count_posts( WPRM_POST_TYPE );
@@ -240,6 +196,7 @@ class WPRM_Api_App {
 
 		return rest_ensure_response( array(
 			'api_version' => self::$api_version,
+			'site_id' => WPRM_Api_App_Kitchen::get_site_id(),
 			'wprm_version' => WPRM_VERSION,
 			'premium_active' => WPRM_Addons::is_active( 'premium' ),
 			'site_name' => get_bloginfo( 'name' ),
@@ -251,85 +208,7 @@ class WPRM_Api_App {
 	}
 
 	/**
-	 * Get the status of all companion app tokens.
-	 *
-	 * @since 10.7.0
-	 */
-	private static function get_app_tokens_status() {
-		$access = self::get_app_access();
-
-		$tokens = array();
-		foreach ( $access as $token_data ) {
-			$tokens[] = array(
-				'id' => isset( $token_data['id'] ) ? $token_data['id'] : '',
-				'name' => isset( $token_data['name'] ) ? $token_data['name'] : '',
-				'created_at' => isset( $token_data['created_at'] ) ? $token_data['created_at'] : '',
-				'created_by' => isset( $token_data['created_by'] ) ? intval( $token_data['created_by'] ) : 0,
-				'last_used_at' => isset( $token_data['last_used_at'] ) ? $token_data['last_used_at'] : '',
-			);
-		}
-
-		usort( $tokens, function( $a, $b ) {
-			return strcmp( $b['created_at'], $a['created_at'] );
-		} );
-
-		return array(
-			'tokens' => $tokens,
-			'premium_active' => WPRM_Addons::is_active( 'premium' ),
-			'api_url' => rtrim( get_rest_url( null, 'wp-recipe-maker/v1/app' ), '/' ),
-			'site_name' => get_bloginfo( 'name' ),
-			'site_url' => home_url(),
-		);
-	}
-
-	/**
-	 * Get stored companion app access tokens.
-	 *
-	 * @since 10.7.0
-	 */
-	private static function get_app_access() {
-		$access = get_option( self::$app_access_option, array() );
-
-		return is_array( $access ) ? $access : array();
-	}
-
-	/**
-	 * Generate a new companion app token secret.
-	 *
-	 * @since 10.7.0
-	 */
-	private static function generate_app_token_secret() {
-		try {
-			$random = bin2hex( random_bytes( 32 ) );
-		} catch ( Exception $e ) {
-			$random = wp_generate_password( 64, false, false );
-		}
-
-		return 'wprm_app_' . $random;
-	}
-
-	/**
-	 * Generate a unique short id used to identify a token in the UI.
-	 *
-	 * @since 10.7.0
-	 * @param array $access Existing access tokens.
-	 */
-	private static function generate_app_token_id( $access ) {
-		$existing_ids = wp_list_pluck( $access, 'id' );
-
-		do {
-			try {
-				$id = bin2hex( random_bytes( 4 ) );
-			} catch ( Exception $e ) {
-				$id = strtolower( wp_generate_password( 8, false, false ) );
-			}
-		} while ( in_array( $id, $existing_ids, true ) );
-
-		return $id;
-	}
-
-	/**
-	 * Get companion app bearer token from the REST request.
+	 * Get the WPRM Kitchen bearer token from the REST request.
 	 *
 	 * @since 10.7.0
 	 * @param WP_REST_Request $request Current request.
@@ -362,59 +241,29 @@ class WPRM_Api_App {
 			return trim( $matches[1] );
 		}
 
-		$header_token = $request->get_header( 'x-wprm-app-token' );
-
-		return $header_token ? trim( $header_token ) : '';
+		return '';
 	}
 
 	/**
-	 * Validate a companion app token and return its hash when valid.
+	 * Validate a WPRM Kitchen token and return its hash when valid.
 	 *
 	 * @since 10.7.0
-	 * @param string $token Token to validate.
+	 * @param WP_REST_Request $request Current request.
+	 * @return array|WP_Error Validated token record or error.
 	 */
-	private static function find_valid_app_token_hash( $token ) {
-		if ( ! is_string( $token ) || '' === $token ) {
-			return false;
+	private static function validate_app_token( $request ) {
+		$token = self::get_app_token_from_request( $request );
+		$found = $token ? WPRM_App_Token_Store::find( $token ) : false;
+
+		if ( ! $found || empty( $found['data']['kind'] ) || 'kitchen' !== $found['data']['kind'] ) {
+			return new WP_Error(
+				'wprm_app_invalid_token',
+				__( 'Invalid WPRM Kitchen access token.', 'wp-recipe-maker' ),
+				array( 'status' => 401 )
+			);
 		}
 
-		$access = self::get_app_access();
-		$token_hash = self::hash_app_token( $token );
-
-		foreach ( array_keys( $access ) as $stored_hash ) {
-			if ( is_string( $stored_hash ) && hash_equals( $stored_hash, $token_hash ) ) {
-				return $stored_hash;
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Hash a companion app token for storage.
-	 *
-	 * @since 10.7.0
-	 * @param string $token Token to hash.
-	 */
-	private static function hash_app_token( $token ) {
-		return hash( 'sha256', $token );
-	}
-
-	/**
-	 * Update the last used timestamp for a companion app token.
-	 *
-	 * @since 10.7.0
-	 * @param string $token_hash Hash of the token that was used.
-	 */
-	private static function update_app_token_last_used( $token_hash ) {
-		$access = self::get_app_access();
-
-		if ( ! isset( $access[ $token_hash ] ) ) {
-			return;
-		}
-
-		$access[ $token_hash ]['last_used_at'] = current_time( 'mysql' );
-		update_option( self::$app_access_option, $access, false );
+		return $found;
 	}
 }
 

@@ -1,0 +1,43 @@
+.wprm-google-preferred-sources-custom {
+    appearance: none;
+    cursor: pointer;
+    font: inherit;
+    line-height: inherit;
+}
+
+.wprm-google-preferred-sources-icon {
+    display: inline-block;
+    line-height: 0;
+    vertical-align: middle;
+}
+
+.wprm-google-preferred-sources-official-wrapper {
+    display: block;
+    width: 100%;
+}
+
+.wprm-google-preferred-sources-official-preview {
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #c4c7c5;
+    border-radius: 999px;
+    color: #202124;
+    display: inline-flex;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    gap: 10px;
+    line-height: 20px;
+    padding: 10px 14px;
+
+    .wprm-google-preferred-sources-icon svg {
+        height: 20px;
+        width: 20px;
+    }
+
+    &[data-theme="dark"] {
+        background: #202124;
+        border-color: #5f6368;
+        color: #ffffff;
+    }
+}

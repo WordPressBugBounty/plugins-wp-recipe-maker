@@ -1,6 +1,18 @@
 {
     "news": [
         {
+            "date": "2026-09-01",
+            "label": "Blog",
+            "title": "The Modern Nonna Case Study",
+            "url": "https://bootstrapped.ventures/the-modern-nonna-case-study/"
+        },
+        {
+            "date": "2026-08-12",
+            "label": "Release",
+            "title": "WP Recipe Maker 10.8.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-10-8-0/"
+        },
+        {
             "date": "2026-08-10",
             "label": "Blog",
             "title": "The Recipe Rebel Case Study",

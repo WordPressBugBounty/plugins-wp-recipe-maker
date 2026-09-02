@@ -31,9 +31,10 @@ class WP_Recipe_Maker {
 	 * @since    1.0.0
 	 */
 	private function define_constants() {
-		define( 'WPRM_VERSION', '10.8.0' );
-		define( 'WPRM_PREMIUM_VERSION_RECOMMENDED', '10.8.0' );
+		define( 'WPRM_VERSION', '10.8.1' );
+		define( 'WPRM_PREMIUM_VERSION_RECOMMENDED', '10.8.1' );
 		define( 'WPRM_PREMIUM_VERSION_REQUIRED', '7.0.0' );
+		define( 'WPRM_KITCHEN_UI_ENABLED', false );
 		define( 'WPRM_POST_TYPE', 'wprm_recipe' );
 		define( 'WPRM_IDEA_POST_TYPE', 'wprm_idea' );
 		define( 'WPRM_LIST_POST_TYPE', 'wprm_list' );
@@ -78,7 +79,9 @@ class WP_Recipe_Maker {
 
 		// API.
 		require_once( WPRM_DIR . 'includes/public/api/class-wprm-api-analytics.php' );
+		require_once( WPRM_DIR . 'includes/public/api/class-wprm-app-token-store.php' );
 		require_once( WPRM_DIR . 'includes/public/api/class-wprm-api-app.php' );
+		require_once( WPRM_DIR . 'includes/public/api/class-wprm-api-app-kitchen.php' );
 		require_once( WPRM_DIR . 'includes/public/api/class-wprm-api-app-analytics.php' );
 		require_once( WPRM_DIR . 'includes/public/api/class-wprm-api-app-recipes.php' );
 		require_once( WPRM_DIR . 'includes/public/api/class-wprm-api-comments.php' );

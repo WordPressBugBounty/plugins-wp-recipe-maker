@@ -1,4 +1,4 @@
-#wpbody-content > *:not(#wprm-settings),
+#wpbody-content > *:not(#wprm-settings):not(#wprm-kitchen),
 #wpfooter {
     display: none;
 }

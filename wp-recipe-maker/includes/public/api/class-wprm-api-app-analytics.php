@@ -1,6 +1,6 @@
 <?php
 /**
- * Open up analytics for the companion app in the WordPress REST API.
+ * Open up analytics for WPRM Kitchen in the WordPress REST API.
  *
  * @link       https://bootstrapped.ventures
  * @since      10.7.0
@@ -10,7 +10,7 @@
  */
 
 /**
- * Open up analytics for the companion app in the WordPress REST API.
+ * Open up analytics for WPRM Kitchen in the WordPress REST API.
  *
  * @since      10.7.0
  * @package    WP_Recipe_Maker
@@ -48,7 +48,7 @@ class WPRM_Api_App_Analytics {
 	}
 
 	/**
-	 * Handle companion app analytics summary call to the REST API.
+	 * Handle the WPRM Kitchen analytics summary call to the REST API.
 	 *
 	 * @since    10.7.0
 	 * @param    WP_REST_Request $request Current request.
@@ -64,7 +64,7 @@ class WPRM_Api_App_Analytics {
 
 		$data = WPRM_Analytics::get_chart_data( $days, 10 );
 
-		// Add image to the top recipes for display in the app.
+		// Add image to the top recipes for display in Kitchen.
 		foreach ( $data['per_recipe'] as $index => $top_recipe ) {
 			$recipe = WPRM_Recipe_Manager::get_recipe( $top_recipe['id'] );
 			$data['per_recipe'][ $index ]['image_url'] = $recipe ? (string) $recipe->image_url( 'medium' ) : '';
@@ -81,7 +81,7 @@ class WPRM_Api_App_Analytics {
 	}
 
 	/**
-	 * Handle companion app recipe analytics call to the REST API.
+	 * Handle the WPRM Kitchen recipe analytics call to the REST API.
 	 *
 	 * @since    10.7.0
 	 * @param    WP_REST_Request $request Current request.

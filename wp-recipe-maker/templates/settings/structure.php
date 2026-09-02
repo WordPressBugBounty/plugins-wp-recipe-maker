@@ -55,7 +55,11 @@ require_once( 'group-recipe-collections.php' );
 // Backend.
 require_once( 'group-recipe-defaults.php' );
 require_once( 'group-ai-assistant.php' );
-require_once( 'group-app.php' );
+$kitchen_settings_groups = array();
+if ( WPRM_KITCHEN_UI_ENABLED ) {
+	require_once( 'group-kitchen.php' );
+	$kitchen_settings_groups[] = $kitchen;
+}
 require_once( 'group-analytics.php' );
 require_once( 'group-import.php' );
 require_once( 'group-changelog.php' );
@@ -108,15 +112,21 @@ $settings_structure = array(
 	array( 'header' => __( 'Backend', 'wp-recipe-maker' ) ),
 	$recipe_defaults,
 	$ai_assistant,
-	$app,
-	$analytics,
-	$import,
-	$changelog,
-	array( 'header' => __( 'Advanced', 'wp-recipe-maker' ) ),
-	$post_type,
-	$metadata,
-	$performance,
-	$permissions,
-	$legacy,
-	$settings_tools,
+);
+
+$settings_structure = array_merge(
+	$settings_structure,
+	$kitchen_settings_groups,
+	array(
+		$analytics,
+		$import,
+		$changelog,
+		array( 'header' => __( 'Advanced', 'wp-recipe-maker' ) ),
+		$post_type,
+		$metadata,
+		$performance,
+		$permissions,
+		$legacy,
+		$settings_tools,
+	)
 );

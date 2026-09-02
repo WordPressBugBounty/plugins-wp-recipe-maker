@@ -354,7 +354,7 @@ class WPRM_Recipe_Saver {
 			sort( $new_term_ids );
 
 			if ( $current_term_ids !== $new_term_ids && ! empty( $translated_term_replacements ) ) {
-				self::replace_translated_term_relationships( $recipe_id, $taxonomy, $translated_term_replacements );
+				self::replace_term_relationships( $recipe_id, $taxonomy, $translated_term_replacements );
 			}
 		}
 	}
@@ -385,27 +385,28 @@ class WPRM_Recipe_Saver {
 	}
 
 	/**
-	 * Replace translated term relationships without clearing unrelated assignments.
+	 * Replace term relationships without clearing unrelated assignments.
 	 *
 	 * This uses direct relationship updates because multilingual plugins can hide
 	 * some term links from the standard replacement flow, which risks leaving old
-	 * translated terms behind or wiping untranslated fallback terms.
+	 * terms behind or wiping unrelated terms.
 	 *
 	 * @since	10.8.1
 	 * @param	int    $recipe_id    Recipe ID.
 	 * @param	string $taxonomy     Taxonomy to update.
 	 * @param	array  $replacements Map of source term IDs to translated term IDs.
+	 * @return	bool Whether the relationships were replaced successfully.
 	 */
-	private static function replace_translated_term_relationships( $recipe_id, $taxonomy, $replacements ) {
+	public static function replace_term_relationships( $recipe_id, $taxonomy, $replacements ) {
 		global $wpdb;
 
 		if ( ! $recipe_id || ! $taxonomy || ! is_array( $replacements ) || empty( $replacements ) ) {
-			return;
+			return false;
 		}
 
 		$current_relationships = self::get_assigned_term_taxonomy_ids_from_database( $recipe_id, $taxonomy );
 		if ( empty( $current_relationships ) ) {
-			return;
+			return false;
 		}
 
 		$translated_term_ids = array_values( array_unique( array_map( 'intval', $replacements ) ) );
@@ -417,6 +418,10 @@ class WPRM_Recipe_Saver {
 		foreach ( $replacements as $source_term_id => $translated_term_id ) {
 			$source_term_id = intval( $source_term_id );
 			$translated_term_id = intval( $translated_term_id );
+
+			if ( $source_term_id === $translated_term_id ) {
+				continue;
+			}
 
 			if ( ! isset( $current_relationships[ $source_term_id ] ) || ! isset( $translated_term_taxonomy_ids[ $translated_term_id ] ) ) {
 				continue;
@@ -430,28 +435,14 @@ class WPRM_Recipe_Saver {
 		$term_taxonomy_ids_to_add = array_values( array_unique( array_filter( $term_taxonomy_ids_to_add ) ) );
 
 		if ( empty( $term_taxonomy_ids_to_remove ) && empty( $term_taxonomy_ids_to_add ) ) {
-			return;
+			return false;
 		}
 
-		if ( ! empty( $term_taxonomy_ids_to_remove ) ) {
-			$delete_placeholders = implode( ', ', array_fill( 0, count( $term_taxonomy_ids_to_remove ), '%d' ) );
-			$delete_arguments = array_merge(
-				array( $recipe_id ),
-				$term_taxonomy_ids_to_remove
-			);
-
-			$wpdb->query(
-				$wpdb->prepare(
-					"DELETE FROM {$wpdb->term_relationships}
-					WHERE object_id = %d AND term_taxonomy_id IN ({$delete_placeholders})",
-					$delete_arguments
-				)
-			);
-		}
-
+		// Add replacements before removing sources. If an insert fails, leaving the
+		// original relationship intact is safer than desynchronizing recipe meta.
 		if ( ! empty( $term_taxonomy_ids_to_add ) ) {
 			foreach ( $term_taxonomy_ids_to_add as $term_taxonomy_id ) {
-				$wpdb->replace(
+				$replaced = $wpdb->replace(
 					$wpdb->term_relationships,
 					array(
 						'object_id'        => $recipe_id,
@@ -462,6 +453,30 @@ class WPRM_Recipe_Saver {
 						'%d',
 					)
 				);
+
+				if ( false === $replaced ) {
+					return false;
+				}
+			}
+		}
+
+		if ( ! empty( $term_taxonomy_ids_to_remove ) ) {
+			$delete_placeholders = implode( ', ', array_fill( 0, count( $term_taxonomy_ids_to_remove ), '%d' ) );
+			$delete_arguments = array_merge(
+				array( $recipe_id ),
+				$term_taxonomy_ids_to_remove
+			);
+
+			$deleted = $wpdb->query(
+				$wpdb->prepare(
+					"DELETE FROM {$wpdb->term_relationships}
+					WHERE object_id = %d AND term_taxonomy_id IN ({$delete_placeholders})",
+					$delete_arguments
+				)
+			);
+
+			if ( false === $deleted ) {
+				return false;
 			}
 		}
 
@@ -471,6 +486,8 @@ class WPRM_Recipe_Saver {
 		}
 
 		clean_object_term_cache( $recipe_id, WPRM_POST_TYPE );
+
+		return true;
 	}
 
 	/**
@@ -556,19 +573,34 @@ class WPRM_Recipe_Saver {
 
 		$recipe_ids = WPRM_Recipe_Manager::get_recipe_ids_from_post( $post->ID, true );
 		$recipe_ids = false === $recipe_ids ? array() : $recipe_ids;
+		$recipe_ids = array_map( 'intval', $recipe_ids );
+		$recipe_ids = array_values( array_unique( $recipe_ids ) );
 
 		// Make sure post itself is not included.
-		if ( in_array( $post->ID, $recipe_ids ) ) {
-			$recipe_ids = array_diff( $recipe_ids, array( $post->ID ) );
+		if ( in_array( intval( $post->ID ), $recipe_ids, true ) ) {
+			$recipe_ids = array_diff( $recipe_ids, array( intval( $post->ID ) ) );
 		}
 
+		// Only update recipes the user saving this post is allowed to edit.
+		foreach ( $recipe_ids as $key => $recipe_id ) {
+			if ( WPRM_POST_TYPE !== get_post_type( $recipe_id ) || ! current_user_can( 'edit_post', $recipe_id ) ) {
+				unset( $recipe_ids[ $key ] );
+			}
+		}
+		$recipe_ids = array_values( $recipe_ids );
+
 		if ( count( $recipe_ids ) > 0 ) {
+			$acting_user_id = get_current_user_id();
+
 			// Immediately update when importing, otherwise do on next load to prevent issues with other plugins.
 			if ( isset( $_POST['importer_uid'] ) || ( isset( $_POST['action'] ) && 'wprm_finding_parents' === $_POST['action'] ) ) { // Input var okay.
-				self::update_recipes_in_post( $post->ID, $recipe_ids );
+				self::update_recipes_in_post( $post->ID, $recipe_ids, $acting_user_id );
 			} else {
 				$post_recipes_to_update = get_option( 'wprm_post_recipes_to_update', array() );
-				$post_recipes_to_update[ $post->ID ] = $recipe_ids;
+				$post_recipes_to_update[ $post->ID ] = array(
+					'user_id'    => $acting_user_id,
+					'recipe_ids' => $recipe_ids,
+				);
 				update_option( 'wprm_post_recipes_to_update', $post_recipes_to_update );
 			}
 		}
@@ -604,7 +636,7 @@ class WPRM_Recipe_Saver {
 			$ids = $query->posts;
 
 			foreach ( $ids as $id ) {
-				if ( ! in_array( $id, $recipe_ids ) ) {
+				if ( ! in_array( intval( $id ), $recipe_ids, true ) && current_user_can( 'edit_post', $id ) ) {
 					delete_post_meta( $id, 'wprm_parent_post_id' );
 				}
 			}
@@ -624,10 +656,13 @@ class WPRM_Recipe_Saver {
 				$i = 0;
 				while ( $i < 10 && ! empty( $post_recipes_to_update ) ) {
 					// Get first post to update the recipes for.
-					$recipe_ids = reset( $post_recipes_to_update );
+					$update = reset( $post_recipes_to_update );
 					$post_id = key( $post_recipes_to_update );
 
-					self::update_recipes_in_post( $post_id, $recipe_ids );
+					// Entries without an acting user predate the authorization check and cannot be processed safely.
+					if ( is_array( $update ) && isset( $update['user_id'], $update['recipe_ids'] ) && is_array( $update['recipe_ids'] ) ) {
+						self::update_recipes_in_post( $post_id, $update['recipe_ids'], intval( $update['user_id'] ) );
+					}
 
 					// Update remaing post/recipes to update.
 					unset( $post_recipes_to_update[ $post_id ] );
@@ -643,11 +678,13 @@ class WPRM_Recipe_Saver {
 	 * Update recipes with post data.
 	 *
 	 * @since    1.20.0
-	 * @param	 mixed $post_id    Post to use the data from.
-	 * @param	 array $recipe_ids Recipes to update.
+	 * @param	 mixed    $post_id       Post to use the data from.
+	 * @param	 array    $recipe_ids    Recipes to update.
+	 * @param	 int|null $acting_user_id User that requested the update. Defaults to the current user for direct calls.
 	 */
-	public static function update_recipes_in_post( $post_id, $recipe_ids ) {
+	public static function update_recipes_in_post( $post_id, $recipe_ids, $acting_user_id = null ) {
 		$post = get_post( $post_id );
+		$acting_user_id = is_null( $acting_user_id ) ? get_current_user_id() : intval( $acting_user_id );
 
 		// Can happen when revision was scheduled and already removed.
 		if ( ! $post ) {
@@ -698,8 +735,15 @@ class WPRM_Recipe_Saver {
 
 			// Update recipes.
 			foreach ( $recipe_ids as $recipe_id ) {
+				$recipe_id = intval( $recipe_id );
+
 				// Prevent infinite loop.
-				if ( $recipe_id === $post_id ) {
+				if ( $recipe_id === intval( $post_id ) ) {
+					continue;
+				}
+
+				// Check the permissions of the user that originally requested this update.
+				if ( ! self::user_can_edit_recipe( $acting_user_id, $recipe_id ) ) {
 					continue;
 				}
 
@@ -721,7 +765,7 @@ class WPRM_Recipe_Saver {
 					'edit_date'		=> true, // Required when going from draft to future.
 				);
 
-				if ( 'parent' === WPRM_Settings::get( 'recipe_use_author' ) ) {
+				if ( 'parent' === WPRM_Settings::get( 'recipe_use_author' ) && self::user_can_edit_recipe( $post->post_author, $recipe_id ) ) {
 					$recipe['post_author'] = $post->post_author;
 				}
 
@@ -758,6 +802,12 @@ class WPRM_Recipe_Saver {
 		} else {
 			// Parent got deleted, set as draft and remove parent post relation.
 			foreach ( $recipe_ids as $recipe_id ) {
+				$recipe_id = intval( $recipe_id );
+
+				if ( ! self::user_can_edit_recipe( $acting_user_id, $recipe_id ) ) {
+					continue;
+				}
+
 				$current_parent_id = intval( get_post_meta( $recipe_id, 'wprm_parent_post_id', true ) );
 
 				if ( $current_parent_id && intval( $post_id ) !== $current_parent_id ) {
@@ -773,6 +823,20 @@ class WPRM_Recipe_Saver {
 				delete_post_meta( $recipe_id, 'wprm_parent_post_id' );
 			}
 		}
+	}
+
+	/**
+	 * Check if a user is allowed to edit a recipe.
+	 *
+	 * @since    10.8.1
+	 * @param	 int $user_id   User to check.
+	 * @param	 int $recipe_id Recipe to check.
+	 */
+	private static function user_can_edit_recipe( $user_id, $recipe_id ) {
+		$user_id = intval( $user_id );
+		$recipe_id = intval( $recipe_id );
+
+		return $user_id && WPRM_POST_TYPE === get_post_type( $recipe_id ) && user_can( $user_id, 'edit_post', $recipe_id );
 	}
 
 	/**

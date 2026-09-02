@@ -10,7 +10,8 @@
     right: 0px;
     bottom: 0px;
     background-color: rgba(0,0,0,0.7);
-    z-index: 99999;
+    // Keep WPRM modals above the WordPress Classic Block editor overlay (100000).
+    z-index: 100001;
     
     display: flex;
     align-items: center;
@@ -22,11 +23,11 @@
 }
 
 .wprm-admin-modal-overlay-secondary {
-    z-index: 100000;
+    z-index: 100002;
 }
 
 .wprm-admin-modal-overlay-tertiary {
-    z-index: 100001;
+    z-index: 100003;
 }
 
 .wprm-admin-modal {

@@ -710,6 +710,34 @@ class WPRM_Api_Manage_Taxonomies {
 	}
 
 	/**
+	 * Get recipe IDs related to a term without multilingual query filtering.
+	 *
+	 * @since	10.8.2
+	 * @param	int    $term_id  Term ID to find recipes for.
+	 * @param	string $taxonomy Taxonomy the term belongs to.
+	 */
+	private static function get_recipe_ids_for_term( $term_id, $taxonomy ) {
+		global $wpdb;
+
+		$query = $wpdb->prepare(
+			"SELECT DISTINCT p.ID
+			FROM {$wpdb->posts} p
+			INNER JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
+			INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+			WHERE p.post_type = %s
+			AND p.post_status != 'trash'
+			AND tt.taxonomy = %s
+			AND tt.term_id = %d",
+			WPRM_POST_TYPE,
+			$taxonomy,
+			intval( $term_id )
+		);
+		$recipe_ids = $wpdb->get_col( $query );
+
+		return is_array( $recipe_ids ) ? array_values( array_map( 'intval', $recipe_ids ) ) : array();
+	}
+
+	/**
 	 * Handle taxonomies merge call to the REST API.
 	 *
 	 * @since    5.0.0
@@ -729,33 +757,19 @@ class WPRM_Api_Manage_Taxonomies {
 		$old_id = isset( $params['oldId'] ) ? intval( $params['oldId'] ) : false;
 		$new_id = isset( $params['newId'] ) ? intval( $params['newId'] ) : false;
 
-		if ( $old_id && $new_id ) {
+		if ( $old_id && $new_id && $old_id !== $new_id ) {
 			$old_term = get_term( $old_id, $taxonomy );
 			$new_term = get_term( $new_id, $taxonomy );
 
 			if ( $old_term && ! is_wp_error( $old_term ) && $new_term && ! is_wp_error( $new_term ) ) {
 				// Add new term ID to recipes using the old term ID.
-				$args = array(
-					'post_type' => WPRM_POST_TYPE,
-					'post_status' => 'any',
-					'nopaging' => true,
-					'tax_query' => array(
-						array(
-							'taxonomy' => $old_term->taxonomy,
-							'field' => 'id',
-							'terms' => $old_term->term_id,
-						),
-					)
-				);
-		
-				$query = new WP_Query( $args );
-				$posts = $query->posts;
-				foreach ( $posts as $post ) {
+				$recipe_ids = self::get_recipe_ids_for_term( $old_term->term_id, $old_term->taxonomy );
+				$merge_succeeded = true;
+				foreach ( $recipe_ids as $recipe_id ) {
 					if ( 'wprm_ingredient' === $old_term->taxonomy ) {
-						$recipe = WPRM_Recipe_Manager::get_recipe( $post );
+						$recipe = WPRM_Recipe_Manager::get_recipe( $recipe_id );
 		
 						$new_ingredients = array();
-						$new_ingredient_ids = array();
 						foreach ( $recipe->ingredients() as $ingredient_group ) {
 							$new_ingredient_group = $ingredient_group;
 							$new_ingredient_group['ingredients'] = array();
@@ -776,22 +790,23 @@ class WPRM_Api_Manage_Taxonomies {
 
 									$ingredient['name'] = $new_name;
 								}
-								$new_ingredient_ids[] = intval( $ingredient['id'] );
 								$new_ingredient_group['ingredients'][] = $ingredient;
 							}
 		
 							$new_ingredients[] = $new_ingredient_group;
 						}
 		
-						$new_ingredient_ids = array_unique( $new_ingredient_ids );
-						wp_set_object_terms( $recipe->id(), $new_ingredient_ids, 'wprm_ingredient', false );
+						$relationship_updated = WPRM_Recipe_Saver::replace_term_relationships( $recipe->id(), 'wprm_ingredient', array( $old_term->term_id => $new_term->term_id ) );
+						if ( ! $relationship_updated ) {
+							$merge_succeeded = false;
+							continue;
+						}
 		
 						update_post_meta( $recipe->id(), 'wprm_ingredients', $new_ingredients );
 					} else if ( 'wprm_ingredient_unit' === $old_term->taxonomy ) {
-						$recipe = WPRM_Recipe_Manager::get_recipe( $post );
+						$recipe = WPRM_Recipe_Manager::get_recipe( $recipe_id );
 		
 						$new_ingredients = array();
-						$new_ingredient_unit_ids = array();
 						foreach ( $recipe->ingredients() as $ingredient_group ) {
 							$new_ingredient_group = $ingredient_group;
 							$new_ingredient_group['ingredients'] = array();
@@ -810,8 +825,6 @@ class WPRM_Api_Manage_Taxonomies {
 										}
 									}
 									$ingredient['unit'] = $new_name;
-
-									$new_ingredient_unit_ids[] = intval( $ingredient['unit_id'] );
 								}
 
 								// Check converted as well.
@@ -831,8 +844,6 @@ class WPRM_Api_Manage_Taxonomies {
 												}
 											}
 											$ingredient['converted'][ $system ]['unit'] = $new_name;
-
-											$new_ingredient_unit_ids[] = intval( $ingredient['converted'][ $system ]['unit_id'] );
 										}
 									}
 								}
@@ -843,37 +854,48 @@ class WPRM_Api_Manage_Taxonomies {
 							$new_ingredients[] = $new_ingredient_group;
 						}
 		
-						$new_ingredient_unit_ids = array_unique( $new_ingredient_unit_ids );
-						wp_set_object_terms( $recipe->id(), $new_ingredient_unit_ids, 'wprm_ingredient_unit', false );
+						$relationship_updated = WPRM_Recipe_Saver::replace_term_relationships( $recipe->id(), 'wprm_ingredient_unit', array( $old_term->term_id => $new_term->term_id ) );
+						if ( ! $relationship_updated ) {
+							$merge_succeeded = false;
+							continue;
+						}
 		
 						update_post_meta( $recipe->id(), 'wprm_ingredients', $new_ingredients );
 					} else if ( 'wprm_equipment' === $old_term->taxonomy ) {
-						$recipe = WPRM_Recipe_Manager::get_recipe( $post );
+						$recipe = WPRM_Recipe_Manager::get_recipe( $recipe_id );
 		
 						$new_equipment = array();
-						$new_equipment_ids = array();
 						foreach ( $recipe->equipment() as $equipment ) {
 							if ( intval( $equipment['id'] ) === $old_term->term_id ) {
 								$equipment['id'] = $new_term->term_id;
 								$equipment['name'] = $new_term->name;
 							}
-							$new_equipment_ids[] = intval( $equipment['id'] );
 							$new_equipment[] = $equipment;
 						}
 		
-						$new_equipment_ids = array_unique( $new_equipment_ids );
-						wp_set_object_terms( $recipe->id(), $new_equipment_ids, 'wprm_equipment', false );
+						$relationship_updated = WPRM_Recipe_Saver::replace_term_relationships( $recipe->id(), 'wprm_equipment', array( $old_term->term_id => $new_term->term_id ) );
+						if ( ! $relationship_updated ) {
+							$merge_succeeded = false;
+							continue;
+						}
 		
 						update_post_meta( $recipe->id(), 'wprm_equipment', $new_equipment );
 					} else {
 						// Append new term.
-						wp_set_object_terms( $post->ID, $new_term->term_id, $new_term->taxonomy, true );
+						$relationship_updated = WPRM_Recipe_Saver::replace_term_relationships( $recipe_id, $new_term->taxonomy, array( $old_term->term_id => $new_term->term_id ) );
+						if ( ! $relationship_updated ) {
+							$merge_succeeded = false;
+						}
 					}
 				}
 
+				if ( ! $merge_succeeded ) {
+					return rest_ensure_response( false );
+				}
+
 				// Delete old term.
-				wp_delete_term( $old_term->term_id, $taxonomy );
-				return rest_ensure_response( true );
+				$deleted = wp_delete_term( $old_term->term_id, $taxonomy );
+				return rest_ensure_response( ! is_wp_error( $deleted ) && (bool) $deleted );
 			}
 		}
 

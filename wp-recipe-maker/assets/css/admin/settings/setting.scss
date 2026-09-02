@@ -52,51 +52,44 @@ textarea.wprm-setting-input {
     }
 }
 
-.wprm-setting-app-access-tokens {
+.wprm-setting-kitchen-connection {
     display: flex;
     flex-direction: column;
     gap: 10px;
 
-    .wprm-setting-app-access-tokens-notice {
+    .wprm-setting-kitchen-status {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 12px;
+        border-left: 4px solid #787c82;
+        background: #f6f7f7;
+    }
+
+    .wprm-setting-kitchen-status-connected {
+        border-left-color: #00a32a;
+    }
+
+    .wprm-setting-kitchen-status-error {
+        border-left-color: #d63638;
+    }
+
+    .wprm-setting-kitchen-status-awaiting-kitchen,
+    .wprm-setting-kitchen-status-awaiting-approval,
+    .wprm-setting-kitchen-status-callback-received {
+        border-left-color: #dba617;
+    }
+
+    .wprm-setting-kitchen-notice,
+    .wprm-setting-kitchen-message {
         padding: 8px 10px;
-        border-left: 4px solid #dba617;
         background: #fff8e5;
     }
 
-    .wprm-setting-app-access-tokens-table {
-        border-collapse: collapse;
-
-        th, td {
-            text-align: left;
-            padding: 4px 16px 4px 0;
-        }
-    }
-
-    .wprm-setting-app-access-tokens-generated {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-
-    .wprm-setting-app-access-tokens-qr {
-        background: #fff;
-        padding: 10px;
-        align-self: flex-start;
-        border: 1px solid #ddd;
-    }
-
-    .wprm-setting-app-access-tokens-actions {
+    .wprm-setting-kitchen-actions {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
-
-        input {
-            min-width: 250px;
-        }
-    }
-
-    textarea {
-        font-family: monospace;
     }
 }
 

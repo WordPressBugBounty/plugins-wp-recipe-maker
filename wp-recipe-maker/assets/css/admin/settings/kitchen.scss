@@ -1,0 +1,137 @@
+#wprm-kitchen {
+    max-width: 1120px;
+}
+
+.wprm-kitchen-page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-top: 20px;
+
+    h1,
+    h2,
+    p {
+        margin-top: 0;
+    }
+
+    .wprm-kitchen-hero {
+        align-items: center;
+        background: linear-gradient(135deg, #1d2327 0%, #34434b 100%);
+        border-radius: 12px;
+        color: #fff;
+        display: flex;
+        justify-content: space-between;
+        overflow: hidden;
+        padding: 36px 40px;
+    }
+
+    .wprm-kitchen-hero-content {
+        max-width: 680px;
+
+        h1 {
+            color: #fff;
+            font-size: 38px;
+            line-height: 1.1;
+            margin: 6px 0 12px;
+        }
+
+        p {
+            color: #dcdcde;
+            font-size: 17px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+    }
+
+    .wprm-kitchen-eyebrow {
+        color: #8ed1a5;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+
+    .wprm-kitchen-hero-mark {
+        align-items: center;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 50%;
+        color: #8ed1a5;
+        display: flex;
+        flex: 0 0 140px;
+        font-size: 72px;
+        font-weight: 700;
+        height: 140px;
+        justify-content: center;
+        margin-left: 40px;
+    }
+
+    .wprm-kitchen-overview,
+    .wprm-kitchen-connection-panel {
+        background: #fff;
+        border: 1px solid #dcdcde;
+        border-radius: 8px;
+        padding: 28px;
+    }
+
+    .wprm-kitchen-overview h2,
+    .wprm-kitchen-connection-heading h2 {
+        font-size: 22px;
+        margin-bottom: 16px;
+    }
+
+    .wprm-kitchen-cards {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .wprm-kitchen-card {
+        background: #f6f7f7;
+        border-radius: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        line-height: 1.5;
+        padding: 20px;
+
+        strong {
+            color: #1d2327;
+            font-size: 15px;
+        }
+
+        small {
+            color: #646970;
+        }
+    }
+
+    .wprm-kitchen-connection-heading p {
+        color: #646970;
+        margin-bottom: 20px;
+    }
+
+    .wprm-setting-kitchen-connection {
+        max-width: 760px;
+    }
+}
+
+@media screen and (max-width: 782px) {
+    .wprm-kitchen-page {
+        .wprm-kitchen-hero {
+            padding: 28px 24px;
+        }
+
+        .wprm-kitchen-hero-mark {
+            display: none;
+        }
+
+        .wprm-kitchen-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .wprm-kitchen-overview,
+        .wprm-kitchen-connection-panel {
+            padding: 22px;
+        }
+    }
+}

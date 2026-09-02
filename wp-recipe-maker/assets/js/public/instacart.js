@@ -66,7 +66,7 @@ window.WPRecipeMaker.instacart = {
 
             window.WPRecipeMaker.manager.getRecipe( recipeId ).then( ( recipe ) => {
                 if ( recipe ) {
-                    const servingsSystemCombination = '' + recipe.data.currentServings + '-' + recipe.data.currentSystem;
+                    const servingsSystemCombination = '' + recipe.data.currentServingsParsed + '-' + recipe.data.currentSystem;
                     let ingredients = [];
 
                     // Get the ingredients.

@@ -19,7 +19,7 @@ import SettingText from './setting/Text';
 import SettingTextarea from './setting/Textarea';
 import SettingToggle from './setting/Toggle';
 import SettingAmazonQueue from './special/AmazonQueue';
-import SettingAppAccessTokens from './special/AppAccessTokens';
+import SettingKitchenConnection from './special/KitchenConnection';
 import SettingJupiterAccessToken from './special/JupiterAccessToken';
 import SettingUnitConversionUnits from './special/UnitConversionUnits';
 
@@ -40,7 +40,7 @@ const settingTypes = {
     textarea: SettingTextarea,
     toggle: SettingToggle,
     amazonQueue: SettingAmazonQueue,
-    appAccessTokens: SettingAppAccessTokens,
+    kitchenConnection: SettingKitchenConnection,
     jupiterAccessToken: SettingJupiterAccessToken,
     unitConversionUnits: SettingUnitConversionUnits,
 }

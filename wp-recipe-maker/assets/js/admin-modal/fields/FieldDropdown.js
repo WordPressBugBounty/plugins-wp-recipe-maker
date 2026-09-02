@@ -49,11 +49,11 @@ export default class FieldDropdown extends Component {
                     }),
                     menuPortal: (provided) => ({
                         ...provided,
-                        zIndex: 100001,
+                        zIndex: 100004,
                     }),
                     menu: (provided) => ({
                         ...provided,
-                        zIndex: 100001,
+                        zIndex: 100004,
                     }),
                 }}
                 { ...customProps }
