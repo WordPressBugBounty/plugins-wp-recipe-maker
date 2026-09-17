@@ -118,6 +118,7 @@ class WPRM_Tools_Refresh_Video_Metadata {
 
 			if ( $recipe ) {
 				delete_post_meta( $post_id, 'wprm_video_metadata_updated' );
+				WPRM_MetadataVideo::schedule_refresh( $recipe, true );
 			}
 		}
 	}

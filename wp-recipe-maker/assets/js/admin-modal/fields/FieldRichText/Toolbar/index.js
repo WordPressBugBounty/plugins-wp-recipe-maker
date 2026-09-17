@@ -82,7 +82,8 @@ const Toolbar = (props) => {
 				&&
 				<ToolbarSuggest
 					value={ value }
-					onSelect={ (value) => {
+					language={ props.language }
+					onSelect={ (suggestion) => {
 						// Select all, delete and insert.
 						Transforms.deselect( editor );
                         Transforms.select( editor, {
@@ -94,7 +95,10 @@ const Toolbar = (props) => {
                             edge: 'end',
                         });
 						Transforms.delete(editor);
-						Editor.insertText( editor, value );
+						Editor.insertText( editor, suggestion.name );
+						if ( props.onSelectSuggestion ) {
+							props.onSelectSuggestion( suggestion );
+						}
 					}}
 					type={ props.type }
 				/>

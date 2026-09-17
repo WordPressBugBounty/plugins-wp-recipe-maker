@@ -23,6 +23,25 @@
             }
         }
 
+        .wprm-admin-onboarding-editor-header {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .wprm-admin-onboarding-editor-badge {
+            flex: 0 0 auto;
+            padding: 3px 7px;
+            border: 1px solid #72aee6;
+            border-radius: 10px;
+            background: #f0f6fc;
+            color: #135e96;
+            font-size: 10px;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
         .accordion__panel {
             background-color: white;
             padding: 10px;

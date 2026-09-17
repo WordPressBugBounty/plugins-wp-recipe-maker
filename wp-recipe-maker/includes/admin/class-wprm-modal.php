@@ -239,6 +239,7 @@ class WPRM_Modal {
 			$wprm_key = substr( $wprm_taxonomy, 5 );
 			$total_terms = wp_count_terms( array(
 				'taxonomy' => $wprm_taxonomy,
+				'lang' => '',
 				'hide_empty' => false,
 			) );
 
@@ -250,6 +251,7 @@ class WPRM_Modal {
 			// Additional terms are loaded on-demand via API to prevent performance issues.
 			$terms = get_terms( array(
 				'taxonomy' => $wprm_taxonomy,
+				'lang' => '',
 				'hide_empty' => false,
 				'number' => $preload_limit, // Limit to 50 most popular terms.
 				'orderby' => 'count',
@@ -263,7 +265,7 @@ class WPRM_Modal {
 
 			$categories[ $wprm_key ] = array(
 				'label' => $options['name'],
-				'terms' => array_values( (array) $terms ),
+				'terms' => WPRM_Api_Modal::category_editor_terms( $terms ),
 				'total_terms' => intval( $total_terms ),
 				'all_terms_loaded' => intval( $total_terms ) <= $preload_limit,
 				'creatable' => true,

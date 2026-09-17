@@ -308,6 +308,11 @@ class WPRM_Api_Utilities {
 			$json_recipe = json_decode( $json, true );
 
 			if ( $json_recipe ) {
+				$preview_id = isset( $json_recipe['id'] ) ? intval( $json_recipe['id'] ) : 0;
+				if ( $preview_id && ! current_user_can( 'edit_post', $preview_id ) ) {
+					return new WP_Error( 'wprm_forbidden_recipe_preview', __( 'You are not allowed to preview this recipe.', 'wp-recipe-maker' ), array( 'status' => 403 ) );
+				}
+
 				$preview_url = WPRM_Preview::set_recipe_for_preview_and_get_url( $json_recipe );
 				return rest_ensure_response( $preview_url );
 			}

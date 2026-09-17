@@ -7,7 +7,11 @@ import Footer from '../../general/Footer';
 import Api from 'Shared/Api';
 import { __wprm } from 'Shared/Translations';
 import Icon from 'Shared/Icon';
-import { getIngredientUnitCacheKey, getIngredientUnitForAmount } from '../ingredient-unit';
+import {
+    getIngredientUnitCacheKey,
+    getIngredientUnitForAmount,
+    loadIngredientUnitConnector,
+} from '../ingredient-unit';
 
 import FieldContainer from '../../fields/FieldContainer';
 import FieldText from '../../fields/FieldText';
@@ -61,11 +65,10 @@ export default class SplitIngredient extends Component {
                 return Promise.resolve();
             }
 
-            return Api.modal.getIngredientUnitConnector( unit ).then((data) => {
-                window.wprm_admin_modal_ingredient_unit_connectors[ cacheKey ] = data && data.found ? data : false;
-            }).catch(() => {
-                window.wprm_admin_modal_ingredient_unit_connectors[ cacheKey ] = false;
-            });
+            return loadIngredientUnitConnector(
+                unit,
+                ( requestUnit ) => Api.modal.getIngredientUnitConnector( requestUnit )
+            ).catch(() => {});
         });
 
         Promise.all( requests ).then(() => {

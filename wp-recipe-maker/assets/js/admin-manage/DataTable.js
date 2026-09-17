@@ -10,6 +10,7 @@ import SelectColumns from './general/SelectColumns';
 import Api from 'Shared/Api';
 import Totals from './general/Totals';
 import { downloadToCsv } from 'Shared/CSV';
+import FirstRecipeEmptyState from './recipes/FirstRecipeEmptyState';
 
 const initState = {
     data: [],
@@ -448,6 +449,7 @@ export default class DataTable extends Component {
             const response = await Api.manage.getData({
                 route: this.props.options.route,
                 type: this.props.options.id,
+                format: 'recipe' === this.props.options.id ? 'table' : 'full',
                 pageSize: exportPageSize,
                 page,
                 sorted,
@@ -660,6 +662,7 @@ export default class DataTable extends Component {
                 Api.manage.getData({
                     route: this.props.options.route,
                     type: this.props.options.id,
+                    format: 'recipe' === this.props.options.id ? 'table' : 'full',
                     pageSize: state.pageSize,
                     page: state.page,
                     sorted: state.sorted,
@@ -735,6 +738,9 @@ export default class DataTable extends Component {
         const selectedColumns = this.getVisibleColumns();
         const exportColumns = this.getExportColumns( selectedColumns );
         const filteredColumns = this.getMeaningfulFilters().map( ( filter ) => filter.id );
+        const isRecipeTable = 'recipe' === this.props.options.id;
+        const isFirstRecipe = isRecipeTable && ! loading && 0 === Number( this.state.countTotal );
+        const hasNoFilterMatches = isRecipeTable && ! loading && 0 < Number( this.state.countTotal ) && 0 === Number( this.state.countFiltered );
 
         return (
             <div className="wprm-admin-manage-page">
@@ -779,40 +785,53 @@ export default class DataTable extends Component {
                         }
                     </div>
                 </div>
-                <div className="wprm-admin-manage-table-container">
-                    <ErrorBoundary module="Datatable">
-                        <Totals
-                            filtered={this.state.countFiltered}
-                            total={this.state.countTotal}
-                            filter={this.props.filter}
-                            onRemoveFilter={this.props.onRemoveFilter}
-                        />
-                        <div className="wprm-admin-manage-table-inner" ref={ this.tableInnerRef }>
-                            <ReactTable
-                                ref={(refReactTable) => {this.refReactTable = refReactTable;}}
-                                manual
-                                columns={selectedColumns}
-                                data={data}
-                                pages={pages}
-                                filtered={this.state.filtered}
-                                onFilteredChange={ filtered => {
-                                    this.setState( { filtered } );
-                                } }
-                                loading={ loading }
-                                onFetchData={this.fetchData}
-                                defaultPageSize={ defaultPageSize }
-                                pageSizeOptions={ pageSizeOptions }
-                                onPageSizeChange={ (pageSize) => {
-                                    localStorage.setItem( 'wprm-admin-manage-page-size', pageSize );
-                                }}
-                                defaultSorted={ this.getDefaultSort() }
-                                filterable
-                                resizable={false}
-                                className="wprm-admin-manage-table wprm-admin-table -highlight"
+                {
+                    isFirstRecipe
+                    ?
+                    <FirstRecipeEmptyState
+                        onCreate={ () => this.props.options.createButton( this ) }
+                    />
+                    :
+                    <div className="wprm-admin-manage-table-container">
+                        <ErrorBoundary module="Datatable">
+                            <Totals
+                                filtered={this.state.countFiltered}
+                                total={this.state.countTotal}
+                                filter={this.props.filter}
+                                onRemoveFilter={this.props.onRemoveFilter}
                             />
-                        </div>
-                    </ErrorBoundary>
-                </div>
+                            <div className="wprm-admin-manage-table-inner" ref={ this.tableInnerRef }>
+                                <ReactTable
+                                    ref={(refReactTable) => {this.refReactTable = refReactTable;}}
+                                    manual
+                                    columns={selectedColumns}
+                                    data={data}
+                                    pages={pages}
+                                    filtered={this.state.filtered}
+                                    onFilteredChange={ filtered => {
+                                        this.setState( { filtered } );
+                                    } }
+                                    loading={ loading }
+                                    onFetchData={this.fetchData}
+                                    defaultPageSize={ defaultPageSize }
+                                    pageSizeOptions={ pageSizeOptions }
+                                    onPageSizeChange={ (pageSize) => {
+                                        localStorage.setItem( 'wprm-admin-manage-page-size', pageSize );
+                                    }}
+                                    defaultSorted={ this.getDefaultSort() }
+                                    filterable
+                                    resizable={false}
+                                    className="wprm-admin-manage-table wprm-admin-table -highlight"
+                                    noDataText={
+                                        hasNoFilterMatches
+                                        ? __wprm( 'No recipes match your filters. Adjust or clear a filter to see your recipes.' )
+                                        : __wprm( 'No rows found' )
+                                    }
+                                />
+                            </div>
+                        </ErrorBoundary>
+                    </div>
+                }
             </div>
         );
     }

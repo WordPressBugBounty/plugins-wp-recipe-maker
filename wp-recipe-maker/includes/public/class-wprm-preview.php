@@ -185,18 +185,38 @@ class WPRM_Preview {
 	 */
 	public static function get_preview_recipe( $preview_id ) {
 		$recipe = false;
-		$json = get_transient( 'wprm_recipe_preview_' . $preview_id );
+		$stored_preview = get_transient( 'wprm_recipe_preview_' . $preview_id );
+		$json = false;
+		$allow_unfiltered_html = false;
 
-		if ( $json && is_array( $json ) ) {
-			$sanitized_recipe = WPRM_Recipe_Sanitizer::sanitize( $json );
+		$is_versioned_preview = is_array( $stored_preview )
+			&& isset( $stored_preview['wprm_preview_version'], $stored_preview['recipe'] )
+			&& 2 === $stored_preview['wprm_preview_version']
+			&& is_array( $stored_preview['recipe'] );
+
+		if ( $is_versioned_preview ) {
+			$json = $stored_preview['recipe'];
+			$stored_allow_unfiltered_html = ! empty( $stored_preview['allow_unfiltered_html'] );
+			$expected_signature = self::get_preview_signature( $json, $stored_allow_unfiltered_html );
+			if ( isset( $stored_preview['signature'] ) && is_string( $stored_preview['signature'] ) && hash_equals( $expected_signature, $stored_preview['signature'] ) ) {
+				$allow_unfiltered_html = $stored_allow_unfiltered_html;
+			}
+		} elseif ( is_array( $stored_preview ) ) {
+			// Legacy transients do not record who supplied their HTML. Always treat
+			// them as filtered so an old payload cannot become trusted after updating.
+			$json = $stored_preview;
+		}
+
+		if ( $json ) {
+			$sanitized_recipe = WPRM_Recipe_Sanitizer::sanitize_with_html_permissions( $json, $allow_unfiltered_html );
 
 			// Fix technical fields.
 			$sanitized_recipe['id'] = 'preview';
 			$sanitized_recipe['parent_url'] = '#';
 			$sanitized_recipe['image_url'] = $json['image_url'];
 			$sanitized_recipe['pin_image_url'] = $json['pin_image_url'];
-			$sanitized_recipe['ingredients_flat'] = $json['ingredients_flat'];
-			$sanitized_recipe['instructions_flat'] = $json['instructions_flat'];
+			$sanitized_recipe['ingredients_flat'] = self::flatten_sanitized_groups( $sanitized_recipe, 'ingredients', 'ingredient' );
+			$sanitized_recipe['instructions_flat'] = self::flatten_sanitized_groups( $sanitized_recipe, 'instructions', 'instruction' );
 
 			// Fix tags.
 			$sanitized_recipe['tags'] = array();
@@ -207,8 +227,11 @@ class WPRM_Preview {
 					foreach ( $terms as $term ) {
 						if ( is_array( $term ) || is_object( $term ) ) {
 							$term = (array) $term;
-							$sanitized_recipe['tags'][ $taxonomy ][] = $term['name'];
-						} else {
+							$term = isset( $term['name'] ) ? $term['name'] : '';
+						}
+
+						$term = sanitize_text_field( $term );
+						if ( '' !== $term ) {
 							$sanitized_recipe['tags'][ $taxonomy ][] = $term;
 						}
 					}
@@ -244,10 +267,17 @@ class WPRM_Preview {
 	 */
 	public static function set_recipe_for_preview_and_get_url( $recipe ) {
 		$preview_id = isset( $recipe['id'] ) ? intval( $recipe['id'] ) : 'new';
+		$allow_unfiltered_html = current_user_can( 'unfiltered_html' );
+		$stored_preview = array(
+			'wprm_preview_version' => 2,
+			'recipe' => $recipe,
+			'allow_unfiltered_html' => $allow_unfiltered_html,
+			'signature' => self::get_preview_signature( $recipe, $allow_unfiltered_html ),
+		);
 
 		// Store recipe as transient.
 		delete_transient( 'wprm_recipe_preview_' . $preview_id );
-		set_transient( 'wprm_recipe_preview_' . $preview_id, $recipe, HOUR_IN_SECONDS );
+		set_transient( 'wprm_recipe_preview_' . $preview_id, $stored_preview, HOUR_IN_SECONDS );
 
 		// Get URL to use for previewing this recipe.
 		$home_url = WPRM_Compatibility::get_home_url();
@@ -267,6 +297,55 @@ class WPRM_Preview {
 		}
 
 		return $preview_url;		
+	}
+
+	/**
+	 * Sign the preview payload and captured HTML capability.
+	 *
+	 * This distinguishes preview metadata created by the plugin from a legacy
+	 * recipe payload containing attacker-controlled keys with the same names.
+	 *
+	 * @since 10.8.2
+	 * @param array   $recipe Recipe data.
+	 * @param boolean $allow_unfiltered_html Whether unfiltered HTML is allowed.
+	 * @return string Preview payload signature.
+	 */
+	private static function get_preview_signature( $recipe, $allow_unfiltered_html ) {
+		$data = maybe_serialize( $recipe ) . '|' . ( $allow_unfiltered_html ? '1' : '0' );
+		return hash_hmac( 'sha256', $data, wp_salt( 'auth' ) );
+	}
+
+	/**
+	 * Flatten sanitized recipe groups without restoring the submitted raw fields.
+	 *
+	 * @since 10.8.2
+	 * @param array  $recipe Sanitized recipe data.
+	 * @param string $group_key Group and item collection key.
+	 * @param string $item_type Default item type.
+	 * @return array Flattened sanitized items.
+	 */
+	private static function flatten_sanitized_groups( $recipe, $group_key, $item_type ) {
+		$groups = isset( $recipe[ $group_key ] ) && is_array( $recipe[ $group_key ] ) ? $recipe[ $group_key ] : array();
+		$flat = array();
+
+		foreach ( $groups as $group_index => $group ) {
+			$items = isset( $group[ $group_key ] ) && is_array( $group[ $group_key ] ) ? $group[ $group_key ] : array();
+
+			if ( 0 !== $group_index || ! empty( $group['name'] ) ) {
+				unset( $group[ $group_key ] );
+				$group['type'] = 'group';
+				$flat[] = $group;
+			}
+
+			foreach ( $items as $item ) {
+				if ( 'instruction' !== $item_type || ! isset( $item['type'] ) || 'tip' !== $item['type'] ) {
+					$item['type'] = $item_type;
+				}
+				$flat[] = $item;
+			}
+		}
+
+		return $flat;
 	}
 }
 

@@ -397,6 +397,8 @@ class WPRM_Assets {
 
 		switch ( $type ) {
 			case 'public':
+				$translations['Close'] = __( 'Close', 'wp-recipe-maker' );
+				$translations['More information'] = __( 'More information', 'wp-recipe-maker' );
 				break;
 			case 'admin':
 				include( WPRM_DIR . 'templates/admin/translations.php' );

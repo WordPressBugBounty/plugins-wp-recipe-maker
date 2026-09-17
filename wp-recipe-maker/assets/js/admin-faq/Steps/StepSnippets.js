@@ -10,8 +10,9 @@ export default class StepSnippets extends Component {
         super(props);
 
         let template = false;
-        if ( wprm_admin_template.templates.hasOwnProperty( 'snippet-basic-buttons' ) ) {
-            template = wprm_admin_template.templates['snippet-basic-buttons'];
+        const currentTemplate = wprm_faq.setup_settings.recipe_snippets_template || 'snippet-basic-buttons';
+        if ( wprm_admin_template.templates.hasOwnProperty( currentTemplate ) ) {
+            template = wprm_admin_template.templates[ currentTemplate ];
         }
 
         this.state = {
@@ -99,7 +100,13 @@ export default class StepSnippets extends Component {
                         className="button button-primary button-compact"
                         id="skip-button"
                         onClick={() => {
-                            this.props.jumpToStep(4);
+                            Api.settings.save({
+                                recipe_snippets_automatically_add_modern: false,
+                            }).then( ( result ) => {
+                                if ( result ) {
+                                    this.props.jumpToStep(4);
+                                }
+                            } );
                         }}
                     >{ __wprm( 'Do not enable snippets right now' ) }</button>
                     <button

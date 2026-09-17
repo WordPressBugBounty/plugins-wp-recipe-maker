@@ -60,6 +60,7 @@ class WPRM_Recipe {
 	 * Get recipe data.
 	 *
 	 * @since    1.0.0
+	 * @param    string $context Data context.
 	 */
 	public function get_data( $context = 'default' ) {
 		$recipe = array();
@@ -269,7 +270,26 @@ class WPRM_Recipe {
 	 */
 	public function get_data_manage() {
 		$recipe = $this->get_data( 'manage' );
-		return apply_filters( 'wprm_recipe_manage_data', $recipe, $this );
+		return apply_filters( 'wprm_recipe_manage_data', $recipe, $this, 'full' );
+	}
+
+	/**
+	 * Get recipe data for the built-in manage table.
+	 *
+	 * The grouped ingredient and instruction fields are used by the table. Their
+	 * flattened editor equivalents are intentionally removed after the legacy
+	 * manage-data filter runs, avoiding duplicate response serialization without
+	 * changing the data shape received by existing filter callbacks.
+	 *
+	 * @since    10.8.2
+	 */
+	public function get_data_manage_table() {
+		$recipe = $this->get_data( 'manage' );
+		$recipe = apply_filters( 'wprm_recipe_manage_data', $recipe, $this, 'table' );
+
+		unset( $recipe['ingredients_flat'], $recipe['instructions_flat'] );
+
+		return apply_filters( 'wprm_recipe_manage_table_data', $recipe, $this );
 	}
 
 	/**
@@ -708,13 +728,14 @@ class WPRM_Recipe {
 			$image_id = 0;
 
 			if ( WPRM_Settings::get( 'recipe_image_use_featured' ) ) {
-				$parent_image_id = get_post_thumbnail_id( $this->parent_post_id() );
+				$parent_post_id = intval( $this->parent_post_id() );
 
-				if ( $parent_image_id ) {
-					$image_id = $parent_image_id;
+				if ( 0 < $parent_post_id ) {
+					$parent_image_id = get_post_thumbnail_id( $parent_post_id );
 
-					// Actually set as image now.
-					set_post_thumbnail( $this->id(), $image_id );
+					if ( $parent_image_id ) {
+						$image_id = $parent_image_id;
+					}
 				}
 			}
 		}
@@ -1052,35 +1073,13 @@ class WPRM_Recipe {
 		$refresh_needed = false;
 
 		if ( $metadata ) {
-			// Default to 1 refresh per week.
-			$refresh_interval = 60 * 60 * 24 * 7;
-
+			$refresh_interval = WPRM_MetadataVideo::get_refresh_interval( $this );
 			$metadata_updated = intval( $this->meta( 'wprm_video_metadata_updated', '' ) );
 			$refresh_needed = time() - $metadata_updated > $refresh_interval;
 		}
 
 		if ( ! $metadata || $refresh_needed ) {
-			$new_metadata = WPRM_MetadataVideo::get_video_metadata_for_recipe( $this );
-
-			// Cache for reuse. Automatically cleared when resaving a recipe.
-			if ( $new_metadata ) {
-				$metadata = $new_metadata;
-
-				// Clear oEmbed cache.
-				global $wp_embed;
-				$parent_post = $this->parent_post_id();
-
-				if ( $parent_post && isset( $wp_embed ) ) {
-					$wp_embed->delete_oembed_caches( $parent_post );
-				}
-
-				update_post_meta( $this->id(), 'wprm_video_metadata', $metadata );
-				update_post_meta( $this->id(), 'wprm_video_metadata_updated', time() );
-
-				if ( class_exists( 'WPRM_Metadata' ) ) {
-					WPRM_Metadata::invalidate_metadata_for_recipe( $this->id() );
-				}
-			}
+			WPRM_MetadataVideo::schedule_refresh( $this );
 		}
 
 		return $metadata;
@@ -1796,21 +1795,7 @@ class WPRM_Recipe {
 			$query_params = $home_url_parts[1];
 		}
 
-		// Check if we should use ID or slug.
-		$identifier = $this->id();
-
-		if ( 'slug' === WPRM_Settings::get( 'print_recipe_identifier' ) ) {
-			$slug = $this->slug();
-
-			// Remove optional wprm- prefix.
-			if ( 0 === strpos( $slug, 'wprm-' ) ) {
-				$slug = substr( $slug, 5 );
-			}
-
-			if ( $slug ) {
-				$identifier = $slug;
-			}
-		}
+		$identifier = $this->print_identifier();
 
 		// Construct URL.
 		if ( get_option( 'permalink_structure' ) ) {
@@ -1836,6 +1821,19 @@ class WPRM_Recipe {
 		}
 
 		return $print_url;
+	}
+
+	/**
+	 * Get the identifier to use in the recipe print URL.
+	 *
+	 * @since	10.8.2
+	 */
+	public function print_identifier() {
+		if ( 'slug' === WPRM_Settings::get( 'print_recipe_identifier' ) ) {
+			return WPRM_Print::get_recipe_identifier( $this->id(), $this->slug() );
+		}
+
+		return $this->id();
 	}
 
 	/**

@@ -47,6 +47,7 @@ class WPRM_Compatibility {
 		add_filter( 'rocket_exclude_js', array( __CLASS__, 'cache_js_excludes' ) );
 		add_filter( 'wp-optimize-minify-default-exclusions', array( __CLASS__, 'cache_js_excludes' ) );
 		add_filter( 'perfmatters_minify_js_exclusions', array( __CLASS__, 'cache_js_excludes' ) );
+		add_filter( 'perfmatters_delay_js_exclusions', array( __CLASS__, 'perfmatters_delay_js_excludes' ) );
 		add_filter( 'sgo_js_minify_exclude', array( __CLASS__, 'cache_js_excludes' ) );
 		add_filter( 'sgo_javascript_combine_exclude', array( __CLASS__, 'siteground_combine_js_excludes' ) );
 		add_filter( 'js_do_concat', array( __CLASS__, 'jetpack_boost_exclude' ), 10, 2 );
@@ -158,6 +159,29 @@ class WPRM_Compatibility {
 				$excludes[] = 'wp-recipe-maker-premium/dist/public-' . strtolower( WPRMP_BUNDLE ) . '-split.js';
 				$excludes[] = 'wp-recipe-maker-premium/dist/public-feature-';
 				$excludes[] = 'wp-recipe-maker-premium/dist/public-recipe-collections-split.js';
+			}
+		}
+
+		return $excludes;
+	}
+
+	/**
+	 * Keep public scripts and their inline data out of Perfmatters script delay.
+	 *
+	 * @since	10.8.2
+	 * @param	array $excludes Script URLs and inline strings excluded from delay.
+	 * @return	array
+	 */
+	public static function perfmatters_delay_js_excludes( $excludes ) {
+		if ( WPRM_Settings::get( 'assets_prevent_caching_optimization' ) && is_array( $excludes ) ) {
+			$excludes = self::cache_js_excludes( $excludes );
+
+			// Inline settings must execute before the public bundles that read them.
+			$excludes[] = 'wprm_public';
+			if ( defined( 'WPRMP_BUNDLE' ) ) {
+				$excludes[] = 'wp-recipe-maker-premium/dist/public-recipe-collections.js';
+				$excludes[] = 'wprmp_public'; // Includes public feature translations.
+				$excludes[] = 'wprmprc_public'; // Includes saved collection data.
 			}
 		}
 
@@ -846,17 +870,23 @@ class WPRM_Compatibility {
 	public static function restore_language_context( $language ) {
 		$multilingual = self::multilingual();
 
-		if ( ! $multilingual || ! $language ) {
+		if ( ! $multilingual ) {
+			return false;
+		}
+
+		// WPML.
+		if ( 'wpml' === $multilingual['plugin'] ) {
+			// Passing null closes the language scope in WPML 5.0+, while also
+			// restoring the original language in older WPML versions.
+			do_action( 'wpml_switch_language', null );
+			return true;
+		}
+
+		if ( ! $language ) {
 			return false;
 		}
 
 		$language = sanitize_key( $language );
-
-		// WPML.
-		if ( 'wpml' === $multilingual['plugin'] ) {
-			do_action( 'wpml_switch_language', $language );
-			return true;
-		}
 
 		// Polylang.
 		if ( 'polylang' === $multilingual['plugin'] && function_exists( 'pll_switch_language' ) ) {

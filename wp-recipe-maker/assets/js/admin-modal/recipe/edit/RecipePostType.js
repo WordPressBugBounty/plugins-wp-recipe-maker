@@ -12,7 +12,7 @@ const RecipePostType = (props) => {
     let languageOptions = [
         { value: false, label: __wprm( 'No language set' ) }
     ];
-    if ( 'wpml' === wprm_admin_modal.multilingual.plugin ) {
+    if ( wprm_admin_modal.multilingual && [ 'wpml', 'polylang' ].includes( wprm_admin_modal.multilingual.plugin ) ) {
         languageOptions = languageOptions.concat( Object.values( wprm_admin_modal.multilingual.languages ) );
     }
 
@@ -104,7 +104,7 @@ const RecipePostType = (props) => {
                 />
             </FieldContainer>
             {
-                showAll
+                ( showAll || 'polylang' === wprm_admin_modal.multilingual.plugin )
                 && 1 < languageOptions.length
                 &&
                 <FieldContainer id="language" label={ __wprm( 'Language' ) }>

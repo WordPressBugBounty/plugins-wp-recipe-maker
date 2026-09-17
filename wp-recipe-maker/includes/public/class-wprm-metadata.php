@@ -25,7 +25,7 @@ class WPRM_Metadata {
 	 * @access   private
 	 * @var      int METADATA_CACHE_VERSION Version for the recipe metadata cache.
 	 */
-	const METADATA_CACHE_VERSION = 2;
+	const METADATA_CACHE_VERSION = 3;
 
 	/**
 	 * List of recipes we've already outputted the metadata for.
@@ -367,7 +367,11 @@ class WPRM_Metadata {
 		$hash = self::get_metadata_cache_hash( $recipe );
 		$cache = get_post_meta( $recipe_id, 'wprm_metadata_cache', true );
 
-		if ( is_array( $cache ) && isset( $cache['hash'], $cache['metadata'] ) && hash_equals( $hash, (string) $cache['hash'] ) ) {
+		if ( is_array( $cache ) && isset( $cache['version'], $cache['hash'], $cache['metadata'] ) && self::METADATA_CACHE_VERSION === $cache['version'] && hash_equals( $hash, (string) $cache['hash'] ) ) {
+			// Keep the independently expiring video cache moving even when the complete
+			// recipe metadata can be returned as-is. This only reads local state and queues
+			// background work; provider requests never run in this visitor request.
+			$recipe->videos_metadata();
 			return $cache['metadata'];
 		}
 
@@ -550,7 +554,9 @@ class WPRM_Metadata {
 				$sanitized[ $key ] = self::sanitize_metadata( $value );
 			}
 		} else {
-			$sanitized = strip_shortcodes( wp_strip_all_tags( do_shortcode( $metadata ) ) );
+			// Metadata includes visitor-controlled review bodies and author names. Never execute
+			// shortcodes here, even for logged-in visitors whose output could be cached publicly.
+			$sanitized = strip_shortcodes( wp_strip_all_tags( WPRM_Instacart::do_shortcode_safe( $metadata ) ) );
 		}
 		return $sanitized;
 	}

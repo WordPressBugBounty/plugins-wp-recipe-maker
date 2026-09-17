@@ -210,6 +210,7 @@ class WPRM_Shortcode_Other {
 			'unit_conversion_both_style' => '',
 			'unit_conversion_show_identical' => '',
 		), $atts, 'wprm_ingredient' );
+		$show_connector = (bool) WPRM_Settings::get( 'ingredient_unit_connectors_in_inline_ingredients' );
 
 		// Default to text as output.
 		$output = WPRM_Shortcode_Helper::sanitize_html( $atts['text'] );
@@ -404,7 +405,13 @@ class WPRM_Shortcode_Other {
 								}
 							}
 						}
-						$text_to_show = WPRM_Ingredient_Display::join_amount_unit_and_name_html( $amount_unit, $name_with_notes, $found_ingredient, intval( $recipe->unit_system() ) );
+						$text_to_show = WPRM_Ingredient_Display::join_amount_unit_and_name_html(
+							$amount_unit,
+							$name_with_notes,
+							$found_ingredient,
+							intval( $recipe->unit_system() ),
+							array( 'show_connector' => $show_connector )
+						);
 
 						if ( $text_to_show ) {
 							// Use the full UID (including split ID) for the class
@@ -448,7 +455,8 @@ class WPRM_Shortcode_Other {
 								$split_data_attr = ' data-split-percentage="' . esc_attr( $split_percentage ) . '" data-split-id="' . esc_attr( $split_id ) . '"';
 							}
 
-							$output = '<span class="' . esc_attr( implode( ' ', $classes ) ) .'"' . $data_keep_notes . $both_units_data_attr . $split_data_attr . $style . '>' . $text_to_show . '</span>';
+							$show_connector_data_attr = ' data-show-connector="' . ( $show_connector ? '1' : '0' ) . '"';
+							$output = '<span class="' . esc_attr( implode( ' ', $classes ) ) .'"' . $data_keep_notes . $both_units_data_attr . $show_connector_data_attr . $split_data_attr . $style . '>' . $text_to_show . '</span>';
 						}
 					}
 				}

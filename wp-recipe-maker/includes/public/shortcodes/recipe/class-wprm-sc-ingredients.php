@@ -1461,6 +1461,7 @@ class WPRM_SC_Ingredients extends WPRM_Template_Shortcode {
 						$ingredient_output .= $amount_unit;
 					} else {
 						$connector_options = array(
+							'show_connector' => (bool) WPRM_Settings::get( 'ingredient_unit_connectors_in_ingredient_lists' ),
 							'suppress_connector_before_spacing' => 'table-' === substr( $atts['ingredients_style'], 0, 6 ),
 						);
 						$ingredient_output .= WPRM_Ingredient_Display::join_amount_unit_and_name_html( $amount_unit, $names_notes, $ingredient, $recipe_unit_system, $connector_options );

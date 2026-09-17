@@ -108,7 +108,7 @@ const EditRecipe = (props) => {
         }
     ];
 
-    if ( 'public' === wprm_admin.settings.post_type_structure || 'manual' === wprm_admin.settings.recipe_use_author ) {
+    if ( 'public' === wprm_admin.settings.post_type_structure || 'manual' === wprm_admin.settings.recipe_use_author || ( wprm_admin_modal.multilingual && 'polylang' === wprm_admin_modal.multilingual.plugin ) ) {
         structure.push({
             id: 'postType', name: __wprm( 'Post Type' ),
             elem: (
@@ -203,6 +203,11 @@ const EditRecipe = (props) => {
         elem: (
             <RecipeIngredients
                 type={ props.recipe.type }
+                language={ props.recipe.language || (
+                    ! props.recipe.id && 'public' !== wprm_admin.settings.post_type_structure && wprm_admin_modal.multilingual
+                        ? wprm_admin_modal.multilingual.current || wprm_admin_modal.multilingual.default
+                        : false
+                ) }
                 ingredients={ props.recipe.ingredients_flat }
                 instructions={ props.recipe.instructions_flat }
                 linkType={ props.recipe.ingredient_links_type }

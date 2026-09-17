@@ -11,9 +11,6 @@ export default class ToolbarSuggest extends Component {
 		
 		// Cache suggestions.
 		window.wprm_admin_modal_suggestions = window.wprm_admin_modal_suggestions || {};
-		if ( ! window.wprm_admin_modal_suggestions.hasOwnProperty( props.type ) ) {
-			window.wprm_admin_modal_suggestions[ props.type ] = {};
-		}
 
         this.state = {
 			search: '',
@@ -29,10 +26,10 @@ export default class ToolbarSuggest extends Component {
 		this.updateSuggestions( this.props.value );
 	}
 
-	componentDidUpdate() {
+	componentDidUpdate(prevProps) {
 		// Only update if the search value actually changed (not just on every render).
 		const trimmedValue = this.props.value ? this.props.value.trim() : '';
-		if ( trimmedValue !== this.state.search ) {
+		if ( trimmedValue !== this.state.search || prevProps.language !== this.props.language ) {
 			// Clear any pending debounce timer.
 			if ( this.debounceTimer ) {
 				clearTimeout( this.debounceTimer );
@@ -57,10 +54,13 @@ export default class ToolbarSuggest extends Component {
 	}
 	
 	updateSuggestions( search ) {
+        const language = this.props.language || '';
+        const cacheKey = `${this.props.type}:${language}`;
+        window.wprm_admin_modal_suggestions[ cacheKey ] = window.wprm_admin_modal_suggestions[ cacheKey ] || {};
 		// Check cache first - empty searches will be cached after first call.
-		if ( window.wprm_admin_modal_suggestions[ this.props.type ].hasOwnProperty( search ) ) {
+		if ( window.wprm_admin_modal_suggestions[ cacheKey ].hasOwnProperty( search ) ) {
 			this.setState({
-				suggestions: window.wprm_admin_modal_suggestions[ this.props.type ][ search ],
+				suggestions: window.wprm_admin_modal_suggestions[ cacheKey ][ search ],
 				search,
 			});
 		} else {
@@ -71,10 +71,12 @@ export default class ToolbarSuggest extends Component {
 	
 			Api.modal.getSuggestions({
 				type: this.props.type,
+                language,
 				search
 			}).then(data => {
+                if ( language !== (this.props.language || '') ) { return; }
 				if ( data ) {
-					window.wprm_admin_modal_suggestions[ this.props.type ][ search ] = data.suggestions;
+					window.wprm_admin_modal_suggestions[ cacheKey ][ search ] = data.suggestions;
 
 					this.setState({
 						suggestions: data.suggestions,
@@ -117,7 +119,7 @@ export default class ToolbarSuggest extends Component {
 											className="wprm-admin-modal-toolbar-suggestion"
 											onMouseDown={ (event) => {
 												event.preventDefault();
-												this.props.onSelect( suggestion.name );
+												this.props.onSelect( suggestion );
 											} }
 											key={ index }
 										>

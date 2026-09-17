@@ -1,5 +1,103 @@
 @use "sass:color";
 
+.wprm-admin-manage-first-recipe {
+    display: grid;
+    grid-template-columns: minmax( 0, 1fr ) minmax( 280px, 380px );
+    gap: 40px;
+    align-items: center;
+    max-width: 960px;
+    margin: 40px auto;
+    padding: 40px;
+    border: 1px solid #c3c4c7;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba( 0, 0, 0, 0.04 );
+
+    .wprm-admin-manage-first-recipe-content {
+        max-width: 520px;
+
+        h2 {
+            margin: 8px 0 12px;
+            font-size: 28px;
+            line-height: 1.2;
+        }
+
+        p {
+            margin: 0 0 22px;
+            color: #50575e;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+    }
+
+    .wprm-admin-manage-first-recipe-eyebrow,
+    .wprm-admin-manage-first-recipe-example-label {
+        color: #646970;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .wprm-admin-manage-first-recipe-example {
+        overflow: hidden;
+        border: 1px solid #dcdcde;
+        border-radius: 6px;
+        background: #fff;
+        box-shadow: 0 8px 24px rgba( 0, 0, 0, 0.08 );
+
+        .wprm-admin-manage-first-recipe-example-label {
+            display: block;
+            padding: 12px 16px;
+            border-bottom: 1px solid #dcdcde;
+            background: #f6f7f7;
+        }
+
+        img {
+            display: block;
+            width: 100%;
+            aspect-ratio: 16 / 8;
+            object-fit: cover;
+        }
+    }
+
+    .wprm-admin-manage-first-recipe-example-body {
+        padding: 18px;
+
+        h3 {
+            margin: 0 0 8px;
+            font-family: Georgia, serif;
+            font-size: 21px;
+            line-height: 1.25;
+        }
+
+        p {
+            margin: 0 0 14px;
+            color: #50575e;
+            line-height: 1.5;
+        }
+    }
+
+    .wprm-admin-manage-first-recipe-example-meta {
+        display: flex;
+        gap: 16px;
+        padding-top: 12px;
+        border-top: 1px solid #dcdcde;
+        color: #3c434a;
+        font-size: 12px;
+        font-weight: 600;
+    }
+}
+
+@media screen and (max-width: 782px) {
+    .wprm-admin-manage-first-recipe {
+        grid-template-columns: 1fr;
+        gap: 28px;
+        margin: 20px 0;
+        padding: 24px;
+    }
+}
+
 .wprm-admin-manage-shortcode-container {
     display: flex;
     align-items: center;

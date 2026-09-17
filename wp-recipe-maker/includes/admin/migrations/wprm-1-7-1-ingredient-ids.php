@@ -33,6 +33,9 @@ while ( true ) {
 
 	foreach ( $posts as $post ) {
 		$recipe = WPRM_Recipe_Manager::get_recipe( $post );
+		if ( ! $recipe ) {
+			continue;
+		}
 
 		$ingredient_ids = array();
 		foreach ( $recipe->ingredients() as $ingredient_group ) {

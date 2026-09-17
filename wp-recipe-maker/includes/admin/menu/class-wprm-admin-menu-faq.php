@@ -94,6 +94,75 @@ class WPRM_Admin_Menu_Faq {
 	}
 
 	/**
+	 * Detect which editor integrations are likely relevant to the current user.
+	 *
+	 * This is guidance only. It does not select or save an editor preference.
+	 *
+	 * @since    10.8.1
+	 * @return   array Detected editors and a single likely editor when unambiguous.
+	 */
+	private static function get_editor_detection() {
+		$active_plugins = get_option( 'active_plugins', array() );
+		$active_plugins = is_array( $active_plugins ) ? $active_plugins : array();
+
+		if ( is_multisite() ) {
+			$network_plugins = get_site_option( 'active_sitewide_plugins', array() );
+			if ( is_array( $network_plugins ) ) {
+				$active_plugins = array_merge( $active_plugins, array_keys( $network_plugins ) );
+			}
+		}
+
+		$is_active = static function( $plugin ) use ( $active_plugins ) {
+			return in_array( $plugin, $active_plugins, true );
+		};
+
+		$detected_editors = array();
+
+		if ( $is_active( 'elementor/elementor.php' ) ) {
+			$detected_editors[] = 'elementor';
+		}
+
+		$theme = wp_get_theme();
+		$divi_theme = 'divi' === strtolower( $theme->get_template() ) || 'divi' === strtolower( $theme->get_stylesheet() );
+		if ( $divi_theme || $is_active( 'divi-builder/divi-builder.php' ) ) {
+			$detected_editors[] = 'divi';
+		}
+
+		if ( $is_active( 'classic-editor/classic-editor.php' ) ) {
+			$user_preference = get_user_meta( get_current_user_id(), 'editor', true );
+			$site_preference = get_option( 'classic-editor-replace', 'classic' );
+
+			if ( 'classic' === $user_preference || ( ! $user_preference && 'classic' === $site_preference ) ) {
+				$detected_editors[] = 'classic';
+			}
+		}
+
+		$other_builders = array(
+			'bb-plugin/fl-builder.php',
+			'beaver-builder-lite-version/fl-builder.php',
+			'breakdance/plugin.php',
+			'brizy/brizy.php',
+			'js_composer/js_composer.php',
+			'oxygen/functions.php',
+			'siteorigin-panels/siteorigin-panels.php',
+		);
+		foreach ( $other_builders as $plugin ) {
+			if ( $is_active( $plugin ) ) {
+				$detected_editors[] = 'other';
+				break;
+			}
+		}
+
+		$detected_editors = array_values( array_unique( $detected_editors ) );
+		$likely_editor = 1 === count( $detected_editors ) ? $detected_editors[0] : '';
+
+		return array(
+			'detected_editors' => $detected_editors,
+			'likely_editor' => $likely_editor,
+		);
+	}
+
+	/**
 	 * Enqueue stylesheets and scripts.
 	 *
 	 * @since    5.8.0
@@ -107,12 +176,34 @@ class WPRM_Admin_Menu_Faq {
 			wp_enqueue_script( 'wprm-admin-faq', WPRM_URL . 'dist/admin-faq.js', array( 'wprm-admin', 'wprm-admin-modal', 'wprm-admin-template' ), WPRM_VERSION, true );
 
 			$current_user = wp_get_current_user();
+			$stored_settings = get_option( 'wprm_settings', array() );
+			$stored_settings = is_array( $stored_settings ) ? $stored_settings : array();
+			$recommended_settings = array(
+				'recipe_template_mode' => WPRM_Settings::get_default( 'recipe_template_mode' ),
+				'default_recipe_template_modern' => WPRM_Settings::get_default( 'default_recipe_template_modern' ),
+				'recipe_snippets_automatically_add_modern' => true,
+				'recipe_snippets_template' => WPRM_Settings::get_default( 'recipe_snippets_template' ),
+			);
+
+			// Applying recommendations should never overwrite an existing choice.
+			foreach ( array_keys( $recommended_settings ) as $setting_id ) {
+				if ( array_key_exists( $setting_id, $stored_settings ) ) {
+					unset( $recommended_settings[ $setting_id ] );
+				}
+			}
+
 			// Allow admins to force onboarding steps for testing via ?test_onboarding=1.
 			$test_onboarding = isset( $_GET['test_onboarding'] ) && '1' === sanitize_text_field( wp_unslash( $_GET['test_onboarding'] ) ) && current_user_can( 'manage_options' );
 			wp_localize_script( 'wprm-admin-faq', 'wprm_faq', array(
 					'onboarded' => $test_onboarding ? false : self::is_onboarded(),
 					'can_access_template_editor' => current_user_can( 'manage_options' ),
 					'template_editor_feature_explorer_url' => admin_url( 'admin.php?page=wprm_template_editor#explorer' ),
+					'editor_detection' => self::get_editor_detection(),
+					'recommended_settings' => $recommended_settings,
+					'setup_settings' => array(
+						'default_recipe_template_modern' => WPRM_Settings::get( 'default_recipe_template_modern' ),
+						'recipe_snippets_template' => WPRM_Settings::get( 'recipe_snippets_template' ),
+					),
 					'user' => array(
 						'email' => $current_user->user_email,
 						'website' => get_site_url(),

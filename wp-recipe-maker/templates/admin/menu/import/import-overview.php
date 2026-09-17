@@ -229,7 +229,11 @@
 				<table class="wprm-import-recipes">
 					<tbody>
 						<?php foreach ( $importer['recipes'] as $post ) :
-							$recipe = WPRM_Recipe_Manager::get_recipe( $post ); ?>
+							$recipe = WPRM_Recipe_Manager::get_recipe( $post );
+							if ( ! $recipe ) {
+								continue;
+							}
+							?>
 							<tr>
 								<td>
 									<input type="checkbox" name="recipes[]" value="<?php echo esc_attr( $recipe->id() ); ?>" />

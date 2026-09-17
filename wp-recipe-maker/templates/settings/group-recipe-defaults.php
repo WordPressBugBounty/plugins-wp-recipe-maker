@@ -178,5 +178,32 @@ $recipe_defaults = array(
 				),
 			),
 		),
+		array(
+			'name' => __( 'Ingredient Unit Connector Display', 'wp-recipe-maker' ),
+			'description' => __( 'Choose where connectors between ingredient units and names are displayed.', 'wp-recipe-maker' ),
+			'settings' => array(
+				array(
+					'id' => 'ingredient_unit_connectors_in_ingredient_lists',
+					'name' => __( 'Show in Ingredient Lists', 'wp-recipe-maker' ),
+					'description' => __( 'Show connectors in recipe and print ingredient lists, and in the Cook Mode overview.', 'wp-recipe-maker' ),
+					'type' => 'toggle',
+					'default' => true,
+				),
+				array(
+					'id' => 'ingredient_unit_connectors_in_inline_ingredients',
+					'name' => __( 'Show in Inline Ingredients', 'wp-recipe-maker' ),
+					'description' => __( 'Show connectors for ingredients embedded directly in instruction text.', 'wp-recipe-maker' ),
+					'type' => 'toggle',
+					'default' => true,
+				),
+				array(
+					'id' => 'ingredient_unit_connectors_in_associated_ingredients',
+					'name' => __( 'Show in Associated Ingredients', 'wp-recipe-maker' ),
+					'description' => __( 'Show connectors for ingredients associated with instruction steps, including in Cook Mode.', 'wp-recipe-maker' ),
+					'type' => 'toggle',
+					'default' => true,
+				),
+			),
+		),
 	),
 );

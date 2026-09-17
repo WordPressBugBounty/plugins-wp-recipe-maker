@@ -42,7 +42,72 @@ class WPRM_Api_Ingredients {
 				'update_callback' => array( __CLASS__, 'api_update_ingredient_meta' ),
 				'schema'          => null,
 			));
+
+			$properties = array();
+			foreach ( array( 'plural', 'group', 'link', 'link_nofollow', 'wpupg_custom_link' ) as $field ) {
+				$properties[ $field ] = array( 'type' => array( 'string', 'null' ) );
+			}
+			foreach ( array( 'image_id', 'eafl', 'wpupg_custom_image' ) as $field ) {
+				$properties[ $field ] = array( 'type' => 'integer', 'minimum' => 0 );
+			}
+			// The manager uses an empty string when removing an Easy Affiliate Link.
+			$properties['eafl'] = array( 'type' => array( 'integer', 'string' ), 'minimum' => 0, 'pattern' => '^\\d*$' );
+			$names_schema = array(
+				'type' => 'object',
+				'properties' => array(
+					'singular' => array( 'type' => 'string' ),
+					'plural' => array( 'type' => 'string' ),
+				),
+				'additionalProperties' => false,
+			);
+			$properties['unit_system_names'] = array(
+				'type' => 'object',
+				'properties' => array( '1' => $names_schema, '2' => $names_schema ),
+				'additionalProperties' => false,
+			);
+			register_rest_route( 'wp-recipe-maker/v1', '/manage/ingredient/(?P<id>\d+)/meta', array(
+				'methods' => 'POST',
+				'callback' => array( __CLASS__, 'api_update_meta' ),
+				'permission_callback' => array( __CLASS__, 'api_update_meta_permissions' ),
+				'args' => array(
+					'id' => array( 'type' => 'integer', 'minimum' => 1 ),
+					'ingredient' => array(
+						'type' => 'object',
+						'required' => true,
+						'properties' => $properties,
+						// Preserve extension fields handled by wprm_update_term_meta (e.g. products).
+						'additionalProperties' => true,
+					),
+				),
+			) );
 		}
+	}
+
+	/**
+	 * Require the same term-edit capability as the core taxonomy endpoint.
+	 *
+	 * @param WP_REST_Request $request Current request.
+	 */
+	public static function api_update_meta_permissions( $request ) {
+		$term = get_term( $request['id'], 'wprm_ingredient' );
+		if ( ! $term || is_wp_error( $term ) ) {
+			return new WP_Error( 'rest_term_invalid', __( 'Term does not exist.', 'wp-recipe-maker' ), array( 'status' => 404 ) );
+		}
+		if ( ! current_user_can( 'edit_term', $term->term_id ) ) {
+			return new WP_Error( 'rest_cannot_update', __( 'Sorry, you are not allowed to edit this term.', 'wp-recipe-maker' ), array( 'status' => rest_authorization_required_code() ) );
+		}
+		return true;
+	}
+
+	/**
+	 * Update metadata without revalidating an existing multilingual term's slug.
+	 *
+	 * @param WP_REST_Request $request Current request.
+	 */
+	public static function api_update_meta( $request ) {
+		$term = get_term( $request['id'], 'wprm_ingredient' );
+		self::api_update_ingredient_meta( $request['ingredient'], $term );
+		return rest_ensure_response( true );
 	}
 	
 	/**
@@ -232,6 +297,9 @@ class WPRM_Api_Ingredients {
 			$posts = $query->posts;
 			foreach ( $posts as $post ) {
 				$recipe = WPRM_Recipe_Manager::get_recipe( $post );
+				if ( ! $recipe ) {
+					continue;
+				}
 	
 				$new_ingredients = array();
 				foreach ( $recipe->ingredients() as $ingredient_group ) {

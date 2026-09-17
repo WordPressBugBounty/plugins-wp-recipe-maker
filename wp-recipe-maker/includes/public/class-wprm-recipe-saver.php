@@ -62,6 +62,12 @@ class WPRM_Recipe_Saver {
 	public static function update_recipe( $id, $recipe, $ignore_log = false ) {
 		$meta = array();
 
+		// Invalidate queued video work before changing any recipe fields. This generation
+		// token prevents a slow background provider response from overwriting this save.
+		if ( class_exists( 'WPRM_MetadataVideo' ) ) {
+			WPRM_MetadataVideo::invalidate_refresh( $id );
+		}
+
 		// Featured Image.
 		if ( isset( $recipe['image_id'] ) ) {
 			if ( $recipe['image_id'] ) {

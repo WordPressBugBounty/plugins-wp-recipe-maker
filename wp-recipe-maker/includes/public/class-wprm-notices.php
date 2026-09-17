@@ -70,56 +70,108 @@ class WPRM_Notices {
 	 * @since	9.8.0
 	 */
 	public static function check_for_dismiss() {
-		if ( isset( $_GET['wprm_dismiss'] ) ) {
+		if ( isset( $_GET['wprm_dismiss'], $_GET['_wpnonce'] ) && is_string( $_GET['wprm_dismiss'] ) && is_string( $_GET['_wpnonce'] ) ) {
 			$notice_id = sanitize_text_field( wp_unslash( $_GET['wprm_dismiss'] ) );
-			self::dismiss( $notice_id );
+			if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wprm_dismiss_' . $notice_id ) ) {
+				self::dismiss( $notice_id );
+			}
 		}
 	}
 
 	/**
-	 * Dissmiss a specific notice.
+	 * Known dismissible IDs, independent of the current admin screen.
+	 * Screen-specific integrations can register IDs with this filter as well.
 	 *
-	 * @since	9.8.0
-	 * @param	mixed $id Notice to dismiss.
-	 * @param	int   $user_id Optional. User ID to dismiss the notice for. Default current user.
+	 * @return array
+	 */
+	public static function get_dismissible_notice_ids() {
+		// Marketing is normally admin-only; REST also needs its exact campaign IDs.
+		if ( ! class_exists( 'WPRM_Marketing' ) ) {
+			require_once WPRM_DIR . 'includes/admin/class-wprm-marketing.php';
+		}
+		$ids = array( 'ingredient_units' );
+		if ( defined( 'WPRMP_VERSION' ) ) {
+			$ids[] = 'amazon_creators_api';
+		}
+		foreach ( apply_filters( 'wprm_admin_notices', array() ) as $notice ) {
+			if ( isset( $notice['id'] ) && ( ! isset( $notice['dismissable'] ) || $notice['dismissable'] )
+				&& ( ! isset( $notice['capability'] ) || current_user_can( $notice['capability'] ) ) ) {
+				$ids[] = $notice['id'];
+			}
+		}
+		$ids = apply_filters( 'wprm_dismissible_notice_ids', $ids );
+		$ids = array_filter( $ids, function( $id ) {
+			return is_string( $id ) && 0 < strlen( $id ) && 100 >= strlen( $id );
+		} );
+		return array_slice( array_values( array_unique( $ids ) ), 0, 100 );
+	}
+
+	/**
+	 * Validate before storing any caller-controlled value.
+	 *
+	 * @param mixed $id Notice ID.
+	 * @return bool
+	 */
+	public static function is_valid_notice_id( $id ) {
+		return is_string( $id ) && 0 < strlen( $id ) && 100 >= strlen( $id )
+			&& in_array( $id, self::get_dismissible_notice_ids(), true );
+	}
+
+	/**
+	 * Dismiss a known notice for the current user only.
+	 * Keep the historical scalar-row format, bounded to one row per known ID.
+	 *
+	 * @param mixed $id Notice ID.
+	 * @param int   $user_id Optional current user ID for backwards compatibility.
+	 * @return bool
 	 */
 	public static function dismiss( $id, $user_id = 0 ) {
-		if ( ! $user_id ) {
-			$user_id = get_current_user_id();
+		global $wpdb;
+		$current_user_id = get_current_user_id();
+		if ( ! $current_user_id || ! current_user_can( 'read' ) || ( $user_id && (int) $user_id !== $current_user_id ) || ! self::is_valid_notice_id( $id ) ) {
+			return false;
 		}
 
-		if ( $id && $user_id ) {
-			add_user_meta( $user_id, 'wprm_dismissed_notices', $id );
-			return true;
+		if ( ! self::is_dismissed( $id ) && ! add_user_meta( $current_user_id, 'wprm_dismissed_notices', $id ) ) {
+			return false;
 		}
 
-		return false;
+		// Clean in SQL: loading polluted user meta into PHP can exhaust memory.
+		// update_user_meta alone would update every duplicate, not remove rows.
+		$ids = self::get_dismissible_notice_ids();
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%s' ) );
+		$deleted = $wpdb->query( $wpdb->prepare(
+			"DELETE FROM {$wpdb->usermeta} WHERE user_id = %d AND meta_key = %s AND BINARY meta_value NOT IN ($placeholders)",
+			array_merge( array( $current_user_id, 'wprm_dismissed_notices' ), $ids )
+		) );
+		// Also collapse concurrent inserts, retaining the oldest row for each ID.
+		$deduplicated = $wpdb->query( $wpdb->prepare(
+			"DELETE duplicate FROM {$wpdb->usermeta} duplicate INNER JOIN {$wpdb->usermeta} original
+			ON duplicate.user_id = original.user_id AND duplicate.meta_key = original.meta_key
+			AND BINARY duplicate.meta_value = BINARY original.meta_value AND duplicate.umeta_id > original.umeta_id
+			WHERE duplicate.user_id = %d AND duplicate.meta_key = %s",
+			$current_user_id, 'wprm_dismissed_notices'
+		) );
+		wp_cache_delete( $current_user_id, 'user_meta' );
+		return false !== $deleted && false !== $deduplicated;
 	}
 
 	/**
-	 * Check if notice has been dismissed.
+	 * Read a dismissal without hydrating all (possibly polluted) user metadata.
 	 *
-	 * @since    8.0.0
-	 * @param	mixed $id Notice to check for dismissal.
+	 * @param mixed $id Notice ID.
+	 * @return bool
 	 */
 	public static function is_dismissed( $id ) {
+		global $wpdb;
 		$current_user_id = get_current_user_id();
-
-		if ( $current_user_id ) {
-			$dismissed_notices = get_user_meta( $current_user_id, 'wprm_dismissed_notices', false );
-
-			// Notice has been dismissed.
-			if ( $id && in_array( $id, $dismissed_notices ) ) {
-				return true;
-			}
-
-			// Could be dismissing right now.
-			if ( isset( $_GET['wprm_dismiss'] ) && $id === $_GET['wprm_dismiss'] ) {
-				return true;
-			}
+		if ( ! $current_user_id || ! is_string( $id ) || ! $id || 100 < strlen( $id ) ) {
+			return false;
 		}
-
-		return false;
+		return (bool) $wpdb->get_var( $wpdb->prepare(
+			"SELECT umeta_id FROM {$wpdb->usermeta} WHERE user_id = %d AND meta_key = %s AND BINARY meta_value = %s LIMIT 1",
+			$current_user_id, 'wprm_dismissed_notices', $id
+		) );
 	}
 
 	/**

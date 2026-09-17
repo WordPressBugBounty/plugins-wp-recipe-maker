@@ -255,6 +255,7 @@ export default class RecipeIngredients extends Component {
                 mode = (
                     <Content
                         type={ this.props.type }
+                        language={ this.props.language }
                         ingredients={ this.props.ingredients }
                         instructions={ this.props.instructions }
                         onRecipeChange={ this.props.onRecipeChange }

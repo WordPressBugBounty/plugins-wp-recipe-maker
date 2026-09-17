@@ -529,7 +529,8 @@ class WPRM_SC_Equipment extends WPRM_Template_Shortcode {
 					$name = $equipment['amount'] . ' ' . $name;
 				}
 				if ( isset( $equipment['notes'] ) && $equipment['notes'] ) {
-					$notes = $equipment['notes'];
+					// Render note shortcodes here, before building the checkbox label.
+					$notes = do_shortcode( $equipment['notes'] );
 
 					switch ( $atts['equipment_notes_separator'] ) {
 						case 'comma':

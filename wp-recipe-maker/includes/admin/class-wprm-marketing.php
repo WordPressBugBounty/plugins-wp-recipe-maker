@@ -95,7 +95,22 @@ class WPRM_Marketing {
 			add_action( 'admin_menu', array( __CLASS__, 'add_submenu_page' ), 99 );
 			add_filter( 'wprm_admin_dashboard_localize', array( __CLASS__, 'dashboard_marketing' ) );
 			add_filter( 'wprm_admin_notices', array( __CLASS__, 'marketing_notice' ) );
+			add_filter( 'wprm_dismissible_notice_ids', array( __CLASS__, 'dismissible_notice_ids' ) );
 		}
+	}
+
+	/**
+	 * Register the finite set of active campaign dismissal IDs.
+	 *
+	 * @param array $ids Known IDs.
+	 * @return array
+	 */
+	public static function dismissible_notice_ids( $ids ) {
+		if ( current_user_can( 'manage_options' ) && false !== self::$campaign ) {
+			$ids[] = 'menu_' . self::$campaign['id'];
+			$ids[] = 'dashboard_' . self::$campaign['id'];
+		}
+		return $ids;
 	}
 
 	/**
@@ -137,7 +152,7 @@ class WPRM_Marketing {
 		echo '<a href="' . esc_url( self::$campaign['url'] ) . '" target="_blank" class="button button-primary button-compact" style="font-size: 14px;">Learn more about the sale!</a>';
 
 		// Dismiss notice.
-		echo '<br/><br/><a href="' . esc_url( admin_url( 'admin.php?page=wprecipemaker&wprm_dismiss=menu_' . esc_attr( self::$campaign['id'] ) ) ) . '" style="font-size: 12px;">Not interested right now, remove this page from my menu...</a>';
+		echo '<br/><br/><a href="' . esc_url( wp_nonce_url( admin_url( 'admin.php?page=wprecipemaker&wprm_dismiss=menu_' . self::$campaign['id'] ), 'wprm_dismiss_menu_' . self::$campaign['id'] ) ) . '" style="font-size: 12px;">Not interested right now, remove this page from my menu...</a>';
 		
 		echo '</div>';
 	}

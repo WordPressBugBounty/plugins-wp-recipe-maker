@@ -38,9 +38,17 @@ class WPRM_Shortcode_Preview {
 		$preview = '';
 
 		if ( check_ajax_referer( 'wprm', 'security', false ) ) {
+			// The public nonce does not grant access to editor previews.
+			if ( ! current_user_can( 'edit_posts' ) ) {
+				wp_die( '', '', array( 'response' => 403 ) );
+			}
+
 			$recipe_id = isset( $_POST['recipe_id'] ) ? intval( $_POST['recipe_id'] ) : 0; // Input var okay.
 
-			$post = get_post( $recipe_id );
+			$post = $recipe_id > 0 ? get_post( $recipe_id ) : null;
+			if ( $recipe_id > 0 && $post && WPRM_POST_TYPE === $post->post_type && ! current_user_can( 'read_post', $recipe_id ) ) {
+				wp_die( '', '', array( 'response' => 403 ) );
+			}
 
 			$preview .= '<span contentEditable="false" style="font-weight: bold;" data-wprm-recipe="' . $recipe_id . '">WP Recipe Maker #' . $recipe_id . '</span>';
 			$preview .= '<span contentEditable="false" style="float: right; color: darkred;" data-wprm-recipe-remove="' . $recipe_id . '">' . esc_html__( 'remove', 'wp-recipe-maker' ) . '</span>';
@@ -48,6 +56,9 @@ class WPRM_Shortcode_Preview {
 
 			if ( ! is_null( $post ) && WPRM_POST_TYPE === $post->post_type  ) {
 					$recipe = WPRM_Recipe_Manager::get_recipe( $recipe_id );
+					if ( ! $recipe ) {
+						wp_die( '', '', array( 'response' => 403 ) );
+					}
 					ob_start();
 					require( WPRM_DIR . 'templates/admin/shortcode-preview.php' );
 					$preview .= ob_get_contents();

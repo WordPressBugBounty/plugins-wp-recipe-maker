@@ -47,6 +47,39 @@ class WPRM_Print {
 	}
 
 	/**
+	 * Get a safe identifier for a recipe print URL.
+	 *
+	 * Slugs are only used when they uniquely identify the intended recipe after
+	 * applying the same optional wprm- prefix normalization as the print resolver.
+	 *
+	 * @since	10.8.2
+	 * @param	int    $recipe_id Recipe ID.
+	 * @param	string $slug      Stored recipe slug.
+	 */
+	public static function get_recipe_identifier( $recipe_id, $slug ) {
+		$recipe_id = intval( $recipe_id );
+		$slug = trim( (string) $slug );
+
+		// Remove optional wprm- prefix, as is done for generated print URLs.
+		if ( 0 === strpos( $slug, 'wprm-' ) ) {
+			$slug = substr( $slug, 5 );
+		}
+
+		if ( ! $slug ) {
+			return $recipe_id;
+		}
+
+		// Numeric identifiers are resolved as recipe IDs before trying a slug lookup.
+		if ( '' . intval( $slug ) === $slug && WPRM_POST_TYPE === get_post_type( intval( $slug ) ) && $recipe_id !== intval( $slug ) ) {
+			return $recipe_id;
+		}
+
+		$matching_recipe_ids = self::get_recipe_ids_by_slug( $slug );
+
+		return 1 === count( $matching_recipe_ids ) && $recipe_id === $matching_recipe_ids[0] ? $slug : $recipe_id;
+	}
+
+	/**
 	 * Get the global print access setting.
 	 *
 	 * @since	10.6.0
@@ -215,6 +248,50 @@ class WPRM_Print {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Get recipe IDs matching a print URL slug.
+	 *
+	 * @since	10.8.2
+	 * @param	string $slug Slug from the print URL.
+	 */
+	private static function get_recipe_ids_by_slug( $slug ) {
+		static $recipe_ids_by_slug = array();
+
+		$slug = trim( (string) $slug );
+
+		if ( isset( $recipe_ids_by_slug[ $slug ] ) ) {
+			return $recipe_ids_by_slug[ $slug ];
+		}
+
+		$recipe_ids = array();
+		$recipe_slugs = array_values( array_unique( array(
+			'wprm-' . $slug,
+			$slug,
+		) ) );
+
+		$recipes = get_posts( array(
+			'post_name__in'          => $recipe_slugs,
+			'post_type'              => WPRM_POST_TYPE,
+			'post_status'            => 'any',
+			'numberposts'            => 2,
+			'fields'                 => 'ids',
+			'orderby'                => 'ID',
+			'order'                  => 'ASC',
+			'suppress_filters'       => true,
+			'no_found_rows'          => true,
+			'update_post_meta_cache' => false,
+			'update_post_term_cache' => false,
+		) );
+
+		foreach ( $recipes as $recipe ) {
+			$recipe_ids[] = intval( is_object( $recipe ) ? $recipe->ID : $recipe );
+		}
+
+		$recipe_ids_by_slug[ $slug ] = array_values( array_unique( $recipe_ids ) );
+
+		return $recipe_ids_by_slug[ $slug ];
 	}
 
 	/**
@@ -552,7 +629,7 @@ class WPRM_Print {
 					$credit = WPRM_Settings::get( 'print_credit' );
 				}
 
-				if ( $credit ) {
+				if ( $recipe && $credit ) {
 					$output['html'] .= '<div id="wprm-print-footer">' . $recipe->replace_placeholders( $credit ) . '</div>';
 
 					// Add class to indicate there's a print credit.
@@ -563,7 +640,7 @@ class WPRM_Print {
 				}
 
 				// Optional QR Code.
-				if ( WPRM_Settings::get( 'print_qr_code' ) ) {
+				if ( $recipe && WPRM_Settings::get( 'print_qr_code' ) ) {
 					$url = $recipe->permalink();
 
 					if ( ! $url && WPRM_Settings::get( 'print_qr_code_use_homepage' ) ) {

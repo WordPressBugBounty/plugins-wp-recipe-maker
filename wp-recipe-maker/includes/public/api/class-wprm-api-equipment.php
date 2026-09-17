@@ -220,6 +220,9 @@ class WPRM_Api_Equipment {
 			$posts = $query->posts;
 			foreach ( $posts as $post ) {
 				$recipe = WPRM_Recipe_Manager::get_recipe( $post );
+				if ( ! $recipe ) {
+					continue;
+				}
 	
 				$new_equipment = array();
 				foreach ( $recipe->equipment() as $equipment ) {

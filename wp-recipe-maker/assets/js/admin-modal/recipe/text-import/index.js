@@ -337,6 +337,7 @@ export default class TextImport extends Component {
                                     &&
                                     <FieldContainer label={ __wprm( 'Ingredients' ) } help={ __wprm( 'Use the checkboxes to indicate group headers (like Frosting and Cake)' ) }>
                                         <SelectGroups
+                                            field="ingredients"
                                             value={ this.state.ingredients }
                                             onChange={ (ingredients) => {
                                                 this.setState({ ingredients });
@@ -349,6 +350,7 @@ export default class TextImport extends Component {
                                     &&
                                     <FieldContainer label={ __wprm( 'Instructions' ) } help={__wprm( 'Use the checkboxes to indicate group headers (like Frosting and Cake)' ) }>
                                         <SelectGroups
+                                            field="instructions"
                                             value={ this.state.instructions }
                                             onChange={ (instructions) => {
                                                 this.setState({ instructions });

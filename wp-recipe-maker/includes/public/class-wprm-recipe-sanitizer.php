@@ -20,12 +20,25 @@
 class WPRM_Recipe_Sanitizer {
 
 	/**
+	 * Whether unfiltered HTML is allowed for the current sanitization operation.
+	 *
+	 * A null value falls back to the capability of the current user. An explicit
+	 * boolean keeps delayed operations, such as recipe previews, tied to the
+	 * permissions of the user who supplied the content.
+	 *
+	 * @var null|boolean
+	 */
+	private static $allow_unfiltered_html = null;
+
+	/**
 	 * Sanitize recipe array.
 	 *
 	 * @since    1.0.0
-	 * @param		 array $recipe Array containing all recipe input data.
+	 * @param array   $recipe Array containing all recipe input data.
+	 * @param boolean $preserve_ingredient_ids Whether ingredient IDs refer to this site's existing recipe data.
+	 * @param boolean $allow_ingredient_selection Whether to accept locally signed editor suggestions on creation.
 	 */
-	public static function sanitize( $recipe ) {
+	public static function sanitize( $recipe, $preserve_ingredient_ids = false, $allow_ingredient_selection = false ) {
 		$sanitized_recipe = array();
 
 		// Prevent infinite loop.
@@ -184,6 +197,7 @@ class WPRM_Recipe_Sanitizer {
 		if ( isset( $recipe['ingredients'] ) || isset( $recipe['ingredients_flat'] ) ) {
 			$sanitized_recipe['ingredients'] = array();
 			$ingredients = isset( $recipe['ingredients'] ) ? $recipe['ingredients'] : array();
+			$ingredient_language = ! empty( $recipe['language'] ) ? sanitize_key( $recipe['language'] ) : false;
 
 			// Use ingredients_flat if set.
 			if ( isset( $recipe['ingredients_flat'] ) ) {
@@ -310,7 +324,13 @@ class WPRM_Recipe_Sanitizer {
 
 						// Add to ingredients if name is set.
 						if ( $sanitized_ingredient['name'] ) {
-							$sanitized_ingredient['id'] = self::get_ingredient_id( $sanitized_ingredient['name'] );
+							$selected_here = $allow_ingredient_selection && isset( $ingredient['id'], $ingredient['selection_token'] )
+								&& is_scalar( $ingredient['id'] ) && is_string( $ingredient['selection_token'] )
+								&& wp_verify_nonce( $ingredient['selection_token'], 'wprm_ingredient_selection_' . $ingredient['id'] );
+							$ingredient_id = ( $preserve_ingredient_ids || $selected_here ) && isset( $ingredient['id'] )
+								? self::get_existing_ingredient_id( $ingredient['id'], $sanitized_ingredient['name'], $ingredient_language )
+								: 0;
+							$sanitized_ingredient['id'] = $ingredient_id ? $ingredient_id : self::get_ingredient_id( $sanitized_ingredient['name'] );
 							$sanitized_group['ingredients'][] = $sanitized_ingredient;
 						}
 					}
@@ -479,6 +499,65 @@ class WPRM_Recipe_Sanitizer {
 		if ( isset( $recipe['import_backup'] ) ) { $sanitized_recipe['import_backup'] = $recipe['import_backup']; }
 
 		return apply_filters( 'wprm_recipe_sanitize', $sanitized_recipe, $recipe );
+	}
+
+	/**
+	 * Sanitize a recipe using an explicitly captured HTML capability.
+	 *
+	 * @since 10.8.2
+	 * @param array   $recipe Recipe input data.
+	 * @param boolean $allow_unfiltered_html Whether unfiltered HTML was allowed when the content was supplied.
+	 * @return array Sanitized recipe data.
+	 */
+	public static function sanitize_with_html_permissions( $recipe, $allow_unfiltered_html ) {
+		$previous_allow_unfiltered_html = self::$allow_unfiltered_html;
+		self::$allow_unfiltered_html = (bool) $allow_unfiltered_html;
+
+		try {
+			return self::sanitize( $recipe );
+		} finally {
+			self::$allow_unfiltered_html = $previous_allow_unfiltered_html;
+		}
+	}
+
+	/**
+	 * Keep an existing ingredient association only while its name and language still match.
+	 * The editor retains IDs when names change; imports can contain IDs from another site.
+	 *
+	 * @param mixed        $id       Submitted term ID.
+	 * @param string       $name     Submitted ingredient name.
+	 * @param false|string $language Recipe language.
+	 * @return int Matching ingredient ID, or zero to resolve the name normally.
+	 */
+	private static function get_existing_ingredient_id( $id, $name, $language ) {
+		if ( ( ! is_int( $id ) && ! is_string( $id ) ) || ! ctype_digit( (string) $id ) || intval( $id ) < 1 ) {
+			return 0;
+		}
+
+		$term = get_term( intval( $id ), 'wprm_ingredient' );
+		if ( ! $term || is_wp_error( $term ) ) {
+			return 0;
+		}
+
+		$term_language = WPRM_Compatibility::get_term_language( $term->term_id, 'wprm_ingredient' );
+		if ( WPRM_Compatibility::multilingual() && $term_language !== $language ) {
+			return 0;
+		}
+
+		$names = array( $term->name );
+		foreach ( array( 'wprm_ingredient_plural', 'wprm_ingredient_unit_system_1_singular', 'wprm_ingredient_unit_system_1_plural', 'wprm_ingredient_unit_system_2_singular', 'wprm_ingredient_unit_system_2_plural' ) as $key ) {
+			$names[] = get_term_meta( $term->term_id, $key, true );
+		}
+
+		$name = html_entity_decode( sanitize_text_field( $name ), ENT_QUOTES, 'UTF-8' );
+		foreach ( $names as $candidate ) {
+			$candidate = html_entity_decode( sanitize_text_field( $candidate ), ENT_QUOTES, 'UTF-8' );
+			if ( '' !== $candidate && 0 === strcasecmp( $candidate, $name ) ) {
+				return (int) $term->term_id;
+			}
+		}
+
+		return 0;
 	}
 
 	/**
@@ -806,8 +885,13 @@ class WPRM_Recipe_Sanitizer {
 			$text = str_replace( $matches[0][ $key ], $shortcode, $text );
 		}
 
-		// Allow administrators to use any html they want.
-		if ( current_user_can( 'unfiltered_html' ) ) {
+		// Allow trusted authors to use any HTML they want. For delayed sanitization,
+		// use the capability captured when the content was supplied instead of the
+		// capability of the user who happens to view it later.
+		$allow_unfiltered_html = null === self::$allow_unfiltered_html
+			? current_user_can( 'unfiltered_html' )
+			: self::$allow_unfiltered_html;
+		if ( $allow_unfiltered_html ) {
 			return $text;
 		}
 

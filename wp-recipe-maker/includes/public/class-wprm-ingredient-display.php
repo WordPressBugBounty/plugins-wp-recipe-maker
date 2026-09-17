@@ -304,9 +304,10 @@ class WPRM_Ingredient_Display {
 			return $amount_unit . $name_output;
 		}
 
+		$show_connector = ! is_array( $options ) || ! isset( $options['show_connector'] ) || (bool) $options['show_connector'];
 		$connector_data = self::get_connector_data_for_ingredient( $ingredient, $system );
 
-		if ( '' === $connector_data['connector'] ) {
+		if ( ! $show_connector || '' === $connector_data['connector'] ) {
 			return $amount_unit . '&#32;' . $name_output;
 		}
 

@@ -168,9 +168,15 @@
 	<?php endif; ?>
 
 <?php
-	if ( class_exists( 'WPRMP_Amazon_api' ) ) :
+	if ( class_exists( 'WPRMP_Amazon_Api_Creators' ) || class_exists( 'WPRMP_Amazon_Api' ) ) :
 		$partner_tag_set = WPRM_Settings::get( 'amazon_partner_tag' ) ? true : false;
-		$api_credentials_set = class_exists( 'WPRMP_Amazon_Api_Factory' ) ? WPRMP_Amazon_Api_Factory::has_api_credentials() : ( class_exists( 'WPRMP_Amazon_Api' ) ? WPRMP_Amazon_Api::validate_api_credentials() : false );
+		if ( method_exists( 'WPRMP_Amazon_Api_Creators', 'has_api_credentials' ) ) {
+			$api_credentials_set = WPRMP_Amazon_Api_Creators::has_api_credentials();
+		} elseif ( method_exists( 'WPRMP_Amazon_Api_Factory', 'has_api_credentials' ) ) {
+			$api_credentials_set = WPRMP_Amazon_Api_Factory::has_api_credentials();
+		} else {
+			$api_credentials_set = class_exists( 'WPRMP_Amazon_Api' ) && WPRMP_Amazon_Api::validate_api_credentials();
+		}
 ?>
 	<h3 class="wprm-tools-section-title"><?php esc_html_e( 'Amazon Affiliate Links Migration for Equipment', 'wp-recipe-maker' ); ?></h3>
 	<?php if ( ! $partner_tag_set ) : ?>

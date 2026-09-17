@@ -126,6 +126,7 @@ export default class IngredientsEdit extends Component {
                                         <FieldIngredient
                                             { ...field }
                                             recipeType={ this.props.type }
+                                            recipeLanguage={ this.props.language }
                                             index={ index }
                                             key={ `ingredient-${field.uid}` }
                                             onTab={(event) => {
@@ -296,21 +297,7 @@ export default class IngredientsEdit extends Component {
                     className="wprm-admin-modal-field-ingredient-actions"
                 >
                     <button
-                        className="button button-secondary button-compact"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            this.addField( 'ingredient' );
-                        } }
-                    >{ 'howto' === this.props.type ? __wprm( 'Add Material' ) : __wprm( 'Add Ingredient' ) }</button>
-                    <button
-                        className="button button-secondary button-compact"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            this.addField( 'group' );
-                        } }
-                    >{ 'howto' === this.props.type ? __wprm( 'Add Material Group' ) : __wprm( 'Add Ingredient Group' ) }</button>
-                    <button
-                        className="button button-secondary button-compact"
+                        className="button button-primary button-compact"
                         onClick={(e) => {
                             e.preventDefault();
                             this.props.openSecondaryModal('bulk-add-ingredients', {
@@ -334,7 +321,21 @@ export default class IngredientsEdit extends Component {
                                 }
                             });
                         } }
-                    >{ 'howto' === this.props.type ? __wprm( 'Bulk Add Materials' ) : __wprm( 'Bulk Add Ingredients' ) }</button>
+                    >{ 'howto' === this.props.type ? __wprm( 'Paste materials' ) : __wprm( 'Paste ingredients' ) }</button>
+                    <button
+                        className="button button-secondary button-compact"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            this.addField( 'ingredient' );
+                        } }
+                    >{ 'howto' === this.props.type ? __wprm( 'Add Material' ) : __wprm( 'Add Ingredient' ) }</button>
+                    <button
+                        className="button button-secondary button-compact"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            this.addField( 'group' );
+                        } }
+                    >{ 'howto' === this.props.type ? __wprm( 'Add Material Group' ) : __wprm( 'Add Ingredient Group' ) }</button>
                     <p>{ __wprm( 'Tip: use the TAB key to move from field to field and easily add ingredients.' ) }</p>
                 </div>
             </div>

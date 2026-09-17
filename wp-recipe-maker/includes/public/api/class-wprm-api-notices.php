@@ -38,9 +38,31 @@ class WPRM_Api_Notices {
 			register_rest_route( 'wp-recipe-maker/v1', '/notice', array(
 				'callback' => array( __CLASS__, 'api_dismiss_notice' ),
 				'methods' => 'DELETE',
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( __CLASS__, 'api_permissions' ),
+				'args' => array(
+					'id' => array(
+						'required' => true,
+						'type' => 'string',
+						'minLength' => 1,
+						'maxLength' => 100,
+						'validate_callback' => array( 'WPRM_Notices', 'is_valid_notice_id' ),
+					),
+					'user_id' => array( 'type' => 'integer', 'minimum' => 1 ),
+				),
 			));
 		}
+	}
+
+	/**
+	 * Only allow authenticated users to dismiss their own notices.
+	 * Cookie authentication is protected by WordPress' REST nonce check.
+	 *
+	 * @param WP_REST_Request $request Current request.
+	 * @return bool
+	 */
+	public static function api_permissions( $request ) {
+		return get_current_user_id() && current_user_can( 'read' )
+			&& ( ! isset( $request['user_id'] ) || get_current_user_id() === (int) $request['user_id'] );
 	}
 
 	/**
@@ -50,13 +72,7 @@ class WPRM_Api_Notices {
 	 * @param WP_REST_Request $request Current request.
 	 */
 	public static function api_dismiss_notice( $request ) {
-		// Parameters.
-		$params = $request->get_params();
-	
-		$id = isset( $params['id'] ) ? $params['id'] : '';
-		$user_id = isset( $params['user_id'] ) ? intval( $params['user_id'] ) : get_current_user_id();
-		
-		$result = WPRM_Notices::dismiss( $id, $user_id );
+		$result = WPRM_Notices::dismiss( $request['id'] );
 
 		return rest_ensure_response( $result );
 	}

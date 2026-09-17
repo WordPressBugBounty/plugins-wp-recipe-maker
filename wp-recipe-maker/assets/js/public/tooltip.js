@@ -1,5 +1,6 @@
 import tippy from 'tippy.js';
 import 'tippy.js/dist/tippy.css';
+import tooltipInteractions, { tooltipActionSelector } from './tooltip-interactions';
 
 import '../../css/public/tooltip.scss';
 
@@ -40,7 +41,8 @@ window.WPRecipeMaker.tooltip = {
 
             if ( tooltip ) {
                 // Preserve the native semantics of links and form controls.
-                if ( ! container.matches( 'a[href], button, input, select, textarea, summary' ) ) {
+                const actionElement = container.closest( tooltipActionSelector );
+                if ( ! actionElement ) {
                     container.role = "button";
                 }
 
@@ -56,12 +58,20 @@ window.WPRecipeMaker.tooltip = {
 
                 // Keep the tooltip outside faded notes so their opacity does not affect it.
                 const fadedNotes = container.closest( fadedNotesSelector );
+                // Keep close controls and content links outside actionable wrappers
+                // as well as faded notes, so closing never activates the trigger.
+                const appendOutside = fadedNotes && ( ! actionElement || fadedNotes.contains( actionElement ) ) ? fadedNotes : actionElement;
 
                 tippy( container, {
                     theme: 'wprm',
                     content,
                     allowHTML: false,
                     interactive: true,
+                    trigger: 'manual',
+                    triggerTarget: actionElement && container.tabIndex < 0 ? actionElement : container,
+                    hideOnClick: false,
+                    role: 'dialog',
+                    plugins: [ tooltipInteractions ],
                     ...( instructionImage ? {
                         arrow: false,
                         placement: 'top',
@@ -81,8 +91,8 @@ window.WPRecipeMaker.tooltip = {
                         },
                         offset: ( { popper } ) => [ 0, - popper.height / 2 ],
                     } : {} ),
-                    ...( fadedNotes ? {
-                        appendTo: () => fadedNotes.parentElement || document.body,
+                    ...( appendOutside ? {
+                        appendTo: () => appendOutside.parentElement || document.body,
                     } : {} ),
                     onCreate(instance) {
                         // Prevents the tooltip from breaking ingredients into multiple lines.
@@ -115,6 +125,9 @@ window.WPRecipeMaker.tooltip = {
                                     return false;
                                 }
                             } ).then( ( html ) => {
+                                if ( instance.state.isDestroyed ) {
+                                    return;
+                                }
                                 instance._isFetching = false;
                                 instance._fetchedContent = true;
 
@@ -124,6 +137,9 @@ window.WPRecipeMaker.tooltip = {
                                     // Change allowHTML to true to show HTML.
                                     instance.setProps( { allowHTML: true } );
                                 }
+                            } ).catch( () => {
+                                // Keep the plain-text definition and allow a later retry.
+                                instance._isFetching = false;
                             } );
                         }
                     }

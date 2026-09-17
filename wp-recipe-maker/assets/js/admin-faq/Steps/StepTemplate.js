@@ -10,8 +10,9 @@ export default class StepTemplate extends Component {
         super(props);
 
         let template = false;
-        if ( wprm_admin_template.templates.hasOwnProperty( 'meadow' ) ) {
-            template = wprm_admin_template.templates['meadow'];
+        const currentTemplate = wprm_faq.setup_settings.default_recipe_template_modern || 'meadow';
+        if ( wprm_admin_template.templates.hasOwnProperty( currentTemplate ) ) {
+            template = wprm_admin_template.templates[ currentTemplate ];
         }
 
         this.state = {

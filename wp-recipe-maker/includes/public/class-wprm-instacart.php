@@ -28,6 +28,15 @@ class WPRM_Instacart {
 	const RECIPE_CACHE_VERSION = 2;
 
 	/**
+	 * Version for cached Instacart shopping list payloads.
+	 *
+	 * @since    10.9.0
+	 * @access   private
+	 * @var      int SHOPPING_LIST_CACHE_VERSION Version for cached shopping list payloads.
+	 */
+	const SHOPPING_LIST_CACHE_VERSION = 2;
+
+	/**
 	 * Register actions and filters.
 	 *
 	 * @since	9.8.0
@@ -173,11 +182,12 @@ class WPRM_Instacart {
 	public static function get_link_for_list( $data ) {
 		// Check for existing link first.
 		if ( isset( $data['meta'] ) && isset( $data['meta']['instacart'] ) ) {
-			$response = $data['meta']['instacart']['response'];
-			$timestamp = $data['meta']['instacart']['timestamp'];
+			$cache_version = isset( $data['meta']['instacart']['version'] ) ? intval( $data['meta']['instacart']['version'] ) : 1;
+			$response = isset( $data['meta']['instacart']['response'] ) ? $data['meta']['instacart']['response'] : false;
+			$timestamp = isset( $data['meta']['instacart']['timestamp'] ) ? intval( $data['meta']['instacart']['timestamp'] ) : 0;
 
-			// Use cached result if it's less than a month old.
-			if ( strtotime( '-1 month' ) < $timestamp ) {
+			// Use cached result if it has the current payload format and is less than a month old.
+			if ( self::SHOPPING_LIST_CACHE_VERSION === $cache_version && strtotime( '-1 month' ) < $timestamp ) {
 				$link = self::get_link_from_response( $response );
 
 				if ( $link ) {
@@ -194,8 +204,12 @@ class WPRM_Instacart {
 			'line_items' => array(),
 		);
 
-		foreach ( $data['groups'] as $group ) {
-			foreach ( $group['ingredients'] as $ingredient ) {
+		$groups = isset( $data['groups'] ) && is_array( $data['groups'] ) ? $data['groups'] : array();
+
+		foreach ( $groups as $group ) {
+			$ingredients = isset( $group['ingredients'] ) && is_array( $group['ingredients'] ) ? $group['ingredients'] : array();
+
+			foreach ( $ingredients as $ingredient ) {
 				$name = trim( strip_tags( html_entity_decode( self::do_shortcode_safe( $ingredient['name'] ) ) ) );
 
 				// Exclude checked ingredients.
@@ -203,39 +217,48 @@ class WPRM_Instacart {
 					continue;
 				}
 
-				foreach ( $ingredient['variations'] as $variation ) {
-					$variation_amount = isset( $variation['amount'] ) ? $variation['amount'] : '';
-					$variation_unit = isset( $variation['unit'] ) ? $variation['unit'] : '';
+				if ( ! $name ) {
+					continue;
+				}
 
-					$display = isset( $variation['display'] ) ? $variation['display'] : '';
-					$display = trim( $display );
+				$variations = isset( $ingredient['variations'] ) && is_array( $ingredient['variations'] ) ? array_values( $ingredient['variations'] ) : array();
+				$measurements = array();
+				$variation_labels = array();
 
-					if ( $display ) {
-						$parsed = WPRM_Recipe_Parser::parse_ingredient( $display, true );
-						$variation_amount = $parsed['amount'];
+				foreach ( $variations as $variation ) {
+					$variation_data = self::get_shopping_list_variation_data( $variation );
 
-						// All the rest is the unit.
-						$variation_unit = trim( $parsed['unit'] . $parsed['name'] . $parsed['notes'] );
+					if ( $variation_data['label'] ) {
+						$variation_labels[] = $variation_data['label'];
 					}
 
-					$quantity = WPRM_Recipe_Parser::parse_quantity( $variation_amount );
+					if ( $variation_data['measurement'] ) {
+						$unit_key = strtolower( $variation_data['measurement']['unit'] );
 
-					// Default to 1 if no quantity.
-					if ( ! $quantity ) {
-						$quantity = 1;
-					}
-
-					if ( $name && $quantity ) {
-						$unit = trim( strip_tags( html_entity_decode( self::do_shortcode_safe( $variation_unit ) ) ) );
-						$line_item = array(
-							'name' => $name,
-							'quantity' => $quantity,
-							'unit' => $unit ? $unit : 'each',
-						);
-
-						$api_data['line_items'][] = self::filter_shopping_list_item_payload( $line_item, $variation, $ingredient, $group, $data );
+						// Recipe Collections variations are additive. Only combine identical units.
+						if ( isset( $measurements[ $unit_key ] ) ) {
+							$measurements[ $unit_key ]['quantity'] += $variation_data['measurement']['quantity'];
+						} else {
+							$measurements[ $unit_key ] = $variation_data['measurement'];
+						}
 					}
 				}
+
+				$line_item = array(
+					'name' => $name,
+				);
+
+				if ( 1 === count( $measurements ) ) {
+					$line_item['line_item_measurements'] = array_values( $measurements );
+				}
+
+				if ( 1 < count( $variation_labels ) || ( ! $measurements && $variation_labels ) ) {
+					// Multiple units are additive requirements, not equivalent measurements.
+					$line_item['display_text'] = $name . ' (' . implode( ' + ', $variation_labels ) . ')';
+				}
+
+				$first_variation = $variations ? $variations[0] : array();
+				$api_data['line_items'][] = self::filter_shopping_list_item_payload( $line_item, $first_variation, $ingredient, $group, $data );
 			}
 		}
 
@@ -249,6 +272,7 @@ class WPRM_Instacart {
 		if ( $link ) {
 			$meta = array(
 				'instacart' => array(
+					'version' => self::SHOPPING_LIST_CACHE_VERSION,
 					'response' => $instacart_response,
 					'timestamp' => time(),
 				),
@@ -257,6 +281,54 @@ class WPRM_Instacart {
 		}
 
 		return $link;
+	}
+
+	/**
+	 * Get the valid Instacart measurement and display label for a shopping list variation.
+	 *
+	 * @since	10.9.0
+	 * @param	array $variation Shopping list variation data.
+	 * @return	array
+	 */
+	private static function get_shopping_list_variation_data( $variation ) {
+		$variation_amount = isset( $variation['amount'] ) ? $variation['amount'] : '';
+		$variation_unit = isset( $variation['unit'] ) ? $variation['unit'] : '';
+		$display = isset( $variation['display'] ) ? trim( $variation['display'] ) : '';
+		$label = '';
+
+		if ( $display ) {
+			$label = trim( strip_tags( html_entity_decode( self::do_shortcode_safe( $display ) ) ) );
+			$parsed = WPRM_Recipe_Parser::parse_ingredient( $display, true );
+			$variation_amount = isset( $parsed['amount'] ) ? $parsed['amount'] : '';
+
+			// All the rest is the unit.
+			$variation_unit = trim(
+				( isset( $parsed['unit'] ) ? $parsed['unit'] : '' )
+				. ( isset( $parsed['name'] ) ? $parsed['name'] : '' )
+				. ( isset( $parsed['notes'] ) ? $parsed['notes'] : '' )
+			);
+		}
+
+		$unit = trim( strip_tags( html_entity_decode( self::do_shortcode_safe( $variation_unit ) ) ) );
+		$quantity = WPRM_Recipe_Parser::parse_quantity( $variation_amount );
+		$quantity = is_numeric( $quantity ) ? (float) $quantity : false;
+
+		if ( ! $label ) {
+			$label = trim( strip_tags( html_entity_decode( self::do_shortcode_safe( trim( $variation_amount . ' ' . $variation_unit ) ) ) ) );
+		}
+
+		$measurement = false;
+		if ( false !== $quantity && is_finite( $quantity ) && 0 < $quantity ) {
+			$measurement = array(
+				'quantity' => $quantity,
+				'unit' => $unit ? $unit : 'each',
+			);
+		}
+
+		return array(
+			'measurement' => $measurement,
+			'label' => $label,
+		);
 	}
 
 	/**
@@ -382,7 +454,7 @@ class WPRM_Instacart {
 	 *
 	 * @since	10.1.1
 	 * @param	array $line_item Instacart shopping list line item payload item.
-	 * @param	array $variation Original shopping list variation data.
+	 * @param	array $variation First original shopping list variation data. All variations remain available in $ingredient.
 	 * @param	array $ingredient Original shopping list ingredient data.
 	 * @param	array $group Original shopping list group data.
 	 * @param	array $data Original shopping list data.

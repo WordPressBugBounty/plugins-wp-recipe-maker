@@ -76,6 +76,9 @@ class WPRM_Access {
 		// If we were checking a recipe, check the parent post restrictions as well.
 		if ( WPRM_POST_TYPE === get_post_type( $post_id ) ) {
 			$recipe = WPRM_Recipe_Manager::get_recipe( $post_id );
+			if ( ! $recipe ) {
+				return false;
+			}
 			$parent_post_id = $recipe->parent_post_id();
 
 			if ( $parent_post_id && $post_id !== $parent_post_id ) {

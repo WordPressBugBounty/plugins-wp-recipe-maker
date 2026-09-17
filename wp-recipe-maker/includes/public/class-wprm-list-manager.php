@@ -110,6 +110,14 @@ class WPRM_List_Manager {
 	 */
 	public static function ajax_search_lists() {
 		if ( check_ajax_referer( 'wprm', 'security', false ) ) {
+			// List pickers are available in the editor and on the configured Manage page.
+			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( WPRM_Settings::get( 'features_manage_access' ) ) ) {
+				wp_send_json_error( array(
+					'message' => __( 'You do not have permission to perform this action.', 'wp-recipe-maker' ),
+				) );
+				wp_die();
+			}
+
 			$search = isset( $_POST['search'] ) ? sanitize_text_field( wp_unslash( $_POST['search'] ) ) : ''; // Input var okay.
 
 			$lists = array();
@@ -117,7 +125,8 @@ class WPRM_List_Manager {
 
 			$args = array(
 				'post_type' => WPRM_LIST_POST_TYPE,
-				'post_status' => 'any',
+				'post_status' => get_post_stati( array( 'internal' => false ) ),
+				'perm' => 'readable',
 				'posts_per_page' => 100,
 				's' => $search,
 				'suppress_filters' => true,
@@ -135,7 +144,8 @@ class WPRM_List_Manager {
 				if ( $id > 0 ) {
 					$args = array(
 						'post_type' => WPRM_LIST_POST_TYPE,
-						'post_status' => 'any',
+						'post_status' => get_post_stati( array( 'internal' => false ) ),
+						'perm' => 'readable',
 						'posts_per_page' => 100,
 						'post__in' => array( $id ),
 					);
@@ -147,6 +157,11 @@ class WPRM_List_Manager {
 			}
 
 			foreach ( $posts as $post ) {
+				// Query permissions alone do not protect drafts and other non-public statuses.
+				if ( ! current_user_can( 'read_post', $post->ID ) ) {
+					continue;
+				}
+
 				$lists[] = array(
 					'id' => $post->ID,
 					'text' => $post->post_title,

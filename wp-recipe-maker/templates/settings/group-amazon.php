@@ -372,3 +372,22 @@ $amazon = array(
 		),
 	),
 );
+
+// Older Premium releases still route requests using these settings and store fields.
+// Keep their UI intact until Premium is upgraded as well.
+$wprm_legacy_amazon = class_exists( 'WPRMP_Amazon_Api' ) && ! method_exists( 'WPRMP_Amazon_Api_Creators', 'has_api_credentials' );
+if ( ! $wprm_legacy_amazon ) {
+	foreach ( $amazon['subGroups'] as $group_index => &$amazon_group ) {
+		$amazon_group['settings'] = array_values( array_filter( $amazon_group['settings'], function( $setting ) {
+			return ! in_array( $setting['id'], array( 'amazon_api_type', 'amazon_access_key', 'amazon_secret_key' ), true );
+		} ) );
+		if ( empty( $amazon_group['settings'] ) ) {
+			unset( $amazon['subGroups'][ $group_index ] );
+		} elseif ( isset( $amazon_group['dependency']['id'] ) && 'amazon_api_type' === $amazon_group['dependency']['id'] ) {
+			unset( $amazon_group['dependency'] );
+		}
+	}
+	unset( $amazon_group );
+	$amazon['subGroups'] = array_values( $amazon['subGroups'] );
+	$amazon['description'] = __( 'Use the Amazon Creators API to easily search for Amazon products to link to your equipment.', 'wp-recipe-maker' );
+}

@@ -5,7 +5,7 @@ Tags: recipe, recipes, food, cooking, schema
 Requires at least: 4.4
 Tested up to: 7.1
 Requires PHP: 7.2
-Stable tag: 10.8.1
+Stable tag: 10.8.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -141,6 +141,29 @@ Please report security bugs found in the source code of the WP Recipe Maker plug
 7. Our Template Editor allows you to completely customize the look and feel.
 
 == Changelog ==
+= 10.8.2 =
+* Improvement: Instacart ingredient unit variations
+* Improvement: Close icon for tooltips when opening on tap or keyboard
+* Improvement: WPML 5 compatibility
+* Improvement: Refresh video metadata in the background
+* Improvement: Reduce frontend Premium translation payload
+* Improvement: Reduced unnecessary category lookups when editing recipes
+* Improvement: Reduce duplicate ingredient unit connector requests
+* Improvement: Ingredient Unit Connector Display settings
+* Improvement: Reduce the amount of data loaded by the Manage page
+* Fix: Preserve multilingual ingredient identity
+* Fix: Ingredient groups export on manage page
+* Fix: Prevent unauthenticated notice dismissals (thanks to Isuka Sanuj for reporting)
+* Fix: List search authorization for non-public lists (thanks to Abdullah Kareem for reporting)
+* Fix: Prevent unauthorized access to unpublished recipes for logged in users (thanks to Abdullah Kareem for reporting)
+* Fix: Prevent shortcode execution of comment text in the recipe metadata (thanks to Jakub Herman and NomanProdhan for reporting)
+* Fix: Prevent unintended shortcode execution in submitted recipes and glossary output
+* Fix: Prevent stored XSS in recipe previews by contributors (thanks to Saulo Rafael for reporting)
+* Fix: Prevent video modal opening during category search
+* Fix: Prevent incorrectly taking over image when a recipe has no parent
+* Fix: Prevent print links from opening the wrong recipe when multiple recipes share the same slug
+* Fix: Properly minify split frontend JavaScript files
+
 = 10.8.1 =
 * Feature: Google Preferred Sources block
 * Improvement: Pass along servings to Instacart
@@ -598,6 +621,9 @@ Please report security bugs found in the source code of the WP Recipe Maker plug
 For earlier versions, please refer to [our full changelog](https://help.bootstrapped.ventures/article/124-wp-recipe-maker-changelog).
 
 == Upgrade notice ==
+= 10.8.2 =
+Improvements, security hardening and bug fixes
+
 = 10.8.1 =
 Some small fixes and improvements
 

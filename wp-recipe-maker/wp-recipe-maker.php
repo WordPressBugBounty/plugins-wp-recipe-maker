@@ -15,7 +15,7 @@
  * Plugin Name:       WP Recipe Maker
  * Plugin URI:        https://bootstrapped.ventures/wp-recipe-maker/
  * Description:       The easy and user-friendly recipe plugin for everyone. Automatic JSON-LD metadata for better SEO will get you more visitors!
- * Version:           10.8.1
+ * Version:           10.8.2
  * Author:            Bootstrapped Ventures
  * Author URI:        https://bootstrapped.ventures/
  * License:           GPL-2.0+
@@ -38,17 +38,7 @@ function activate_wp_recipe_maker() {
 	WPRM_Activator::activate();
 }
 
-/**
- * The code that runs during plugin deactivation.
- * This action is documented in includes/class-wprm-deactivator.php
- */
-function deactivate_wp_recipe_maker() {
-	require_once plugin_dir_path( __FILE__ ) . 'includes/class-wprm-deactivator.php';
-	WPRM_Deactivator::deactivate();
-}
-
 register_activation_hook( __FILE__, 'activate_wp_recipe_maker' );
-register_deactivation_hook( __FILE__, 'deactivate_wp_recipe_maker' );
 
 /**
  * The core plugin class that is used to define internationalization,

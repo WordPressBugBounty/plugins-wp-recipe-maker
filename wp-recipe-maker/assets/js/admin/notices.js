@@ -25,14 +25,14 @@
                                 // Add our event listener to the dismiss button
                                 node.addEventListener("click", function(e) {
                                     var noticeId = notice.getAttribute("data-notice-id");
-                                    var userId = notice.getAttribute("data-user-id");
                                     
                                     if (noticeId) {
                                         // REST API call to dismiss notice
                                         var xhr = new XMLHttpRequest();
                                         xhr.open("DELETE", wprm_admin.endpoints.notices, true);
                                         xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-                                        xhr.send("id=" + encodeURIComponent(noticeId) + "&user_id=" + encodeURIComponent(userId));
+                                        xhr.setRequestHeader("X-WP-Nonce", wprm_admin.api_nonce);
+                                        xhr.send("id=" + encodeURIComponent(noticeId));
                                     }
                                 });
                                 

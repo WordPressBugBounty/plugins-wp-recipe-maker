@@ -1492,6 +1492,7 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 	 */
 	private static function instruction_ingredients( $recipe, $instruction, $atts ) {
 		$output = '';
+		$show_connector = (bool) WPRM_Settings::get( 'ingredient_unit_connectors_in_associated_ingredients' );
 
 		if ( isset( $instruction['ingredients'] ) && $instruction['ingredients'] ) {
 			$ingredients_to_output = array();
@@ -1702,7 +1703,13 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 								}
 							}
 							}
-							$text_to_show = WPRM_Ingredient_Display::join_amount_unit_and_name_html( $amount_unit, $name_with_notes, $found_ingredient, intval( $recipe->unit_system() ) );
+							$text_to_show = WPRM_Ingredient_Display::join_amount_unit_and_name_html(
+								$amount_unit,
+								$name_with_notes,
+								$found_ingredient,
+								intval( $recipe->unit_system() ),
+								array( 'show_connector' => $show_connector )
+							);
 
 							if ( $text_to_show ) {
 								$ingredients_to_output[ $output_key ] = $text_to_show;
@@ -1794,7 +1801,8 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 						}
 
 						// Output.
-						$output .= '<' . $tag . ' class="'. esc_attr( implode( ' ', $classes ) ) . '" data-separator="' . esc_attr( $separator ) . '"' . $data_keep_notes . $both_units_data_attr . $split_data_attr . $style . '>';
+						$show_connector_data_attr = ' data-show-connector="' . ( $show_connector ? '1' : '0' ) . '"';
+						$output .= '<' . $tag . ' class="'. esc_attr( implode( ' ', $classes ) ) . '" data-separator="' . esc_attr( $separator ) . '"' . $data_keep_notes . $both_units_data_attr . $show_connector_data_attr . $split_data_attr . $style . '>';
 						$output .= wp_kses_post( $text );
 						$output .= $separator;
 

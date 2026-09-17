@@ -125,6 +125,13 @@ const RichEditor = React.memo((props) => {
             }
             <Toolbar
                 type={ props.toolbar ? props.toolbar : 'all' }
+                language={ props.suggestionLanguage }
+                onSelectSuggestion={ (suggestion) => {
+                    if ( debounceRef.current ) {
+                        clearTimeout( debounceRef.current );
+                    }
+                    flushChange({ suggestion, historyBoundary: true });
+                } }
                 isMarkActive={ isMarkActive }
                 toggleMark={ toggleMark }
             />
@@ -245,6 +252,7 @@ const RichEditor = React.memo((props) => {
     // Re-render when text or callbacks change, or inline ingredients portal becomes available.
     return prevProps.value === nextProps.value
         && prevProps.onChange === nextProps.onChange
+        && prevProps.suggestionLanguage === nextProps.suggestionLanguage
         && prevProps.inlineIngredientsPortalRendered === nextProps.inlineIngredientsPortalRendered
         && prevProps.allIngredients === nextProps.allIngredients;
 });

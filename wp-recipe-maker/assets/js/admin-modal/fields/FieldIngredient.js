@@ -12,6 +12,12 @@ import Tooltip from 'Shared/Tooltip';
 import { __wprm } from 'Shared/Translations';
 
 import FieldRichText from './FieldRichText';
+import {
+    getIngredientUnitCacheKey,
+    getIngredientUnitConnectorCache,
+    loadIngredientUnitConnector,
+    setIngredientUnitConnectorCache,
+} from '../recipe/ingredient-unit';
 
 const connectorSpacingOptions = [
     { value: 'space-both', label: __wprm( 'Space before and after' ) },
@@ -190,6 +196,7 @@ const ingredient = (props, provided) => {
                     <FieldRichText
                         singleLine
                         toolbar="ingredient"
+                        suggestionLanguage={ props.recipeLanguage }
                         className="wprm-admin-modal-field-ingredient-name"
                         value={ props.name }
                         placeholder={ 'howto' === props.recipeType ? __wprm( 'paper' ) : __wprm( 'olive oil' ) }
@@ -197,6 +204,10 @@ const ingredient = (props, provided) => {
                             props.onChangeIngredient({
                                 name,
                                 globalLink: false, // Changing names will lead to a different global link.
+                                ...( changeOptions.suggestion ? {
+                                    id: changeOptions.suggestion.id,
+                                    selection_token: changeOptions.suggestion.selection_token,
+                                } : {} ),
                             }, changeOptions);
                     }}
                     />
@@ -274,13 +285,11 @@ export default class FieldIngredient extends Component {
     }
 
     getConnectorCache() {
-        window.wprm_admin_modal_ingredient_unit_connectors = window.wprm_admin_modal_ingredient_unit_connectors || {};
-
-        return window.wprm_admin_modal_ingredient_unit_connectors;
+        return getIngredientUnitConnectorCache();
     }
 
     getConnectorCacheKey(unit) {
-        return unit.toLowerCase();
+        return getIngredientUnitCacheKey( unit );
     }
 
     getCurrentUnit() {
@@ -309,6 +318,7 @@ export default class FieldIngredient extends Component {
 
     maybeLoadConnectorData() {
         const unit = this.getCurrentUnit();
+        const requestId = ++this.connectorRequestId;
 
         if ( ! this.shouldLoadConnectorData() ) {
             this.setState({
@@ -335,21 +345,15 @@ export default class FieldIngredient extends Component {
             return;
         }
 
-        const requestId = ++this.connectorRequestId;
-
         this.setState({
             connectorLoading: true,
             connectorUnit: unit,
         });
 
-        Api.modal.getIngredientUnitConnector( unit ).then((data) => {
+        loadIngredientUnitConnector( unit, ( requestUnit ) => Api.modal.getIngredientUnitConnector( requestUnit ) ).then((connectorData) => {
             if ( requestId !== this.connectorRequestId ) {
                 return;
             }
-
-            const connectorData = data && data.found ? data : false;
-
-            cache[ cacheKey ] = connectorData;
 
             this.setState({
                 connectorData,
@@ -392,14 +396,16 @@ export default class FieldIngredient extends Component {
                 connector_pluralizes_ingredient: !! data.connector_pluralizes_ingredient,
             };
 
-            this.setState({
-                connectorData: {
-                    ...data,
-                    ...connectorData,
-                },
-                connectorLoading: false,
-                connectorUnit: unit,
-            });
+            if ( unit === this.getCurrentUnit() ) {
+                this.setState({
+                    connectorData: {
+                        ...data,
+                        ...connectorData,
+                    },
+                    connectorLoading: false,
+                    connectorUnit: unit,
+                });
+            }
 
             this.props.openSecondaryModal( 'input-fields', {
                 header: `${ __wprm( 'Change Connector' ) }: ${ data.name || unit }`,
@@ -430,21 +436,21 @@ export default class FieldIngredient extends Component {
                     };
 
                     Api.manage.updateTaxonomyMeta( 'ingredient_unit', data.term_id, updatedConnectorData ).then(() => {
-                        const cache = this.getConnectorCache();
-                        const cacheKey = this.getConnectorCacheKey( unit );
                         const updatedData = {
                             ...data,
                             ...updatedConnectorData,
                             found: true,
                         };
 
-                        cache[ cacheKey ] = updatedData;
+                        setIngredientUnitConnectorCache( unit, updatedData );
 
-                        this.setState({
-                            connectorData: updatedData,
-                            connectorLoading: false,
-                            connectorUnit: unit,
-                        });
+                        if ( unit === this.getCurrentUnit() ) {
+                            this.setState({
+                                connectorData: updatedData,
+                                connectorLoading: false,
+                                connectorUnit: unit,
+                            });
+                        }
                     });
                 },
             } );

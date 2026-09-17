@@ -10,6 +10,9 @@ import {
 import '../../../css/admin/onboarding/accordion.scss';
 
 const SimpleAccordion = (props) => {
+    const itemIds = props.items.map( ( item, index ) => item.id || index );
+    const preExpanded = itemIds.includes( props.preExpanded ) ? [ props.preExpanded ] : [];
+
     return (
         <div className="wprm-admin-onboarding-accordion-container">
             {
@@ -22,10 +25,14 @@ const SimpleAccordion = (props) => {
             <Accordion
                 className="wprm-admin-onboarding-accordion"
                 allowZeroExpanded={ true }
+                preExpanded={ preExpanded }
             >
                 {
                     props.items.map((item, index) => (
-                        <AccordionItem key={ index }>
+                        <AccordionItem
+                            key={ item.id || index }
+                            uuid={ item.id || index }
+                        >
                             <AccordionItemHeading>
                                 <AccordionItemButton>
                                     { item.header }

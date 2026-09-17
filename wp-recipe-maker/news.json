@@ -1,6 +1,12 @@
 {
     "news": [
         {
+            "date": "2026-09-15",
+            "label": "Blog",
+            "title": "WordPress vs Squarespace - Which Is Better for Blogging?",
+            "url": "https://bootstrapped.ventures/wordpress-vs-squarespace-for-blogging/"
+        },
+        {
             "date": "2026-09-01",
             "label": "Blog",
             "title": "The Modern Nonna Case Study",

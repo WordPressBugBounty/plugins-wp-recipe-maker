@@ -768,6 +768,9 @@ class WPRM_Api_Manage_Taxonomies {
 				foreach ( $recipe_ids as $recipe_id ) {
 					if ( 'wprm_ingredient' === $old_term->taxonomy ) {
 						$recipe = WPRM_Recipe_Manager::get_recipe( $recipe_id );
+						if ( ! $recipe ) {
+							continue;
+						}
 		
 						$new_ingredients = array();
 						foreach ( $recipe->ingredients() as $ingredient_group ) {
@@ -805,6 +808,9 @@ class WPRM_Api_Manage_Taxonomies {
 						update_post_meta( $recipe->id(), 'wprm_ingredients', $new_ingredients );
 					} else if ( 'wprm_ingredient_unit' === $old_term->taxonomy ) {
 						$recipe = WPRM_Recipe_Manager::get_recipe( $recipe_id );
+						if ( ! $recipe ) {
+							continue;
+						}
 		
 						$new_ingredients = array();
 						foreach ( $recipe->ingredients() as $ingredient_group ) {
@@ -863,6 +869,9 @@ class WPRM_Api_Manage_Taxonomies {
 						update_post_meta( $recipe->id(), 'wprm_ingredients', $new_ingredients );
 					} else if ( 'wprm_equipment' === $old_term->taxonomy ) {
 						$recipe = WPRM_Recipe_Manager::get_recipe( $recipe_id );
+						if ( ! $recipe ) {
+							continue;
+						}
 		
 						$new_equipment = array();
 						foreach ( $recipe->equipment() as $equipment ) {

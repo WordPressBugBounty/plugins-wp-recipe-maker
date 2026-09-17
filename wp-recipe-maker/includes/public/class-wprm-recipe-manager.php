@@ -747,17 +747,24 @@ class WPRM_Recipe_Manager {
 			$recipe_id = is_object( $post_or_recipe_id ) && $post_or_recipe_id instanceof WP_Post ? $post_or_recipe_id->ID : intval( $post_or_recipe_id );
 		}
 
+		// Check the stored post on every access, including cache hits and WP_Post inputs.
+		if ( $recipe_id <= 0 ) {
+			return false;
+		}
+		$post = get_post( $recipe_id );
+		if ( ! $post instanceof WP_Post || WPRM_POST_TYPE !== $post->post_type ) {
+			return false;
+		}
+
+		// Recipes are embedded publicly even when their post type is not public.
+		$status = get_post_status_object( get_post_status( $post ) );
+		if ( ( ! $status || ! $status->public ) && ! current_user_can( 'read_post', $recipe_id ) ) {
+			return false;
+		}
+
 		// Only get new recipe object if it hasn't been retrieved before.
 		if ( ! array_key_exists( $recipe_id, self::$recipes ) ) {
-			$post = is_object( $post_or_recipe_id ) && $post_or_recipe_id instanceof WP_Post ? $post_or_recipe_id : get_post( intval( $post_or_recipe_id ) );
-
-			if ( $post instanceof WP_Post && WPRM_POST_TYPE === $post->post_type ) {
-				$recipe = new WPRM_Recipe( $post );
-			} else {
-				$recipe = false;
-			}
-
-			self::$recipes[ $recipe_id ] = $recipe;
+			self::$recipes[ $recipe_id ] = new WPRM_Recipe( $post );
 		}
 
 		return self::$recipes[ $recipe_id ];

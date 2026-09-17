@@ -144,6 +144,9 @@ class WPRM_Api_Ingredient_Units {
 			$posts = $query->posts;
 			foreach ( $posts as $post ) {
 				$recipe = WPRM_Recipe_Manager::get_recipe( $post );
+				if ( ! $recipe ) {
+					continue;
+				}
 	
 				$new_ingredients = array();
 				foreach ( $recipe->ingredients() as $ingredient_group ) {

@@ -97,9 +97,12 @@ class WPRM_Api_Modal {
 				break;
 		}
 
+		$language = ! empty( $params['language'] ) ? sanitize_key( $params['language'] ) : '';
+
 		// Regular search.
 		$args = array(
 			'taxonomy' => $taxonomy,
+			'lang' => 'wprm_ingredient' === $taxonomy && $language ? $language : null,
 			'hide_empty' => false,
 			'number' => 10,
 			'offset' => 0,
@@ -119,6 +122,7 @@ class WPRM_Api_Modal {
 
 			$args = array(
 				'taxonomy' => $taxonomy,
+				'lang' => 'wprm_ingredient' === $taxonomy && $language ? $language : null,
 				'hide_empty' => false,
 				'number' => 10,
 				'offset' => 0,
@@ -142,7 +146,8 @@ class WPRM_Api_Modal {
 					$plural = get_term_meta( $plural_term->term_id, $plural_key, true );
 
 					if ( $plural ) {
-						$suggestions[ $plural ] = array(
+						$suggestions[ 'wprm_ingredient' === $taxonomy ? $plural_term->term_id . ':' . $plural : $plural ] = array(
+							'id' => (int) $plural_term->term_id,
 							'name' => $plural,
 							'count' => $plural_term->count,
 						);
@@ -161,6 +166,7 @@ class WPRM_Api_Modal {
 				foreach ( $alias_keys as $alias_key ) {
 					$args = array(
 						'taxonomy' => $taxonomy,
+						'lang' => 'wprm_ingredient' === $taxonomy && $language ? $language : null,
 						'hide_empty' => false,
 						'number' => 10,
 						'offset' => 0,
@@ -183,8 +189,9 @@ class WPRM_Api_Modal {
 						foreach ( $alias_terms as $alias_term ) {
 							$alias = get_term_meta( $alias_term->term_id, $alias_key, true );
 
-							if ( $alias && ! array_key_exists( $alias, $suggestions ) ) {
-								$suggestions[ $alias ] = array(
+							if ( $alias && ! array_key_exists( $alias_term->term_id . ':' . $alias, $suggestions ) ) {
+								$suggestions[ $alias_term->term_id . ':' . $alias ] = array(
+									'id' => (int) $alias_term->term_id,
 									'name' => $alias,
 									'count' => $alias_term->count,
 								);
@@ -198,8 +205,10 @@ class WPRM_Api_Modal {
 		// Get suggestions from terms.
 		if ( $terms && is_array( $terms ) ) {
 			foreach ( $terms as $term ) {
-				if ( ! array_key_exists( $term->name, $suggestions ) ) {
-					$suggestions[ $term->name ] = array(
+				$key = 'wprm_ingredient' === $taxonomy ? $term->term_id . ':' . $term->name : $term->name;
+				if ( ! array_key_exists( $key, $suggestions ) ) {
+					$suggestions[ $key ] = array(
+						'id' => (int) $term->term_id,
 						'name' => $term->name,
 						'count' => $term->count,
 					);
@@ -216,6 +225,13 @@ class WPRM_Api_Modal {
 			}
 			return $a['count'] > $b['count'] ? -1 : 1;
 		} );
+
+		if ( 'wprm_ingredient' === $taxonomy ) {
+			foreach ( $suggestions as &$suggestion ) {
+				$suggestion['selection_token'] = wp_create_nonce( 'wprm_ingredient_selection_' . $suggestion['id'] );
+			}
+			unset( $suggestion );
+		}
 
 		$data = array(
 			'suggestions' => array_slice( $suggestions, 0, 10 ),
@@ -342,6 +358,17 @@ class WPRM_Api_Modal {
 		return is_numeric( $term ) ? intval( $term ) : 0;
 	}
 
+	/** Add editor-only language details without modifying the cached term objects. */
+	public static function category_editor_terms( $terms ) {
+		return array_map( function( $term ) {
+			$data = (array) $term;
+			if ( function_exists( 'pll_get_term_language' ) ) {
+				$data['language'] = pll_get_term_language( $term->term_id, 'slug' );
+			}
+			return $data;
+		}, array_values( (array) $terms ) );
+	}
+
 	/**
 	 * Handle categories call to the REST API.
 	 *
@@ -390,6 +417,7 @@ class WPRM_Api_Modal {
 		if ( ! empty( $term_ids ) ) {
 			$args = array(
 				'taxonomy' => $taxonomy,
+				'lang' => '',
 				'include' => $term_ids,
 				'hide_empty' => false,
 				'count' => true,
@@ -409,6 +437,7 @@ class WPRM_Api_Modal {
 		if ( $search ) {
 			$args = array(
 				'taxonomy' => $taxonomy,
+				'lang' => '',
 				'hide_empty' => false,
 				'number' => 50, // Limit results to prevent large queries.
 				'count' => true,
@@ -431,7 +460,7 @@ class WPRM_Api_Modal {
 		}
 
 		// Convert to array format expected by frontend.
-		$terms_array = array_values( $terms );
+		$terms_array = self::category_editor_terms( $terms );
 
 		$data = array(
 			'terms' => $terms_array,

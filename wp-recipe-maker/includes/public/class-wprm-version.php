@@ -36,7 +36,8 @@ class WPRM_Version {
 	public static function convert_to_number( $version = WPRM_VERSION ) {
 		$number = 0;
 
-		$version_split = explode( '.', $version );
+		// Recipe migration metadata uses major.minor.patch; extra build components must not shift its scale.
+		$version_split = array_slice( explode( '.', $version ), 0, 3 );
 
 		$multiplier = count( $version_split ) - 1;
 		foreach ( $version_split as $split ) {

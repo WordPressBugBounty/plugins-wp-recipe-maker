@@ -42,4 +42,16 @@ hooks.addFilter( 'api', 'wp-recipe-maker/ingredient-unit-connector-api', ( api )
 	return api;
 } );
 
+// Apply this in the shared bundle so older Premium bundles use the same metadata route.
+hooks.addFilter( 'api', 'wp-recipe-maker/ingredient-metadata-api', ( api ) => {
+	const updateTaxonomyMeta = api.manage.updateTaxonomyMeta;
+	api.manage.updateTaxonomyMeta = function( type, id, meta ) {
+		if ( 'ingredient' === type ) {
+			return ApiWrapper.call( `${ wprm_admin.endpoints.manage }/ingredient/${ id }/meta`, 'POST', { ingredient: meta } );
+		}
+		return updateTaxonomyMeta.call( this, type, id, meta );
+	};
+	return api;
+} );
+
 export { hooks };

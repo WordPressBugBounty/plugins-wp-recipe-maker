@@ -389,59 +389,6 @@ export default {
             return part;
         });
     },
-    groupMatchesSearch(group, normalizedQuery) {
-        if (!normalizedQuery) {
-            return true;
-        }
-        
-        // Check group name and description
-        if (this.matchesSearch(group.name, normalizedQuery) || 
-            (group.description && this.matchesSearch(group.description, normalizedQuery))) {
-            return true;
-        }
-        
-        // Check subgroups
-        if (group.subGroups) {
-            for (let subgroup of group.subGroups) {
-                if (this.subgroupMatchesSearch(subgroup, normalizedQuery)) {
-                    return true;
-                }
-            }
-        }
-        
-        // Check direct settings
-        if (group.settings) {
-            for (let setting of group.settings) {
-                if (this.settingMatchesSearch(setting, normalizedQuery)) {
-                    return true;
-                }
-            }
-        }
-        
-        return false;
-    },
-    subgroupMatchesSearch(subgroup, normalizedQuery) {
-        if (!normalizedQuery) {
-            return true;
-        }
-        
-        // Check subgroup name and description
-        if ((subgroup.name && this.matchesSearch(subgroup.name, normalizedQuery)) || 
-            (subgroup.description && this.matchesSearch(subgroup.description, normalizedQuery))) {
-            return true;
-        }
-        
-        // Check settings in subgroup
-        if (subgroup.settings) {
-            for (let setting of subgroup.settings) {
-                if (this.settingMatchesSearch(setting, normalizedQuery)) {
-                    return true;
-                }
-            }
-        }
-        
-        return false;
-    },
     settingMatchesSearch(setting, normalizedQuery) {
         if (!normalizedQuery) {
             return true;

@@ -67,7 +67,7 @@ class WPRM_Api_Recipe{
 		WPRM_Recipe_Manager::invalidate_recipe( $object['id'] );
 		$recipe = WPRM_Recipe_Manager::get_recipe( $object['id'] );
 
-		return $recipe->get_data( 'api' );
+		return $recipe ? $recipe->get_data( 'api' ) : array();
 	}
 
 	/**
@@ -106,7 +106,7 @@ class WPRM_Api_Recipe{
 		}
 
 		try {
-			$recipe = WPRM_Recipe_Sanitizer::sanitize( $recipe_data );
+			$recipe = WPRM_Recipe_Sanitizer::sanitize( $recipe_data, ! $creating, true );
 		} finally {
 			if ( $recipe_language ) {
 				WPRM_Compatibility::clear_new_term_language_context();

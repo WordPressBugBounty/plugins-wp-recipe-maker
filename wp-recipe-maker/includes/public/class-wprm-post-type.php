@@ -118,6 +118,9 @@ class WPRM_Post_Type {
 		if ( WPRM_POST_TYPE === $post->post_type ) {
 			if ( 'public' !== WPRM_Settings::get( 'post_type_structure' ) || 'parent' === WPRM_Settings::get( 'post_type_permalink_priority' ) ) {
 				$recipe = WPRM_Recipe_Manager::get_recipe( $post );
+				if ( ! $recipe ) {
+					return $url;
+				}
 				$parent_post_id = intval( $recipe->parent_post_id() );
 
 				if ( $parent_post_id && $parent_post_id !== $post->ID ) { // Prevent infinite loop.

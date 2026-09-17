@@ -933,6 +933,18 @@ export default {
                 Header: __wprm( 'Ingredients' ),
                 id: 'ingredient',
                 accessor: 'ingredients',
+                // Use the same ingredient text for visible and fetched rows; groups are nested API data.
+                exportValue: ( groups ) => ( Array.isArray( groups ) ? groups : [] )
+                    .filter( ( group ) => group )
+                    .map( ( group ) => [
+                        group.name,
+                        ...( Array.isArray( group.ingredients ) ? group.ingredients : [] )
+                            .filter( ( ingredient ) => ingredient )
+                            .map( ( ingredient ) => [ ingredient.amount, ingredient.unit, ingredient.name, ingredient.notes ]
+                                .filter( ( field ) => field ).join( ' ' ) ),
+                    ].map( ( line ) => he.decode( getTextWithoutHtml( line ) ).replace( /\s+/g, ' ' ).trim() )
+                        .filter( ( line ) => line ).join( '; ' ) )
+                    .filter( ( group ) => group ).join( '; ' ),
                 width: 300,
                 sortable: false,
                 Filter: (props) => (<TextFilter {...props}/>),
