@@ -25,7 +25,7 @@ class WPRM_Metadata {
 	 * @access   private
 	 * @var      int METADATA_CACHE_VERSION Version for the recipe metadata cache.
 	 */
-	const METADATA_CACHE_VERSION = 3;
+	const METADATA_CACHE_VERSION = 4;
 
 	/**
 	 * List of recipes we've already outputted the metadata for.
@@ -562,6 +562,54 @@ class WPRM_Metadata {
 	}
 
 	/**
+	 * Expand safe fallback text for inline instruction shortcodes.
+	 *
+	 * This deliberately parses attributes instead of executing shortcode callbacks. All
+	 * remaining shortcode syntax is handled by the recursive metadata sanitizer.
+	 *
+	 * @since    10.8.3
+	 * @param    string $text Instruction text.
+	 */
+	private static function expand_instruction_metadata_shortcodes( $text ) {
+		if ( ! is_string( $text ) || false === strpos( $text, '[wprm-' ) ) {
+			return $text;
+		}
+
+		$pattern = get_shortcode_regex( array( 'wprm-ingredient', 'wprm-temperature' ) );
+		$expanded = preg_replace_callback(
+			"/$pattern/s",
+			function( $matches ) {
+				// Leave escaped shortcode syntax for the metadata sanitizer to strip safely.
+				if ( '[' === $matches[1] && ']' === $matches[6] ) {
+					return $matches[0];
+				}
+
+				$attributes = shortcode_parse_atts( $matches[3] );
+				if ( ! is_array( $attributes ) ) {
+					return '';
+				}
+
+				if ( 'wprm-ingredient' === $matches[2] ) {
+					return isset( $attributes['text'] ) ? $attributes['text'] : '';
+				}
+
+				$value = isset( $attributes['value'] ) ? $attributes['value'] : '';
+				if ( '' === $value ) {
+					return '';
+				}
+
+				$unit = isset( $attributes['unit'] ) ? $attributes['unit'] : WPRM_Settings::get( 'default_temperature_unit' );
+				$unit = strtoupper( sanitize_key( $unit ) );
+
+				return $value . ( in_array( $unit, array( 'C', 'F' ), true ) ? ' °' . $unit : '' );
+			},
+			$text
+		);
+
+		return null === $expanded ? $text : $expanded;
+	}
+
+	/**
 	 * Remove URLs from a video description before including it in the metadata.
 	 *
 	 * @since    10.8.2
@@ -831,7 +879,7 @@ class WPRM_Metadata {
 
 					$metadata_instruction = array(
 						'@type' => 'HowToStep',
-						'text' => wp_strip_all_tags( $instruction['text'] ),
+						'text' => wp_strip_all_tags( self::expand_instruction_metadata_shortcodes( $instruction['text'] ) ),
 					);
 
 					// Handle instruction step name field.
