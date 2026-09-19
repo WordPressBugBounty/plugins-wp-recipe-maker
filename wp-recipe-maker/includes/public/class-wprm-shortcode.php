@@ -708,7 +708,7 @@ class WPRM_Shortcode {
 				$recipe_id = intval( $atts['id'] );
 			}
 
-			$recipe = WPRM_Recipe_Manager::get_recipe( $recipe_id );
+			$recipe = WPRM_Recipe_Manager::get_recipe( $recipe_id, get_the_ID() );
 		}
 
 		if ( $recipe ) {			

@@ -64,8 +64,12 @@ class WPRM_SC_Url extends WPRM_Template_Shortcode {
 		$atts = parent::get_attributes( $atts );
 
 		$recipe = WPRM_Template_Shortcodes::get_recipe( $atts['id'] );
+		if ( ! $recipe ) {
+			return apply_filters( parent::get_hook(), '', $atts, $recipe );
+		}
+
 		$url = $recipe->permalink();
-		if ( ! $recipe || ! $url ) {
+		if ( ! $url ) {
 			return apply_filters( parent::get_hook(), '', $atts, $recipe );
 		}
 

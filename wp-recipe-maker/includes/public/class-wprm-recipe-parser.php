@@ -264,6 +264,86 @@ class WPRM_Recipe_Parser {
 
 		return array_map( 'sanitize_text_field', $units );
 	}
+
+	/**
+	 * Get the singular and plural forms for a standard ingredient unit.
+	 *
+	 * This is used before a unit has necessarily been saved as a taxonomy term,
+	 * such as while editing a new recipe.
+	 *
+	 * @since	10.8.4
+	 * @param	mixed $unit Unit to get the forms for.
+	 */
+	public static function get_ingredient_unit_forms( $unit ) {
+		$forms = array(
+			// Weight.
+			array( 'singular' => __( 'kilogram', 'wp-recipe-maker' ), 'plural' => __( 'kilograms', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'gram', 'wp-recipe-maker' ), 'plural' => __( 'grams', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'milligram', 'wp-recipe-maker' ), 'plural' => __( 'milligrams', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'pound', 'wp-recipe-maker' ), 'plural' => __( 'pounds', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'lb', 'wp-recipe-maker' ), 'plural' => __( 'lbs', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'ounce', 'wp-recipe-maker' ), 'plural' => __( 'ounces', 'wp-recipe-maker' ) ),
+			// Volume.
+			array( 'singular' => __( 'liter', 'wp-recipe-maker' ), 'plural' => __( 'liters', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'deciliter', 'wp-recipe-maker' ), 'plural' => __( 'deciliters', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'centiliter', 'wp-recipe-maker' ), 'plural' => __( 'centiliters', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'milliliter', 'wp-recipe-maker' ), 'plural' => __( 'milliliters', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'gallon', 'wp-recipe-maker' ), 'plural' => __( 'gallons', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'quart', 'wp-recipe-maker' ), 'plural' => __( 'quarts', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'pint', 'wp-recipe-maker' ), 'plural' => __( 'pints', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'cup', 'wp-recipe-maker' ), 'plural' => __( 'cups', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'fluid ounce', 'wp-recipe-maker' ), 'plural' => __( 'fluid ounces', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'fl ounce', 'wp-recipe-maker' ), 'plural' => __( 'fl ounces', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'tablespoon', 'wp-recipe-maker' ), 'plural' => __( 'tablespoons', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'tbsp', 'wp-recipe-maker' ), 'plural' => __( 'tbsps', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'tb', 'wp-recipe-maker' ), 'plural' => __( 'tbs', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'teaspoon', 'wp-recipe-maker' ), 'plural' => __( 'teaspoons', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'tsp', 'wp-recipe-maker' ), 'plural' => __( 'tsps', 'wp-recipe-maker' ) ),
+			// Length.
+			array( 'singular' => __( 'meter', 'wp-recipe-maker' ), 'plural' => __( 'meters', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'centimeter', 'wp-recipe-maker' ), 'plural' => __( 'centimeters', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'millimeter', 'wp-recipe-maker' ), 'plural' => __( 'millimeters', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'yard', 'wp-recipe-maker' ), 'plural' => __( 'yards', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'foot', 'wp-recipe-maker' ), 'plural' => __( 'feet', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'inch', 'wp-recipe-maker' ), 'plural' => __( 'inches', 'wp-recipe-maker' ) ),
+			// General.
+			array( 'singular' => __( 'clove', 'wp-recipe-maker' ), 'plural' => __( 'cloves', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'slice', 'wp-recipe-maker' ), 'plural' => __( 'slices', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'piece', 'wp-recipe-maker' ), 'plural' => __( 'pieces', 'wp-recipe-maker' ) ),
+			array( 'singular' => __( 'pinch', 'wp-recipe-maker' ), 'plural' => __( 'pinches', 'wp-recipe-maker' ) ),
+		);
+
+		$forms = apply_filters( 'wprm_ingredient_unit_forms', $forms );
+		$unit = sanitize_text_field( $unit );
+
+		if ( ! $unit ) {
+			return false;
+		}
+
+		$normalize = function( $value ) {
+			$value = sanitize_text_field( $value );
+			return function_exists( 'mb_strtolower' ) ? mb_strtolower( $value, 'UTF-8' ) : strtolower( $value );
+		};
+		$normalized_unit = $normalize( $unit );
+
+		foreach ( $forms as $form ) {
+			if ( ! is_array( $form ) ) {
+				continue;
+			}
+
+			$singular = isset( $form['singular'] ) ? sanitize_text_field( $form['singular'] ) : '';
+			$plural = isset( $form['plural'] ) ? sanitize_text_field( $form['plural'] ) : '';
+
+			if ( $singular && $plural && in_array( $normalized_unit, array( $normalize( $singular ), $normalize( $plural ) ), true ) ) {
+				return array(
+					'singular' => $singular,
+					'plural' => $plural,
+				);
+			}
+		}
+
+		return false;
+	}
 	
 	/**
 	 * Parse ingredient amount.

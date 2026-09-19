@@ -789,7 +789,7 @@ class WPRM_Print {
 	 * @param	mixed $recipe Recipe to print.
 	 */
 	public static function has_permission( $recipe ) {
-		if ( ! self::has_access() ) {
+		if ( ! $recipe || ! self::has_access() ) {
 			return false;
 		}
 

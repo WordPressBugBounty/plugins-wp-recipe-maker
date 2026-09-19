@@ -164,10 +164,16 @@ class WPRM_MetadataVideo {
 		$queued = false;
 		$dispatch = false;
 		$now = time();
+		$refresh_user_id = get_current_user_id();
 		$signature = self::get_refresh_signature( $recipe );
 		$state = self::get_refresh_state( $recipe_id );
 
 		if ( $state && isset( $state['signature'] ) && hash_equals( (string) $state['signature'], $signature ) ) {
+			if ( $refresh_user_id && user_can( $refresh_user_id, 'read_post', $recipe_id ) && $refresh_user_id !== ( isset( $state['user_id'] ) ? intval( $state['user_id'] ) : 0 ) ) {
+				$state['user_id'] = $refresh_user_id;
+				update_post_meta( $recipe_id, self::REFRESH_STATE_META, $state );
+			}
+
 			$status = isset( $state['status'] ) ? $state['status'] : '';
 			$next_attempt = isset( $state['next_attempt'] ) ? intval( $state['next_attempt'] ) : 0;
 			$last_dispatch = isset( $state['last_dispatch'] ) ? intval( $state['last_dispatch'] ) : 0;
@@ -215,6 +221,7 @@ class WPRM_MetadataVideo {
 		$attempts = $state && isset( $state['signature'], $state['attempts'] ) && hash_equals( (string) $state['signature'], $signature ) ? intval( $state['attempts'] ) : 0;
 		$new_state = array(
 			'signature' => $signature,
+			'user_id' => $refresh_user_id && user_can( $refresh_user_id, 'read_post', $recipe_id ) ? $refresh_user_id : 0,
 			'status' => 'queued',
 			'attempts' => $attempts,
 			'queued_at' => $now,
@@ -251,7 +258,7 @@ class WPRM_MetadataVideo {
 	 * @param string $signature Signature of the queued video inputs.
 	 */
 	public static function retry_refresh( $recipe_id, $signature ) {
-		$recipe = self::get_fresh_recipe( $recipe_id );
+		$recipe = self::get_fresh_recipe( $recipe_id, $signature );
 		if ( ! $recipe || ! hash_equals( (string) $signature, self::get_refresh_signature( $recipe ) ) ) {
 			return;
 		}
@@ -272,7 +279,7 @@ class WPRM_MetadataVideo {
 	public static function process_refresh( $recipe_id, $signature ) {
 		$recipe_id = intval( $recipe_id );
 		$signature = (string) $signature;
-		$recipe = self::get_fresh_recipe( $recipe_id );
+		$recipe = self::get_fresh_recipe( $recipe_id, $signature );
 
 		if ( ! $recipe ) {
 			delete_post_meta( $recipe_id, self::REFRESH_STATE_META );
@@ -307,7 +314,7 @@ class WPRM_MetadataVideo {
 			return self::record_refresh_failure( $recipe_id, $signature );
 		}
 
-		$current_recipe = self::get_fresh_recipe( $recipe_id );
+		$current_recipe = self::get_fresh_recipe( $recipe_id, $signature );
 		if ( ! $current_recipe || ! hash_equals( $signature, self::get_refresh_signature( $current_recipe ) ) ) {
 			self::clear_matching_state( $recipe_id, $signature );
 			return 'stale';
@@ -320,7 +327,7 @@ class WPRM_MetadataVideo {
 		// Preserve the existing Mediavine duplicate-JSON-LD protection, but only after
 		// confirming that the recipe still has the video inputs used by this job.
 		if ( self::maybe_disable_mediavine_jsonld( $current_recipe, $metadata ) ) {
-			$current_recipe = self::get_fresh_recipe( $recipe_id );
+			$current_recipe = self::get_fresh_recipe( $recipe_id, $signature );
 			if ( ! $current_recipe ) {
 				self::clear_matching_state( $recipe_id, $signature );
 				return 'stale';
@@ -338,7 +345,7 @@ class WPRM_MetadataVideo {
 			return 'locked';
 		}
 
-		$current_recipe = self::get_fresh_recipe( $recipe_id );
+		$current_recipe = self::get_fresh_recipe( $recipe_id, $signature );
 		if ( ! $current_recipe || ! hash_equals( $signature, self::get_refresh_signature( $current_recipe ) ) ) {
 			$state = self::get_refresh_state( $recipe_id );
 			if ( $state && isset( $state['signature'] ) && hash_equals( (string) $state['signature'], $signature ) ) {
@@ -799,16 +806,36 @@ class WPRM_MetadataVideo {
 	 * Get a recipe after invalidating the request-local recipe cache.
 	 *
 	 * @since 10.9.0
-	 * @param int $recipe_id Recipe ID.
+	 * @param int    $recipe_id Recipe ID.
+	 * @param string $signature Refresh signature used to authorize stored user context.
 	 * @return object|false Recipe object.
 	 */
-	private static function get_fresh_recipe( $recipe_id ) {
+	private static function get_fresh_recipe( $recipe_id, $signature ) {
 		if ( ! class_exists( 'WPRM_Recipe_Manager' ) ) {
 			return false;
 		}
 
-		WPRM_Recipe_Manager::invalidate_recipe( intval( $recipe_id ) );
-		return WPRM_Recipe_Manager::get_recipe( intval( $recipe_id ) );
+		$recipe_id = intval( $recipe_id );
+		WPRM_Recipe_Manager::invalidate_recipe( $recipe_id );
+		$recipe = WPRM_Recipe_Manager::get_recipe( $recipe_id );
+		if ( $recipe ) {
+			return $recipe;
+		}
+
+		$state = self::get_refresh_state( $recipe_id );
+		$user_id = $state && isset( $state['user_id'] ) ? intval( $state['user_id'] ) : 0;
+		if ( ! $user_id || ! isset( $state['signature'] ) || ! hash_equals( (string) $state['signature'], (string) $signature ) || ! user_can( $user_id, 'read_post', $recipe_id ) ) {
+			return false;
+		}
+
+		$original_user_id = get_current_user_id();
+		wp_set_current_user( $user_id );
+		try {
+			WPRM_Recipe_Manager::invalidate_recipe( $recipe_id );
+			return WPRM_Recipe_Manager::get_recipe( $recipe_id );
+		} finally {
+			wp_set_current_user( $original_user_id );
+		}
 	}
 
 	/**

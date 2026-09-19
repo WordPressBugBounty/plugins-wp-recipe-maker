@@ -52,7 +52,8 @@ export function loadIngredientUnitConnector( unit, loader ) {
     const request = Promise.resolve()
         .then(() => loader( unit ))
         .then((data) => {
-            const connectorData = data && data.found ? data : false;
+            const hasUnitForms = data && data.singular && data.plural;
+            const connectorData = data && ( data.found || hasUnitForms ) ? data : false;
 
             // ApiWrapper resolves HTTP errors to false. Only cache valid API
             // responses, including a successful lookup with found: false.

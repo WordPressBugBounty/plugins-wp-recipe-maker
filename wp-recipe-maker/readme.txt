@@ -5,7 +5,7 @@ Tags: recipe, recipes, food, cooking, schema
 Requires at least: 4.4
 Tested up to: 7.1
 Requires PHP: 7.2
-Stable tag: 10.8.3
+Stable tag: 10.8.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -141,6 +141,11 @@ Please report security bugs found in the source code of the WP Recipe Maker plug
 7. Our Template Editor allows you to completely customize the look and feel.
 
 == Changelog ==
+= 10.8.4 =
+* Fix: Display of unpublished recipes inside of published posts
+* Fix: Error when trying to print unpublished recipe
+* Fix: Singularize split ingredient units
+
 = 10.8.3 =
 * Fix: Inline ingredients display in recipe metadata
 
@@ -624,6 +629,9 @@ Please report security bugs found in the source code of the WP Recipe Maker plug
 For earlier versions, please refer to [our full changelog](https://help.bootstrapped.ventures/article/124-wp-recipe-maker-changelog).
 
 == Upgrade notice ==
+= 10.8.4 =
+Update to prevent unpublished recipe card issues
+
 = 10.8.3 =
 Prevent metadata issue when using inline ingredients
 

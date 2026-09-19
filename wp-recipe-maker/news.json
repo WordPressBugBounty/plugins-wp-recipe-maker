@@ -1,6 +1,12 @@
 {
     "news": [
         {
+            "date": "2026-09-17",
+            "label": "Blog",
+            "title": "Top Food Bloggers With Recipes You Can Trust",
+            "url": "https://bootstrapped.ventures/top-food-bloggers/"
+        },
+        {
             "date": "2026-09-15",
             "label": "Blog",
             "title": "WordPress vs Squarespace - Which Is Better for Blogging?",

@@ -737,8 +737,9 @@ class WPRM_Recipe_Manager {
 	 *
 	 * @since    1.0.0
 	 * @param		 mixed $post_or_recipe_id ID or Post Object for the recipe we want.
+	 * @param		 int   $public_post_id Optional public post that embeds this recipe.
 	 */
-	public static function get_recipe( $post_or_recipe_id ) {
+	public static function get_recipe( $post_or_recipe_id, $public_post_id = 0 ) {
 		if ( 'demo' === $post_or_recipe_id ) {
 			return self::get_demo_recipe();
 		} elseif ( 'feature-explorer' === $post_or_recipe_id ) {
@@ -759,7 +760,14 @@ class WPRM_Recipe_Manager {
 		// Recipes are embedded publicly even when their post type is not public.
 		$status = get_post_status_object( get_post_status( $post ) );
 		if ( ( ! $status || ! $status->public ) && ! current_user_can( 'read_post', $recipe_id ) ) {
-			return false;
+			$public_post_id = intval( $public_post_id );
+			if ( ! $public_post_id ) {
+				$public_post_id = intval( get_post_meta( $recipe_id, 'wprm_parent_post_id', true ) );
+			}
+
+			if ( ! self::is_public_recipe_context( $recipe_id, $public_post_id ) ) {
+				return false;
+			}
 		}
 
 		// Only get new recipe object if it hasn't been retrieved before.
@@ -768,6 +776,35 @@ class WPRM_Recipe_Manager {
 		}
 
 		return self::$recipes[ $recipe_id ];
+	}
+
+	/**
+	 * Check if a recipe is being accessed in a public post context.
+	 *
+	 * A recipe status can get out of sync with its parent post. In that case the
+	 * public rendering context or stored parent is authoritative.
+	 *
+	 * @since    10.8.4
+	 * @param	 int $recipe_id Recipe ID.
+	 * @param	 int $post_id Post that is rendering the recipe.
+	 */
+	private static function is_public_recipe_context( $recipe_id, $post_id ) {
+		$post_id = intval( $post_id );
+		if ( $post_id <= 0 || $post_id === intval( $recipe_id ) ) {
+			return false;
+		}
+
+		$post = get_post( $post_id );
+		if ( ! $post instanceof WP_Post ) {
+			return false;
+		}
+
+		$status = get_post_status_object( get_post_status( $post ) );
+		if ( ! $status || ! $status->public || post_password_required( $post ) ) {
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
