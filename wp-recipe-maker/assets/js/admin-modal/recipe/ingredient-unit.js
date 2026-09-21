@@ -100,3 +100,70 @@ export function getIngredientUnitForAmount( ingredient = {}, amount = 0, system 
 
     return amount <= 1 ? singular : plural;
 }
+
+export function getIngredientNameForAmount( ingredient = {}, amount = 0, system = false ) {
+    const defaultName = ingredient && ingredient.name ? ingredient.name : '';
+
+    if ( ! defaultName || ! amount || isNaN( amount ) || amount <= 0 ) {
+        return defaultName;
+    }
+
+    const values = false !== system
+        && ingredient.converted
+        && ingredient.converted[ system ]
+        ? ingredient.converted[ system ]
+        : ingredient;
+    const unit = values && values.unit ? values.unit : '';
+    const cacheKey = getIngredientUnitCacheKey( unit );
+    const hasCached = unit
+        && 'undefined' !== typeof window
+        && window.wprm_admin_modal_ingredient_unit_connectors
+        && window.wprm_admin_modal_ingredient_unit_connectors.hasOwnProperty( cacheKey );
+    const cached = hasCached ? window.wprm_admin_modal_ingredient_unit_connectors[ cacheKey ] : false;
+    const connector = hasCached
+        ? cached && cached.connector ? cached.connector : ''
+        : values && values.unit_connector ? values.unit_connector : '';
+    const connectorPluralizesIngredient = hasCached
+        ? !! ( cached && cached.connector_pluralizes_ingredient )
+        : values && values.unit_connector ? !! values.unit_connector_pluralizes_ingredient : true;
+
+    if ( connector && ! connectorPluralizesIngredient ) {
+        return defaultName;
+    }
+
+    const forms = [];
+    if ( ingredient.name_singular && ingredient.name_plural ) {
+        forms.push( {
+            singular: ingredient.name_singular,
+            plural: ingredient.name_plural,
+        } );
+    }
+
+    if ( ingredient.unit_system_names && 'object' === typeof ingredient.unit_system_names ) {
+        const systems = false !== system
+            ? [ `${ system }` ]
+            : Object.keys( ingredient.unit_system_names );
+
+        for ( const nameSystem of systems ) {
+            const systemNames = ingredient.unit_system_names[ nameSystem ];
+            if ( systemNames && systemNames.singular && systemNames.plural ) {
+                forms.push( {
+                    singular: systemNames.singular,
+                    plural: systemNames.plural,
+                } );
+            }
+        }
+    }
+
+    const normalizedName = getIngredientUnitCacheKey( defaultName );
+    const matchingForms = forms.find((nameForms) => (
+        normalizedName === getIngredientUnitCacheKey( nameForms.singular )
+        || normalizedName === getIngredientUnitCacheKey( nameForms.plural )
+    ));
+
+    if ( ! matchingForms ) {
+        return defaultName;
+    }
+
+    return amount <= 1 ? matchingForms.singular : matchingForms.plural;
+}

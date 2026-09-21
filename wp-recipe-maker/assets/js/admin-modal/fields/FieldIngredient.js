@@ -207,6 +207,8 @@ const ingredient = (props, provided) => {
                                 ...( changeOptions.suggestion ? {
                                     id: changeOptions.suggestion.id,
                                     selection_token: changeOptions.suggestion.selection_token,
+                                    name_singular: changeOptions.suggestion.name_singular || '',
+                                    name_plural: changeOptions.suggestion.name_plural || '',
                                 } : {} ),
                             }, changeOptions);
                     }}

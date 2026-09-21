@@ -40,6 +40,15 @@
 
 		<div class="wprm-tools-panel">
 			<span class="wprm-tools-tag"><?php esc_html_e( 'Tool', 'wp-recipe-maker' ); ?></span>
+			<h2><?php esc_html_e( 'Sync Parent Status', 'wp-recipe-maker' ); ?></h2>
+			<p><?php esc_html_e( 'Synchronize each recipe status with its assigned parent post. Only the recipe status is changed, and recipes without a valid parent are skipped.', 'wp-recipe-maker' ); ?></p>
+			<div class="wprm-tools-actions">
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=wprm_sync_parent_status' ) ); ?>" class="button button-secondary button-compact"><?php esc_html_e( 'Sync Parent Status', 'wp-recipe-maker' ); ?></a>
+			</div>
+		</div>
+
+		<div class="wprm-tools-panel">
+			<span class="wprm-tools-tag"><?php esc_html_e( 'Tool', 'wp-recipe-maker' ); ?></span>
 			<h2><?php esc_html_e( 'Find Recipe Ratings', 'wp-recipe-maker' ); ?></h2>
 			<p><?php esc_html_e( 'Go through all recipes on your website to find any missing ratings.', 'wp-recipe-maker' ); ?></p>
 			<div class="wprm-tools-actions">

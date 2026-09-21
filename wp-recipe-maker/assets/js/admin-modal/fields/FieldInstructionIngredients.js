@@ -5,7 +5,7 @@ import he from 'he';
 import Helpers from 'Shared/Helpers';
 import { __wprm } from 'Shared/Translations';
 import { parseQuantity, formatQuantity } from 'Shared/quantities';
-import { getIngredientUnitForAmount } from '../recipe/ingredient-unit';
+import { getIngredientNameForAmount, getIngredientUnitForAmount } from '../recipe/ingredient-unit';
 
 const FieldInstructionIngredients = (props) => {
     const ingredients = props.hasOwnProperty( 'ingredients' ) ? props.ingredients : [];
@@ -109,7 +109,7 @@ const FieldInstructionIngredients = (props) => {
                                         splitAmount = formatQuantity( calculated, decimals, allowFractions );
                                     }
                                     const splitUnit = getIngredientUnitForAmount( ingredient, parseQuantity( splitAmount ) );
-                                    const splitName = ingredient.name || '';
+                                    const splitName = getIngredientNameForAmount( ingredient, parseQuantity( splitAmount ) );
                                     const splitString = splitAmount ? Helpers.joinAmountUnitAndName(
                                         [ splitAmount, splitUnit ].filter( Boolean ).join( ' ' ),
                                         splitName,
@@ -162,7 +162,7 @@ const FieldInstructionIngredients = (props) => {
                                         splitAmount = formatQuantity( calculated, decimals, allowFractions );
                                     }
                                     const splitUnit = getIngredientUnitForAmount( ingredient, parseQuantity( splitAmount ) );
-                                    const splitName = ingredient.name || '';
+                                    const splitName = getIngredientNameForAmount( ingredient, parseQuantity( splitAmount ) );
                                     const splitString = splitAmount ? Helpers.joinAmountUnitAndName(
                                         [ splitAmount, splitUnit ].filter( Boolean ).join( ' ' ),
                                         splitName,

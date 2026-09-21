@@ -8,7 +8,7 @@ import { __wprm } from 'Shared/Translations';
 import Helpers from 'Shared/Helpers';
 import InlineIngredientsHelper from './InlineIngredientsHelper';
 import { parseQuantity, formatQuantity } from 'Shared/quantities';
-import { getIngredientUnitForAmount } from '../../ingredient-unit';
+import { getIngredientNameForAmount, getIngredientUnitForAmount } from '../../ingredient-unit';
 
 import { serialize } from '../../../fields/FieldRichText/html';
 import { off } from 'medium-editor';
@@ -255,7 +255,7 @@ const InlineIngredientsInner = (props) => {
                                                 splitAmount = formatQuantity( calculated, decimals, allowFractions );
                                             }
                                             const splitUnit = getIngredientUnitForAmount( ingredient, parseQuantity( splitAmount ) );
-                                            const splitName = ingredient.name || '';
+                                            const splitName = getIngredientNameForAmount( ingredient, parseQuantity( splitAmount ) );
                                             // Build split string conditionally to avoid double spaces when unit is empty
                                             let splitString = '';
                                             if ( splitAmount ) {

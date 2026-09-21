@@ -680,6 +680,7 @@ class WPRM_Shortcode {
 
 		$recipe_template = trim( $atts['template'] );
 		$recipe = false;
+		$public_post_id = 0;
 
 		// Check if we're previewing a recipe.
 		if ( $atts['preview'] ) {
@@ -708,7 +709,8 @@ class WPRM_Shortcode {
 				$recipe_id = intval( $atts['id'] );
 			}
 
-			$recipe = WPRM_Recipe_Manager::get_recipe( $recipe_id, get_the_ID() );
+			$public_post_id = get_the_ID();
+			$recipe = WPRM_Recipe_Manager::get_recipe( $recipe_id, $public_post_id );
 		}
 
 		if ( $recipe ) {			
@@ -782,7 +784,7 @@ class WPRM_Shortcode {
 				WPRMPUC_Manager::prime_ingredient_name_forms( $recipe->ingredients_flat() );
 			}
 
-			$output .= WPRM_Template_Manager::get_template( $recipe, $type, $recipe_template );
+			$output .= WPRM_Template_Manager::get_template( $recipe, $type, $recipe_template, $public_post_id );
 			$output .= '</div>';
 			
 			return apply_filters( 'wprm_recipe_shortcode_output', $output, $recipe, $type, $recipe_template );

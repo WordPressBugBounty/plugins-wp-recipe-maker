@@ -186,8 +186,9 @@ class WPRM_Template_Manager {
 	 * @param		 object $recipe Recipe object to get the template for.
 	 * @param		 mixed  $type 	Type of template we want to get, defaults to single.
 	 * @param		 mixed  $slug 	Slug of the specific template we want.
+	 * @param		 int    $public_post_id Optional public post rendering the recipe.
 	 */
-	public static function get_template( $recipe, $type = 'single', $slug = false ) {
+	public static function get_template( $recipe, $type = 'single', $slug = false, $public_post_id = 0 ) {
 		if ( $slug ) {
 			$template = self::get_template_by_slug( $slug );
 		}
@@ -219,11 +220,14 @@ class WPRM_Template_Manager {
 		}
 
 		// Set and reset current recipe ID for shortcodes (otherwise jump button won't be first recipe on page but last).
-		WPRM_Template_Shortcodes::set_current_recipe_id( $recipe->id() );
+		WPRM_Template_Shortcodes::set_current_recipe_id( $recipe->id(), $public_post_id );
 		self::$currently_outputting[ $recipe->id() ] = true;
-		$wprm_template_output = do_shortcode( $wprm_template_output );
-		unset( self::$currently_outputting[ $recipe->id() ] );
-		WPRM_Template_Shortcodes::set_current_recipe_id( false );
+		try {
+			$wprm_template_output = do_shortcode( $wprm_template_output );
+		} finally {
+			unset( self::$currently_outputting[ $recipe->id() ] );
+			WPRM_Template_Shortcodes::set_current_recipe_id( false );
+		}
 
 		return apply_filters( 'wprm_get_template', $wprm_template_output, $recipe, $type, $slug );
 	}

@@ -9,6 +9,7 @@ import { __wprm } from 'Shared/Translations';
 import Icon from 'Shared/Icon';
 import {
     getIngredientUnitCacheKey,
+    getIngredientNameForAmount,
     getIngredientUnitForAmount,
     loadIngredientUnitConnector,
 } from '../ingredient-unit';
@@ -304,15 +305,17 @@ export default class SplitIngredient extends Component {
 
     render() {
         const ingredient = this.props.ingredient || this.props.args?.ingredient || {};
+        const parentAmount = parseQuantity( ingredient.amount || '' );
+        const parentName = getIngredientNameForAmount( ingredient, parentAmount );
         // Build ingredient string conditionally to avoid double spaces when unit is empty
         let ingredientString = '';
         if ( ingredient.amount ) {
             const parts = [ ingredient.amount ];
             if ( ingredient.unit ) { parts.push( ingredient.unit ); }
-            if ( ingredient.name ) { parts.push( ingredient.name ); }
+            if ( parentName ) { parts.push( parentName ); }
             ingredientString = parts.join( ' ' );
         } else {
-            ingredientString = ingredient.name || '';
+            ingredientString = parentName;
         }
         
         const totalPercentage = this.getTotalPercentage();
@@ -370,8 +373,10 @@ export default class SplitIngredient extends Component {
                                         
                                         const calculatedAmount = this.calculateSplitAmount(percentage, false);
                                         const calculatedConvertedAmount = hasConversion ? this.calculateSplitAmount(percentage, true) : null;
-                                        const displayName = ingredient.name || '';
-                                        const displayUnit = ingredient.unit || '';
+                                        const displayName = getIngredientNameForAmount(
+                                            ingredient,
+                                            parseQuantity( calculatedAmount.amount )
+                                        );
                                         
                                         return (
                                             <div key={split.id || index} className="wprm-admin-modal-split-ingredient-part">

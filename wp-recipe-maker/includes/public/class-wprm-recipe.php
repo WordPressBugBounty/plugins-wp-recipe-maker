@@ -188,7 +188,7 @@ class WPRM_Recipe {
 	}
 
 	/**
-	 * Add singular and plural unit forms to recipe data used by the editor.
+	 * Add singular and plural ingredient forms to recipe data used by the editor.
 	 *
 	 * @since	10.7.2
 	 * @param	array $recipe Recipe data.
@@ -197,6 +197,30 @@ class WPRM_Recipe {
 		$add_forms = function( $ingredient ) {
 			if ( ! is_array( $ingredient ) ) {
 				return $ingredient;
+			}
+
+			// Ingredient names need the same explicit form data as units so editor
+			// previews can use the configured taxonomy mapping without guessing.
+			if ( ! empty( $ingredient['id'] ) ) {
+				static $name_forms = array();
+				$ingredient_id = intval( $ingredient['id'] );
+
+				if ( ! isset( $name_forms[ $ingredient_id ] ) ) {
+					$ingredient_term = get_term( $ingredient_id, 'wprm_ingredient' );
+					$ingredient_plural = get_term_meta( $ingredient_id, 'wprm_ingredient_plural', true );
+
+					$name_forms[ $ingredient_id ] = $ingredient_term && ! is_wp_error( $ingredient_term ) && $ingredient_plural
+						? array(
+							'singular' => $ingredient_term->name,
+							'plural' => $ingredient_plural,
+						)
+						: false;
+				}
+
+				if ( $name_forms[ $ingredient_id ] ) {
+					$ingredient['name_singular'] = $name_forms[ $ingredient_id ]['singular'];
+					$ingredient['name_plural'] = $name_forms[ $ingredient_id ]['plural'];
+				}
 			}
 
 			$add_unit_forms = function( $values ) {

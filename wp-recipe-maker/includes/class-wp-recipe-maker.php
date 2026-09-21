@@ -31,7 +31,7 @@ class WP_Recipe_Maker {
 	 * @since    1.0.0
 	 */
 	private function define_constants() {
-		define( 'WPRM_VERSION', '10.8.4' );
+		define( 'WPRM_VERSION', '10.8.5' );
 		define( 'WPRM_PREMIUM_VERSION_RECOMMENDED', '10.8.2' );
 		define( 'WPRM_PREMIUM_VERSION_REQUIRED', '7.0.0' );
 		if ( ! defined( 'WPRM_KITCHEN_UI_ENABLED' ) ) {
@@ -220,6 +220,7 @@ class WP_Recipe_Maker {
 			require_once( WPRM_DIR . 'includes/admin/tools/class-wprm-tools-debug.php' );
 			require_once( WPRM_DIR . 'includes/admin/tools/class-wprm-tools-settings-transfer.php' );
 			require_once( WPRM_DIR . 'includes/admin/tools/class-wprm-tools-templates-transfer.php' );
+			require_once( WPRM_DIR . 'includes/admin/tools/class-wprm-tools-sync-parent-status.php' );
 			require_once( WPRM_DIR . 'includes/admin/tools/class-wprm-tools-sync-recipe-language.php' );
 			require_once( WPRM_DIR . 'includes/admin/tools/class-wprm-tools-sync-recipe-term-language.php' );
 			require_once( WPRM_DIR . 'includes/admin/tools/class-wprm-tools-wpurp-ingredients.php' );

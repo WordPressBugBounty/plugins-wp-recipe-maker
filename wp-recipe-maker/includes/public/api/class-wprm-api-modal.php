@@ -218,6 +218,49 @@ class WPRM_Api_Modal {
 
 		$suggestions = array_values( $suggestions);
 
+		// Include configured ingredient name forms so a newly selected suggestion
+		// can be singularized in editor previews before the recipe is first saved.
+		if ( 'wprm_ingredient' === $taxonomy ) {
+			foreach ( $suggestions as &$suggestion ) {
+				$term_id = isset( $suggestion['id'] ) ? intval( $suggestion['id'] ) : 0;
+				$selected_name = isset( $suggestion['name'] ) ? $suggestion['name'] : '';
+				$name_forms = array();
+
+				if ( $term_id ) {
+					$term = get_term( $term_id, 'wprm_ingredient' );
+					$plural = get_term_meta( $term_id, 'wprm_ingredient_plural', true );
+
+					if ( $term && ! is_wp_error( $term ) && $term->name && $plural ) {
+						$name_forms[] = array(
+							'singular' => $term->name,
+							'plural' => $plural,
+						);
+					}
+
+					foreach ( array( 1, 2 ) as $system ) {
+						$singular = get_term_meta( $term_id, 'wprm_ingredient_unit_system_' . $system . '_singular', true );
+						$plural = get_term_meta( $term_id, 'wprm_ingredient_unit_system_' . $system . '_plural', true );
+
+						if ( $singular && $plural ) {
+							$name_forms[] = array(
+								'singular' => $singular,
+								'plural' => $plural,
+							);
+						}
+					}
+				}
+
+				foreach ( $name_forms as $name_form ) {
+					if ( 0 === strcasecmp( $selected_name, $name_form['singular'] ) || 0 === strcasecmp( $selected_name, $name_form['plural'] ) ) {
+						$suggestion['name_singular'] = $name_form['singular'];
+						$suggestion['name_plural'] = $name_form['plural'];
+						break;
+					}
+				}
+			}
+			unset( $suggestion );
+		}
+
 		// Reorder based on count.
 		usort( $suggestions, function($a, $b) {
 			if ( $a['count'] == $b['count'] ) {

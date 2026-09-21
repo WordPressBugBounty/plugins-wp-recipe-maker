@@ -29,6 +29,15 @@ class WPRM_Template_Shortcodes {
 	private static $current_recipe_id = false;
 
 	/**
+	 * Current public post context.
+	 *
+	 * @since	10.8.4
+	 * @access	private
+	 * @var		int $current_public_post_id Public post rendering the current recipe.
+	 */
+	private static $current_public_post_id = 0;
+
+	/**
 	 * Current recipe shell.
 	 *
 	 * @since	5.2.0
@@ -83,6 +92,7 @@ class WPRM_Template_Shortcodes {
 	public static function reset_current_recipe_id() {
 		// A new post was loaded, reset current recipe ID. This ensures compatibility with the Query Loop.
 		self::$current_recipe_id = false;
+		self::$current_public_post_id = 0;
 	}
 
 	/**
@@ -113,7 +123,7 @@ class WPRM_Template_Shortcodes {
 		}
 
 		if ( $recipe_id ) {
-			return WPRM_Recipe_Manager::get_recipe( $recipe_id );
+			return WPRM_Recipe_Manager::get_recipe( $recipe_id, self::$current_public_post_id );
 		} else {
 			return false;
 		}
@@ -145,9 +155,11 @@ class WPRM_Template_Shortcodes {
 	 *
 	 * @since	3.2.0
 	 * @param	int $id ID to set as the current recipe ID.
+	 * @param	int $public_post_id Optional public post rendering the recipe.
 	 */
-	public static function set_current_recipe_id( $id ) {
+	public static function set_current_recipe_id( $id, $public_post_id = 0 ) {
 		self::$current_recipe_id = $id;
+		self::$current_public_post_id = intval( $public_post_id );
 	}
 
 	/**
