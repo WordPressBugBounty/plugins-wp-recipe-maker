@@ -120,6 +120,7 @@ export default class TextImport extends Component {
             this.state.equipment.map( ( equipmentItem, index ) => {
                 let amount = '';
                 let name = equipmentItem.text;
+                let notes = '';
 
                 // Use regex to check if the equipment text starts with an amount, followed by a space.
                 const amountMatch = name.match( /^(\d+\/\d+|\d+\.?\d*)\s/ );
@@ -128,10 +129,39 @@ export default class TextImport extends Component {
                     name = name.replace(amountMatch[0], '');
                 }
 
+                const notesIdentifier = wprm_admin_modal.settings.import_equipment_notes_identifier;
+                const notesStart = [];
+
+                if ( [ 'comma', 'both' ].includes( notesIdentifier ) && name.includes( ',' ) ) {
+                    notesStart.push( name.indexOf( ',' ) );
+                }
+                if ( [ 'parentheses', 'both' ].includes( notesIdentifier ) && /\(.*?\)/.test( name ) ) {
+                    notesStart.push( name.indexOf( '(' ) );
+                }
+
+                if ( notesStart.length ) {
+                    const start = Math.min( ...notesStart );
+                    const equipmentName = name.substring( 0, start ).trim();
+                    // Keep malformed input intact rather than importing an empty equipment name.
+                    if ( equipmentName ) {
+                        notes = name.substring( start ).trim();
+                        if ( wprm_admin_modal.settings.import_equipment_notes_remove_identifier ) {
+                            const identifier = notes[0];
+                            notes = notes.substring( 1 );
+                            if ( '(' === identifier ) {
+                                notes = notes.replace( ')', '' );
+                            }
+                            notes = notes.trim();
+                        }
+                        name = equipmentName;
+                    }
+                }
+
                 equipment.push({
                     uid: index,
                     amount,
                     name,
+                    notes,
                 });
             });
 

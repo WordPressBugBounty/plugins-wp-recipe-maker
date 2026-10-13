@@ -100,6 +100,10 @@ class WPRM_Recipe_Sanitizer {
 		}
 
 		// Advanced Servings.
+		if ( array_key_exists( 'servings_nutrition', $recipe ) ) {
+			$sanitized_recipe['servings_nutrition'] = WPRM_Nutrition::parse_servings( $recipe['servings_nutrition'] );
+		}
+
 		if ( isset( $recipe['servings_advanced'] ) ) {
 			$servings_advanced = array();
 
@@ -154,12 +158,25 @@ class WPRM_Recipe_Sanitizer {
 		// Recipe Equipment.
 		if ( isset( $recipe['equipment'] ) ) {
 			$sanitized_recipe['equipment'] = array();
+			$used_equipment_uids = array();
+			$next_equipment_uid = 0;
+			foreach ( $recipe['equipment'] as $equipment ) {
+				if ( isset( $equipment['uid'] ) && ( is_int( $equipment['uid'] ) && 0 <= $equipment['uid'] || is_string( $equipment['uid'] ) && ctype_digit( $equipment['uid'] ) ) ) {
+					$next_equipment_uid = max( $next_equipment_uid, intval( $equipment['uid'] ) + 1 );
+				}
+			}
 
 			foreach ( $recipe['equipment'] as $equipment ) {
 				$name = isset( $equipment['name'] ) ? self::sanitize_html( $equipment['name'] ) : '';
 
 				if ( $name ) {
+					$equipment_uid = isset( $equipment['uid'] ) && ( is_int( $equipment['uid'] ) && 0 <= $equipment['uid'] || is_string( $equipment['uid'] ) && ctype_digit( $equipment['uid'] ) ) ? intval( $equipment['uid'] ) : -1;
+					if ( 0 > $equipment_uid || in_array( $equipment_uid, $used_equipment_uids, true ) ) {
+						$equipment_uid = $next_equipment_uid++;
+					}
+					$used_equipment_uids[] = $equipment_uid;
 					$sanitized_equipment = array(
+						'uid' => $equipment_uid,
 						'id' => self::get_equipment_id( $name ),
 						'amount' => isset( $equipment['amount'] ) ? self::sanitize_html( $equipment['amount'] ) : '',
 						'name' => $name,
@@ -345,6 +362,7 @@ class WPRM_Recipe_Sanitizer {
 		// Recipe Instructions.
 		if ( isset( $recipe['instructions'] ) || isset( $recipe['instructions_flat'] ) ) {
 			$sanitized_recipe['instructions'] = array();
+			$valid_equipment_uids = isset( $sanitized_recipe['equipment'] ) ? wp_list_pluck( $sanitized_recipe['equipment'], 'uid' ) : null;
 			$instructions = isset( $recipe['instructions'] ) ? $recipe['instructions'] : array();
 
 			// Use ingredients_flat if set.
@@ -381,6 +399,19 @@ class WPRM_Recipe_Sanitizer {
 								}
 							}
 						}
+
+						$sanitized_equipment_uids = array();
+						if ( ! $is_tip && isset( $instruction['equipment'] ) && is_array( $instruction['equipment'] ) ) {
+							foreach ( $instruction['equipment'] as $equipment_uid ) {
+								if ( ! ( is_int( $equipment_uid ) && 0 <= $equipment_uid || is_string( $equipment_uid ) && ctype_digit( $equipment_uid ) ) ) {
+									continue;
+								}
+								$equipment_uid = intval( $equipment_uid );
+								if ( ( null === $valid_equipment_uids || in_array( $equipment_uid, $valid_equipment_uids, true ) ) && ! in_array( $equipment_uid, $sanitized_equipment_uids, true ) ) {
+									$sanitized_equipment_uids[] = $equipment_uid;
+								}
+							}
+						}
 						
 						$sanitized_instruction = array(
 							'uid' => isset( $instruction['uid'] ) ? intval( $instruction['uid'] ) : -1,
@@ -404,6 +435,7 @@ class WPRM_Recipe_Sanitizer {
 						} else {
 							$sanitized_instruction['image'] = isset( $instruction['image'] ) ? intval( $instruction['image'] ) : 0;
 							$sanitized_instruction['ingredients'] = $sanitized_ingredients;
+							$sanitized_instruction['equipment'] = $sanitized_equipment_uids;
 						}
 
 						if ( ! $is_tip && isset( $instruction['video'] ) ) {

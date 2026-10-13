@@ -4,7 +4,7 @@ window.WPRecipeMaker.analytics = {
 	init: () => {
 		if ( wprm_public.settings.analytics_enabled || wprm_public.settings.google_analytics_enabled ) {
 			document.addEventListener( 'click', function(e) {
-				const target = e.target.closest ? e.target.closest( '.wprm-recipe-jump, .wprm-recipe-jump-video, .wprm-recipe-pin, .wprm-recipe-facebook-share, .wprm-recipe-messenger-share, .wprm-recipe-twitter-share, .wprm-recipe-bluesky-share, .wprm-recipe-mastodon-share, .wprm-recipe-tumblr-share, .wprm-recipe-text-share, .wprm-recipe-whatsapp-share, .wprm-recipe-email-share, .wprm-recipe-favorite, .wprm-recipe-add-to-collection-recipe, .wprm-recipe-add-to-shopping-list, .wprm-recipe-cook-mode, .wprm-recipe-equipment a, .wprm-recipe-ingredient a, .wprm-recipe-instruction a' ) : false;
+				const target = e.target.closest ? e.target.closest( '.wprm-recipe-jump, .wprm-recipe-jump-video, .wprm-recipe-pin, .wprm-recipe-facebook-share, .wprm-recipe-messenger-share, .wprm-recipe-twitter-share, .wprm-recipe-bluesky-share, .wprm-recipe-mastodon-share, .wprm-recipe-tumblr-share, .wprm-recipe-text-share, .wprm-recipe-whatsapp-share, .wprm-recipe-email-share, .wprm-recipe-favorite, .wprm-recipe-add-to-collection-recipe, .wprm-recipe-add-to-shopping-list, .wprm-recipe-cook-mode, [data-wprm-google-preferred-sources], .wprm-recipe-equipment a, .wprm-recipe-ingredient a, .wprm-recipe-instruction a' ) : false;
 				if ( target ) {
 					window.WPRecipeMaker.analytics.checkClick( target, e );
 				}
@@ -12,7 +12,21 @@ window.WPRecipeMaker.analytics = {
 		}
 	},
 	checkClick: ( target, e ) => {
-		if ( target.matches( '.wprm-recipe-jump' ) ) {
+		if ( target.matches( '[data-wprm-google-preferred-sources]' ) ) {
+			const container = target.closest( '.wprm-recipe-container[data-recipe-id]' );
+			const recipeId = container ? container.dataset.recipeId : false;
+			const meta = {
+				mode: target.dataset.wprmGooglePreferredSourcesMode,
+			};
+
+			if ( recipeId ) {
+				window.WPRecipeMaker.analytics.registerAction( recipeId, wprm_public.post_id, 'google-preferred-sources-button', meta );
+			} else {
+				// The shortcode can also appear outside a recipe card. GA can still record that click.
+				window.WPRecipeMaker.analytics.registerActionGoogleAnalytics( 0, wprm_public.post_id, 'google-preferred-sources-button', meta );
+			}
+			return true;
+		} else if ( target.matches( '.wprm-recipe-jump' ) ) {
 			const recipeId = target.dataset.hasOwnProperty( 'recipe' ) ? target.dataset.recipe : false;
 
 			if ( recipeId ) {

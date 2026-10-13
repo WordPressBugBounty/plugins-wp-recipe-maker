@@ -68,6 +68,36 @@ $import = array(
 			),
 		),
 		array(
+			'name' => __( 'Equipment Parsing', 'wp-recipe-maker' ),
+			'settings' => array(
+				array(
+					'id' => 'import_equipment_notes_identifier',
+					'name' => __( 'Equipment Notes Identifier', 'wp-recipe-maker' ),
+					'description' => __( 'How to recognize equipment notes when importing from text.', 'wp-recipe-maker' ),
+					'type' => 'dropdown',
+					'options' => array(
+						'comma' => __( 'Everything after the first comma', 'wp-recipe-maker' ),
+						'parentheses' => __( 'Everything inside parentheses', 'wp-recipe-maker' ),
+						'both' => __( 'Comma or parentheses, whichever comes first', 'wp-recipe-maker' ),
+						'none' => __( 'Do not import to equipment notes', 'wp-recipe-maker' ),
+					),
+					'default' => 'none',
+				),
+				array(
+					'id' => 'import_equipment_notes_remove_identifier',
+					'name' => __( 'Remove Identifier', 'wp-recipe-maker' ),
+					'description' => __( 'Remove the above equipment notes identifier from the notes after importing.', 'wp-recipe-maker' ),
+					'type' => 'toggle',
+					'default' => true,
+					'dependency' => array(
+						'id' => 'import_equipment_notes_identifier',
+						'value' => 'none',
+						'type' => 'inverse',
+					),
+				),
+			),
+		),
+		array(
 			'name' => __( 'Instruction Parsing', 'wp-recipe-maker' ),
 			'settings' => array(
 				array(

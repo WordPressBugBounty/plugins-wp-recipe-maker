@@ -1,6 +1,42 @@
 {
     "news": [
         {
+            "date": "2026-10-13",
+            "label": "Release",
+            "title": "WP Recipe Maker 10.9.0",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-10-9-0/"
+        },
+        {
+            "date": "2026-10-09",
+            "label": "Blog",
+            "title": "WP Recipe Maker Alternatives That Fit Your Workflow",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-alternatives/"
+        },
+        {
+            "date": "2026-10-05",
+            "label": "Blog",
+            "title": "WP Recipe Maker vs WP Delicious: beginner or power user?",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-vs-wp-delicious/"
+        },
+        {
+            "date": "2026-10-01",
+            "label": "Blog",
+            "title": "WP Recipe Maker vs Recipe Card Blocks: Pros, Cons, and Pricing",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-vs-recipe-card-blocks/"
+        },
+        {
+            "date": "2026-09-24",
+            "label": "Blog",
+            "title": "WP Recipe Maker vs Tasty Recipes: Which Is Right for You",
+            "url": "https://bootstrapped.ventures/wp-recipe-maker-vs-tasty-recipes/"
+        },
+        {
+            "date": "2026-09-22",
+            "label": "Blog",
+            "title": "Best Baking Blogs That Test Every Recipe",
+            "url": "https://bootstrapped.ventures/best-baking-blogs/"
+        },
+        {
             "date": "2026-09-17",
             "label": "Blog",
             "title": "Top Food Bloggers With Recipes You Can Trust",

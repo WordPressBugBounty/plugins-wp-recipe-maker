@@ -54,6 +54,46 @@
 	}
 }
 
+#wprm-print-in-app-notice {
+	max-width: 500px;
+	margin: 0 auto 10px;
+	padding: 10px 15px;
+	border: 1px solid #444444;
+	border-radius: 3px;
+	font-size: 0.9em;
+
+	&[hidden],
+	[hidden] {
+		display: none;
+	}
+
+	.wprm-print-in-app-notice-text {
+		margin: 0;
+	}
+
+	.wprm-print-button {
+		margin: 10px 0 0;
+		background-color: white;
+	}
+
+	.wprm-print-in-app-notice-status {
+		margin: 5px 0 0;
+
+		&:empty {
+			display: none;
+		}
+	}
+
+	.wprm-print-in-app-notice-url {
+		width: 100%;
+		margin-top: 5px;
+		padding: 8px;
+		border: 1px solid #444444;
+		border-radius: 3px;
+		font-size: 16px; // Prevent iOS zoom on focus.
+	}
+}
+
 #wprm-print-header-options {
 	display: flex;
 	justify-content: center;
@@ -221,6 +261,7 @@
 
 @media print {
 	#wprm-print-header,
+	#wprm-print-in-app-notice,
 	#wprm-print-footer-ad,
 	.wprm-prevent-sleep {
 		display: none;

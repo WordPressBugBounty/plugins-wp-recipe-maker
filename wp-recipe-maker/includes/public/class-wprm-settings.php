@@ -79,6 +79,7 @@ class WPRM_Settings {
 	 */
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_submenu_page' ), 20 );
+		add_action( 'admin_head', array( __CLASS__, 'maybe_hide_kitchen_submenu' ) );
 
 		if ( defined( 'WPRM_POST_TYPE' ) ) {
 			add_action( 'save_post_' . WPRM_POST_TYPE, array( __CLASS__, 'clear_recipe_type_usage_cache' ), 10, 0 );
@@ -96,8 +97,18 @@ class WPRM_Settings {
 	public static function add_submenu_page() {
 		add_submenu_page( 'wprecipemaker', __( 'WPRM Settings', 'wp-recipe-maker' ), __( 'Settings', 'wp-recipe-maker' ), 'manage_options', 'wprm_settings', array( __CLASS__, 'settings_page_template' ) );
 
-		if ( WPRM_KITCHEN_UI_ENABLED ) {
-			add_submenu_page( 'wprecipemaker', __( 'WPRM Kitchen', 'wp-recipe-maker' ), __( 'WPRM Kitchen', 'wp-recipe-maker' ), 'manage_options', 'wprm_kitchen', array( __CLASS__, 'kitchen_page_template' ) );
+		add_submenu_page( 'wprecipemaker', __( 'WPRM Kitchen', 'wp-recipe-maker' ), __( 'WPRM Kitchen', 'wp-recipe-maker' ), 'manage_options', 'wprm_kitchen', array( __CLASS__, 'kitchen_page_template' ) );
+	}
+
+	/**
+	 * Hide the optional Kitchen menu entry after WordPress resolves page access.
+	 *
+	 * @since 10.9.0
+	 */
+	public static function maybe_hide_kitchen_submenu() {
+		if ( ! self::get( 'kitchen_show_menu' ) ) {
+			// Removing it during admin_menu breaks parent resolution for direct links and pairing callbacks.
+			remove_submenu_page( 'wprecipemaker', 'wprm_kitchen' );
 		}
 	}
 

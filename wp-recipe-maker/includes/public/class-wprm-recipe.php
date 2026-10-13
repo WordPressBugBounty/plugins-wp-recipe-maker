@@ -94,6 +94,7 @@ class WPRM_Recipe {
 		$recipe['cost'] = $this->cost();
 		$recipe['servings'] = $this->servings();
 		$recipe['servings_unit'] = $this->servings_unit();
+		$recipe['servings_nutrition'] = $this->servings_nutrition();
 		$recipe['servings_advanced_enabled'] = $this->servings_advanced_enabled();
 		$recipe['servings_advanced'] = $this->servings_advanced();
 		$recipe['prep_time'] = $this->prep_time();
@@ -149,6 +150,7 @@ class WPRM_Recipe {
 
 			$recipe['seo'] = $this->seo();
 			$recipe['seo_priority'] = $this->seo_priority();
+			$recipe['seo_test_url'] = WPRM_Seo_Checker::get_test_url( $this );
 			$recipe['rating'] = WPRM_Rating::get_ratings_summary_for( $this->id() );
 			$recipe['image_dimensions'] = $this->image_dimensions();
 	
@@ -224,29 +226,18 @@ class WPRM_Recipe {
 			}
 
 			$add_unit_forms = function( $values ) {
-				static $unit_forms = array();
-
-				if ( ! is_array( $values ) || empty( $values['unit_id'] ) ) {
+				if ( ! is_array( $values ) ) {
 					return $values;
 				}
 
-				$unit_id = intval( $values['unit_id'] );
+				$forms = WPRM_Recipe_Parser::get_ingredient_unit_forms_for_term(
+					isset( $values['unit'] ) ? $values['unit'] : '',
+					isset( $values['unit_id'] ) ? intval( $values['unit_id'] ) : 0
+				);
 
-				if ( ! isset( $unit_forms[ $unit_id ] ) ) {
-					$unit_term = get_term( $unit_id, 'wprm_ingredient_unit' );
-					$unit_plural = get_term_meta( $unit_id, 'wprm_ingredient_unit_plural', true );
-
-					$unit_forms[ $unit_id ] = $unit_term && ! is_wp_error( $unit_term ) && $unit_plural
-						? array(
-							'singular' => $unit_term->name,
-							'plural' => $unit_plural,
-						)
-						: false;
-				}
-
-				if ( $unit_forms[ $unit_id ] ) {
-					$values['unit_singular'] = $unit_forms[ $unit_id ]['singular'];
-					$values['unit_plural'] = $unit_forms[ $unit_id ]['plural'];
+				if ( $forms ) {
+					$values['unit_singular'] = $forms['singular'];
+					$values['unit_plural'] = $forms['plural'];
 				}
 
 				return $values;
@@ -345,6 +336,7 @@ class WPRM_Recipe {
 		
 		$parsed_servings = WPRM_Recipe_Parser::parse_quantity( $this->servings() );
 		$recipe['originalServingsParsed'] = is_numeric( $parsed_servings ) && 0 < $parsed_servings ? $parsed_servings : 1;
+		$recipe['nutritionServings'] = $this->servings_nutrition();
 
 		$recipe['currentServings'] = $recipe['originalServings'];
 		$recipe['currentServingsParsed'] = $recipe['originalServingsParsed'];
@@ -475,6 +467,44 @@ class WPRM_Recipe {
 
 		// Fall back to author name otherwise.
 		return $this->post_author_name();
+	}
+
+	/**
+	 * Get the URL identifying the recipe author to use in the metadata.
+	 *
+	 * @since    10.9.0
+	 */
+	public function author_meta_url() {
+		$url = false;
+
+		// Follow the same name resolution as author_meta() so the URL belongs to that name.
+		switch ( $this->author_display() ) {
+			case 'same':
+				if ( WPRM_Settings::get( 'recipe_author_same_name' ) ) {
+					$url = WPRM_Settings::get( 'recipe_author_same_link' );
+				}
+				break;
+			case 'custom':
+				if ( $this->custom_author_name() ) {
+					$url = $this->custom_author_link();
+				}
+				break;
+		}
+
+		// Post author fallback: profile website, or the author archive otherwise.
+		if ( false === $url ) {
+			$url = '';
+			$author_id = $this->post_author();
+
+			if ( $author_id ) {
+				$author = get_userdata( $author_id );
+				$url = $author && $author->data->user_url ? $author->data->user_url : get_author_posts_url( $author_id );
+			}
+		}
+
+		$url = esc_url_raw( trim( (string) $url ) );
+
+		return apply_filters( 'wprm_recipe_author_meta_url', $url, $this );
 	}
 
 	/**
@@ -1237,6 +1267,16 @@ class WPRM_Recipe {
 	}
 
 	/**
+	 * Get the optional nutritional portion count for the complete base recipe.
+	 * Stored outside the nutrient meta namespace so it is never a nutrition fact.
+	 *
+	 * @return float|false
+	 */
+	public function servings_nutrition() {
+		return WPRM_Nutrition::parse_servings( $this->meta( 'wprm_servings_nutrition', false ) );
+	}
+
+	/**
 	 * Get the recipe servings advanced enabled.
 	 *
 	 * @since	8.0.0
@@ -1390,10 +1430,22 @@ class WPRM_Recipe {
 		$equipment_array = self::unserialize( $this->meta( 'wprm_equipment', array() ) );
 		$terms = $this->tags( 'equipment' );
 
+		// Existing equipment may not have a stored UID. Keep persisted IDs stable when
+		// items are reordered, and assign missing or duplicate IDs after the highest one.
+		$used_uids = array();
 		$uid = 0;
+		foreach ( $equipment_array as $equipment ) {
+			if ( isset( $equipment['uid'] ) && ( is_int( $equipment['uid'] ) && 0 <= $equipment['uid'] || is_string( $equipment['uid'] ) && ctype_digit( $equipment['uid'] ) ) ) {
+				$uid = max( $uid, intval( $equipment['uid'] ) + 1 );
+			}
+		}
 		foreach ( $equipment_array as $index => $equipment ) {
-			$equipment_array[ $index ]['uid'] = $uid;
-			$uid++;
+			$equipment_uid = isset( $equipment['uid'] ) && ( is_int( $equipment['uid'] ) && 0 <= $equipment['uid'] || is_string( $equipment['uid'] ) && ctype_digit( $equipment['uid'] ) ) ? intval( $equipment['uid'] ) : -1;
+			if ( 0 > $equipment_uid || in_array( $equipment_uid, $used_uids, true ) ) {
+				$equipment_uid = $uid++;
+			}
+			$equipment_array[ $index ]['uid'] = $equipment_uid;
+			$used_uids[] = $equipment_uid;
 
 			$equipment_id = isset( $equipment['id'] ) ? intval( $equipment['id'] ) : 0;
 			$term_key = array_search( $equipment_id, wp_list_pluck( $terms, 'term_id' ) );
@@ -1844,7 +1896,7 @@ class WPRM_Recipe {
 			}
 		}
 
-		return $print_url;
+		return WPRM_Print::add_public_render_context( $print_url, $this->id() );
 	}
 
 	/**

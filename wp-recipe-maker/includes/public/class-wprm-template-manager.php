@@ -220,13 +220,14 @@ class WPRM_Template_Manager {
 		}
 
 		// Set and reset current recipe ID for shortcodes (otherwise jump button won't be first recipe on page but last).
-		WPRM_Template_Shortcodes::set_current_recipe_id( $recipe->id(), $public_post_id );
+		$previous_context = WPRM_Template_Shortcodes::get_recipe_context();
+		WPRM_Template_Shortcodes::set_current_recipe_id( $recipe->id(), $public_post_id, in_array( $type, array( 'print', 'print-collection', 'pdf' ), true ) );
 		self::$currently_outputting[ $recipe->id() ] = true;
 		try {
 			$wprm_template_output = do_shortcode( $wprm_template_output );
 		} finally {
 			unset( self::$currently_outputting[ $recipe->id() ] );
-			WPRM_Template_Shortcodes::set_current_recipe_id( false );
+			WPRM_Template_Shortcodes::set_current_recipe_id( ...$previous_context );
 		}
 
 		return apply_filters( 'wprm_get_template', $wprm_template_output, $recipe, $type, $slug );
@@ -540,14 +541,19 @@ class WPRM_Template_Manager {
 	 * @since	4.0.0
 	 * @param	mixed $template Template to save.
 	 */
-	public static function save_template( $template ) {
+	public static function save_template( $template, $expected_revision = null ) {
+		return WPRM_Template_Store::save( $template, $expected_revision );
+	}
+
+	/** Normalize a modern template without writing storage. */
+	public static function prepare_template_for_save( $template ) {
 		$templates = self::get_templates();
 		$slug = isset( $template['slug'] ) && false !== $template['slug'] ? self::slugify( $template['slug'] ) : false;
 		$old_slug = isset( $template['oldSlug'] ) ? self::slugify( $template['oldSlug'] ) : $slug;
 
 		// New slug needed.
 		if ( ! $slug || ( array_key_exists( $slug, $templates['modern'] ) && 'file' === $templates['modern'][ $slug ]['location'] ) ) {
-			$slug_base = self::slugify( $template['name'] );
+			$slug_base = substr( self::slugify( $template['name'] ), 0, 70 );
 
 			$slug = $slug_base;
 			$i = 2;
@@ -558,8 +564,8 @@ class WPRM_Template_Manager {
 
 			if ( $old_slug ) {
 				// Need to update CSS and HTML classes.
-				$template['css'] = str_ireplace( '.wprm-recipe-template-' . $old_slug, '.wprm-recipe-template-' . $slug, $template['css'] );
-				$template['html'] = str_ireplace( 'wprm-recipe-template-' . $old_slug, 'wprm-recipe-template-' . $slug, $template['html'] );
+				$template['slug'] = $old_slug;
+				$template = WPRM_Template_Package::rewrite_slug( $template, $slug );
 			}
 		}		
 
@@ -583,16 +589,6 @@ class WPRM_Template_Manager {
 		$fonts = isset( $template['fonts'] ) ? $template['fonts'] : array();
 		$sanitized_template['fonts'] = array_map( 'sanitize_text_field', $fonts );
 
-		// Make sure list of templates is up to date.
-		$templates = get_option( 'wprm_templates', array() );
-		if ( ! in_array( $slug, $templates ) ) {
-			$templates[] = $slug;
-			update_option( 'wprm_templates', $templates );
-		}
-
-		// Save template in cache and database.
-		self::$templates['modern'][$slug] = $sanitized_template;
-		update_option( 'wprm_template_' . $slug, $sanitized_template );
 
 		return $sanitized_template;
 	}
@@ -623,18 +619,7 @@ class WPRM_Template_Manager {
 	 * @param	mixed $slug Slug of the template to delete.
 	 */
 	public static function delete_template( $slug ) {
-		$slug = self::slugify( $slug );
-
-		// Make sure list of templates is up to date.
-		$templates = get_option( 'wprm_templates', array() );
-		if ( false !== ( $index = array_search( $slug, $templates ) ) ) {
-			unset( $templates[ $index ] );
-		}
-		update_option( 'wprm_templates', $templates );
-		
-		delete_option( 'wprm_template_' . $slug );
-
-		return $slug;
+		return WPRM_Template_Store::delete( $slug );
 	}
 
 	/**
@@ -643,11 +628,14 @@ class WPRM_Template_Manager {
 	 * @since    1.2.0
 	 * @param	 mixed $mode Mode to get the templates for.
 	 */
+	public static function reset_cache() { self::$templates = array(); }
+
 	public static function get_templates() {
 		if ( empty( self::$templates ) ) {
 			self::load_templates();
 		}
 
+		foreach ( self::$templates['modern'] as $slug => $template ) { self::$templates['modern'][$slug] = WPRM_Template_Store::describe( $template ); }
 		return self::$templates;
 	}
 

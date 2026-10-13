@@ -26,6 +26,7 @@ class WPRM_Shortcode_Other {
 	 */
 	public static function init() {
 		add_shortcode( 'adjustable', array( __CLASS__, 'adjustable_shortcode' ) );
+		add_shortcode( 'wprm-pan-size', array( __CLASS__, 'pan_size_shortcode' ) );
 		add_shortcode( 'timer', array( __CLASS__, 'timer_shortcode' ) );
 		add_shortcode( 'wprm-temperature', array( __CLASS__, 'temperature_shortcode' ) );
 		add_shortcode( 'wprm-glossary', array( __CLASS__, 'glossary_shortcode' ) );
@@ -45,6 +46,82 @@ class WPRM_Shortcode_Other {
 	 */
 	public static function adjustable_shortcode( $atts, $content ) {
 		return '<span class="wprm-dynamic-quantity">' . $content . '</span>';
+	}
+
+	/**
+	 * Show the baking pan dimensions for the current recipe in instruction text.
+	 *
+	 * The Premium frontend updates this span when servings or pan dimensions change.
+	 * Without Premium, the original dimensions remain visible.
+	 *
+	 * @param array $atts Shortcode attributes.
+	 * @return string
+	 */
+	public static function pan_size_shortcode( $atts ) {
+		$atts = shortcode_atts( array( 'id' => 0, 'decimals' => 'auto' ), $atts, 'wprm-pan-size' );
+		$recipe = WPRM_Template_Shortcodes::get_recipe( $atts['id'] );
+
+		if ( ! $recipe || ! $recipe->servings_advanced_enabled() ) {
+			return '';
+		}
+
+		$size = self::get_pan_size_text( $recipe, $atts['decimals'] );
+		if ( '' === $size ) {
+			return '';
+		}
+
+		$pan = $recipe->servings_advanced();
+		$auto_decimals = 'auto' === $atts['decimals'];
+		$decimals = $auto_decimals ? ( 'inch' === $pan['unit'] ? 1 : 0 ) : max( 0, min( 2, intval( $atts['decimals'] ) ) );
+		$unit_labels = array(
+			'cm' => __( 'cm', 'wp-recipe-maker' ),
+			'inch' => __( 'inch', 'wp-recipe-maker' ),
+		);
+
+		return '<span class="wprm-recipe-pan-size wprm-recipe-pan-size-' . esc_attr( $recipe->id() ) . '" data-recipe="' . esc_attr( $recipe->id() ) . '" data-decimals="' . esc_attr( $auto_decimals ? 'auto' : $decimals ) . '" data-unit-cm="' . esc_attr( $unit_labels['cm'] ) . '" data-unit-inch="' . esc_attr( $unit_labels['inch'] ) . '">' . esc_html( $size ) . '</span>';
+	}
+
+	/**
+	 * Format original pan dimensions without executing a shortcode or selecting a recipe.
+	 *
+	 * @param object $recipe Recipe whose pan should be formatted.
+	 * @param mixed  $decimals Decimal precision, or auto for practical dimensions.
+	 * @return string
+	 */
+	public static function get_pan_size_text( $recipe, $decimals = 'auto' ) {
+		if ( ! $recipe || ! $recipe->servings_advanced_enabled() ) {
+			return '';
+		}
+
+		$pan = $recipe->servings_advanced();
+		$unit = in_array( $pan['unit'], array( 'cm', 'inch' ), true ) ? $pan['unit'] : '';
+		$unit_labels = array(
+			'cm' => __( 'cm', 'wp-recipe-maker' ),
+			'inch' => __( 'inch', 'wp-recipe-maker' ),
+		);
+		$unit_label = isset( $unit_labels[ $unit ] ) ? $unit_labels[ $unit ] : '';
+		$auto_decimals = 'auto' === $decimals;
+		$decimals = $auto_decimals ? ( 'inch' === $unit ? 1 : 0 ) : max( 0, min( 2, intval( $decimals ) ) );
+		$decimal_separator = 'comma' === WPRM_Settings::get( 'decimal_separator' ) ? ',' : '.';
+		$thousands_separator = ',' === $decimal_separator ? '.' : ',';
+		$format_dimension = function( $dimension ) use ( $auto_decimals, $decimals, $decimal_separator, $thousands_separator, $unit ) {
+			if ( $auto_decimals ) {
+				$step = 'inch' === $unit ? 0.5 : 1;
+				$dimension = max( $step, round( (float) $dimension / $step ) * $step );
+			}
+			$formatted = number_format( (float) $dimension, $decimals, $decimal_separator, $thousands_separator );
+			return $decimals ? rtrim( rtrim( $formatted, '0' ), $decimal_separator ) : $formatted;
+		};
+
+		if ( 'round' === $pan['shape'] && 0 < $pan['diameter'] ) {
+			$size = 'Ø ' . $format_dimension( $pan['diameter'] ) . ' ' . $unit_label;
+		} elseif ( 'rectangle' === $pan['shape'] && 0 < $pan['width'] && 0 < $pan['length'] ) {
+			$size = $format_dimension( $pan['width'] ) . ' × ' . $format_dimension( $pan['length'] ) . ' ' . $unit_label;
+		} else {
+			return '';
+		}
+
+		return trim( $size );
 	}
 
 	/**
@@ -251,19 +328,12 @@ class WPRM_Shortcode_Other {
 
 					if ( 'ingredient' === $found_ingredient['type'] ) {
 						$get_unit_for_amount = function( $default_unit, $unit_id, $amount_parsed ) {
-							if ( ! $unit_id || $amount_parsed <= 0 ) {
+							if ( $amount_parsed <= 0 ) {
 								return $default_unit;
 							}
 
-							$plural = get_term_meta( $unit_id, 'wprm_ingredient_unit_plural', true );
-							if ( ! $plural ) {
-								return $default_unit;
-							}
-
-							$term = get_term( $unit_id, 'wprm_ingredient_unit' );
-							$singular = ( $term && ! is_wp_error( $term ) ) ? $term->name : $default_unit;
-
-							return $amount_parsed <= 1 ? $singular : $plural;
+							$forms = WPRM_Recipe_Parser::get_ingredient_unit_forms_for_term( $default_unit, $unit_id );
+							return $forms ? ( $amount_parsed <= 1 ? $forms['singular'] : $forms['plural'] ) : $default_unit;
 						};
 						$decimals = intval( WPRM_Settings::get( 'adjustable_servings_round_to_decimals' ) );
 						if ( $decimals < 0 ) {
@@ -313,9 +383,7 @@ class WPRM_Shortcode_Other {
 
 						if ( $is_split && $split_amount_parsed_for_plural > 0 ) {
 							// Split-specific unit singular/plural.
-							if ( isset( $found_ingredient['unit_id'] ) && $found_ingredient['unit_id'] ) {
-								$unit = $get_unit_for_amount( $unit, intval( $found_ingredient['unit_id'] ), $split_amount_parsed_for_plural );
-							}
+							$unit = $get_unit_for_amount( $unit, isset( $found_ingredient['unit_id'] ) ? intval( $found_ingredient['unit_id'] ) : 0, $split_amount_parsed_for_plural );
 
 							// Split-specific ingredient name singular/plural.
 							if ( isset( $found_ingredient['id'] ) && $found_ingredient['id'] && WPRM_Ingredient_Display::connector_allows_ingredient_plural( $found_ingredient, intval( $recipe->unit_system() ) ) ) {
@@ -366,13 +434,11 @@ class WPRM_Shortcode_Other {
 												// Check system-specific fraction setting, fall back to general setting.
 												$allow_fractions = WPRM_Settings::get( 'unit_conversion_system_' . $system . '_fractions' );
 												$ingredient_for_output['converted'][ $system ]['amount'] = WPRM_Recipe_Parser::format_quantity( $converted_split, $decimals, $allow_fractions, true );
-												if ( isset( $converted['unit_id'] ) && $converted['unit_id'] ) {
-													$ingredient_for_output['converted'][ $system ]['unit'] = $get_unit_for_amount(
-														isset( $converted['unit'] ) ? $converted['unit'] : '',
-														intval( $converted['unit_id'] ),
-														$converted_split
-													);
-												}
+											$ingredient_for_output['converted'][ $system ]['unit'] = $get_unit_for_amount(
+													isset( $converted['unit'] ) ? $converted['unit'] : '',
+													isset( $converted['unit_id'] ) ? intval( $converted['unit_id'] ) : 0,
+													$converted_split
+												);
 											} else {
 												$ingredient_for_output['converted'][ $system ]['amount'] = '';
 											}

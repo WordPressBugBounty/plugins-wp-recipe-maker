@@ -72,8 +72,11 @@ class WPRM_Notices {
 	public static function check_for_dismiss() {
 		if ( isset( $_GET['wprm_dismiss'], $_GET['_wpnonce'] ) && is_string( $_GET['wprm_dismiss'] ) && is_string( $_GET['_wpnonce'] ) ) {
 			$notice_id = sanitize_text_field( wp_unslash( $_GET['wprm_dismiss'] ) );
-			if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wprm_dismiss_' . $notice_id ) ) {
-				self::dismiss( $notice_id );
+			if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wprm_dismiss_' . $notice_id ) && self::dismiss( $notice_id ) ) {
+				// The admin menu is built before admin_init, so reload for it to reflect the dismissal.
+				if ( wp_safe_redirect( remove_query_arg( array( 'wprm_dismiss', '_wpnonce' ) ) ) ) {
+					exit;
+				}
 			}
 		}
 	}
@@ -91,7 +94,7 @@ class WPRM_Notices {
 		}
 		$ids = array( 'ingredient_units' );
 		if ( defined( 'WPRMP_VERSION' ) ) {
-			$ids[] = 'amazon_creators_api';
+			$ids[] = 'amazon_creators_api_required';
 		}
 		foreach ( apply_filters( 'wprm_admin_notices', array() ) as $notice ) {
 			if ( isset( $notice['id'] ) && ( ! isset( $notice['dismissable'] ) || $notice['dismissable'] )

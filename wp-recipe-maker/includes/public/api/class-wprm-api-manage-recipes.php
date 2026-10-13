@@ -129,6 +129,12 @@ class WPRM_Api_Manage_Recipes {
 
 		$rows = array();
 		foreach ( $result['recipes'] as $recipe ) {
+			// Generate SEO data that's missing or outdated, so the SEO column is always current.
+			if ( WPRM_Seo_Checker::is_outdated( $recipe->seo() ) && WPRM_Seo_Checker::update_seo_for( $recipe->id() ) ) {
+				$updated_recipe = WPRM_Recipe_Manager::get_recipe( $recipe->id() );
+				$recipe = $updated_recipe ? $updated_recipe : $recipe;
+			}
+
 			$rows[] = $table_format ? $recipe->get_data_manage_table() : $recipe->get_data_manage();
 		}
 
@@ -183,8 +189,23 @@ class WPRM_Api_Manage_Recipes {
 				$args['orderby'] = 'date';
 				break;
 			case 'seo':
-				$args['orderby'] = 'meta_value_num';
-				$args['meta_key'] = 'wprm_seo_priority';
+				// Include recipes without SEO data, which a regular meta_key sort would exclude.
+				$args['meta_query']['seo_sort'] = array(
+					'relation' => 'OR',
+					'seo_priority' => array(
+						'key' => 'wprm_seo_priority',
+						'compare' => 'EXISTS',
+						'type' => 'NUMERIC',
+					),
+					array(
+						'key' => 'wprm_seo_priority',
+						'compare' => 'NOT EXISTS',
+					),
+				);
+				$args['orderby'] = array(
+					'seo_priority' => $args['order'],
+					'ID' => $args['order'],
+				);
 				break;
 			case 'slug':
 				$args['orderby'] = 'post_name';

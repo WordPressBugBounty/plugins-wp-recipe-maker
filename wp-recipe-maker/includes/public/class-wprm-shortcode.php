@@ -784,6 +784,7 @@ class WPRM_Shortcode {
 				WPRMPUC_Manager::prime_ingredient_name_forms( $recipe->ingredients_flat() );
 			}
 
+			WPRM_Recipe_Manager::remember_public_render_context( $recipe->id(), $public_post_id );
 			$output .= WPRM_Template_Manager::get_template( $recipe, $type, $recipe_template, $public_post_id );
 			$output .= '</div>';
 			

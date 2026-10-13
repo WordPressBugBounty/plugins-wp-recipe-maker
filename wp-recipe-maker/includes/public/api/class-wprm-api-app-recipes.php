@@ -69,6 +69,7 @@ class WPRM_Api_App_Recipes {
 
 		$rows = array();
 		foreach ( $result['recipes'] as $recipe ) {
+			$recipe = self::maybe_update_seo( $recipe );
 			$rows[] = self::get_recipe_list_data( $recipe );
 		}
 
@@ -100,8 +101,10 @@ class WPRM_Api_App_Recipes {
 			);
 		}
 
+		$recipe = self::maybe_update_seo( $recipe );
 		$data = $recipe->get_data( 'api' );
 
+		$data['images'] = self::get_recipe_images( $recipe );
 		$data['permalink'] = $recipe->permalink( true );
 		$data['parent_post_url'] = $recipe->parent_url();
 
@@ -109,8 +112,25 @@ class WPRM_Api_App_Recipes {
 		$data['parent_post_title'] = $parent_post ? get_the_title( $parent_post ) : '';
 
 		$data['seo'] = $recipe->seo();
+		$data['seo_test_url'] = (string) WPRM_Seo_Checker::get_test_url( $recipe );
+		$data['seo_fix_urls'] = (object) WPRM_Seo_Checker::get_fix_urls( $recipe );
 
 		return rest_ensure_response( $data );
+	}
+
+	/**
+	 * Generate SEO data that's missing or outdated, the same way the Manage page does.
+	 *
+	 * @since    10.9.0
+	 * @param    WPRM_Recipe $recipe Recipe to check.
+	 */
+	private static function maybe_update_seo( $recipe ) {
+		if ( WPRM_Seo_Checker::is_outdated( $recipe->seo() ) && WPRM_Seo_Checker::update_seo_for( $recipe->id() ) ) {
+			$updated_recipe = WPRM_Recipe_Manager::get_recipe( $recipe->id() );
+			$recipe = $updated_recipe ? $updated_recipe : $recipe;
+		}
+
+		return $recipe;
 	}
 
 	/**
@@ -180,6 +200,7 @@ class WPRM_Api_App_Recipes {
 			'date' => $recipe->date(),
 			'type' => $recipe->type(),
 			'image_url' => (string) $recipe->image_url( 'medium' ),
+			'images' => self::get_recipe_images( $recipe ),
 			'permalink' => (string) $recipe->permalink( true ),
 			'rating' => array(
 				'average' => floatval( isset( $rating['average'] ) ? $rating['average'] : 0 ),
@@ -190,6 +211,7 @@ class WPRM_Api_App_Recipes {
 			'total_time' => intval( $recipe->total_time() ),
 			'servings' => floatval( $recipe->servings() ),
 			'servings_unit' => (string) $recipe->servings_unit(),
+			'servings_nutrition' => $recipe->servings_nutrition(),
 			'seo' => array(
 				'type' => isset( $seo['type'] ) ? (string) $seo['type'] : 'missing',
 				'priority' => intval( isset( $seo['priority'] ) ? $seo['priority'] : 0 ),
@@ -200,6 +222,61 @@ class WPRM_Api_App_Recipes {
 				'cuisine' => self::get_term_names( $recipe->tags( 'cuisine' ) ),
 			),
 		);
+	}
+
+	/**
+	 * Get the full recipe image and the thumbnails used in the recipe metadata,
+	 * following the same rules as WPRM_Metadata::get_metadata_details().
+	 *
+	 * @since    10.9.0
+	 * @param    WPRM_Recipe $recipe Recipe to get the images for.
+	 */
+	private static function get_recipe_images( $recipe ) {
+		if ( ! $recipe->image_id() ) {
+			return array();
+		}
+
+		// Prevent Jetpack Photon from replacing image URLs, like the metadata does.
+		$photon_removed = false;
+		if ( class_exists( 'Jetpack' ) && class_exists( '\Automattic\Jetpack\Image_CDN\Image_CDN' ) && Jetpack::is_module_active( 'photon' ) ) {
+			$photon_removed = remove_filter( 'image_downsize', array( Automattic\Jetpack\Image_CDN\Image_CDN::instance(), 'filter_image_downsize' ) );
+		}
+
+		$sizes = array( 'full', 'wprm-metadata-1_1', 'wprm-metadata-4_3', 'wprm-metadata-16_9' );
+		$full_url = '';
+		$metadata_urls = array();
+		$images = array();
+
+		foreach ( $sizes as $size ) {
+			$url = (string) $recipe->image_url( $size );
+
+			if ( 'full' === $size ) {
+				$full_url = $url;
+			}
+
+			// A missing thumbnail falls back to the full image.
+			$generated = '' !== $url && ( 'full' === $size || $url !== $full_url );
+
+			// Food recipes include each unique size, how-to only the full image.
+			$in_metadata = false;
+			if ( $url && ( 'food' === $recipe->type() || ( 'howto' === $recipe->type() && 'full' === $size ) ) ) {
+				$in_metadata = ! in_array( $url, $metadata_urls, true );
+				$metadata_urls[] = $url;
+			}
+
+			$images[] = array(
+				'size' => $size,
+				'url' => $url,
+				'generated' => $generated,
+				'in_metadata' => $in_metadata,
+			);
+		}
+
+		if ( $photon_removed ) {
+			add_filter( 'image_downsize', array( Automattic\Jetpack\Image_CDN\Image_CDN::instance(), 'filter_image_downsize' ), 10, 3 );
+		}
+
+		return $images;
 	}
 
 	/**

@@ -25,7 +25,7 @@ class WPRM_Metadata {
 	 * @access   private
 	 * @var      int METADATA_CACHE_VERSION Version for the recipe metadata cache.
 	 */
-	const METADATA_CACHE_VERSION = 4;
+	const METADATA_CACHE_VERSION = 8;
 
 	/**
 	 * List of recipes we've already outputted the metadata for.
@@ -216,19 +216,35 @@ class WPRM_Metadata {
 					$recipe_ids_to_output_metadata_for = $recipe_ids;
 				} else {
 					// Only add metadata for first food recipe on page.
-					foreach ( $recipe_ids as $recipe_id ) {
-						$recipe = WPRM_Recipe_Manager::get_recipe( $recipe_id );
+					$first_recipe_id = self::get_first_recipe_id_for_metadata( $recipe_ids );
 
-						if ( $recipe && 'other' !== $recipe->type() ) {
-							$recipe_ids_to_output_metadata_for = array( $recipe_id );
-							break;
-						}
+					if ( $first_recipe_id ) {
+						$recipe_ids_to_output_metadata_for = array( $first_recipe_id );
 					}
 				}
 			}
 		}
 
 		return $recipe_ids_to_output_metadata_for;
+	}
+
+	/**
+	 * Get the recipe that gets metadata when only showing it for the first recipe.
+	 *
+	 * @since	10.9.0
+	 * @param	array $recipe_ids Recipe IDs in the order they appear on the page.
+	 * @return	mixed First recipe ID that outputs metadata or false if there is none.
+	 */
+	public static function get_first_recipe_id_for_metadata( $recipe_ids ) {
+		foreach ( $recipe_ids as $recipe_id ) {
+			$recipe = WPRM_Recipe_Manager::get_recipe( $recipe_id );
+
+			if ( $recipe && 'other' !== $recipe->type() ) {
+				return $recipe_id;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -440,6 +456,8 @@ class WPRM_Metadata {
 			'wp_version' => get_bloginfo( 'version' ),
 			'home_url' => home_url(),
 			'permalink_structure' => get_option( 'permalink_structure' ),
+			'timezone_string' => get_option( 'timezone_string' ),
+			'gmt_offset' => get_option( 'gmt_offset' ),
 			'locale' => function_exists( 'determine_locale' ) ? determine_locale() : get_locale(),
 			'recipe_id' => $recipe_id,
 			'recipe_modified' => $recipe_id ? get_post_modified_time( 'U', true, $recipe_id ) : 0,
@@ -476,9 +494,13 @@ class WPRM_Metadata {
 				'metadata_include_ingredient_notes',
 				'metadata_restrict_ingredient_length',
 				'metadata_instruction_name',
+				'decimal_separator',
 				'metadata_review_include',
 				'metadata_review_append_featured',
 				'metadata_youtube_api_key',
+				'metadata_video_creator_type',
+				'metadata_video_creator_fallback',
+				'recipe_author_same_link',
 				'nutrition_default_serving_unit',
 				'post_type_structure',
 				'post_type_comments',
@@ -551,6 +573,12 @@ class WPRM_Metadata {
 		$sanitized = array();
 		if ( is_array( $metadata ) ) {
 			foreach ( $metadata as $key => $value ) {
+				// schema.org expects an Integer here and provider counts are already cast.
+				if ( 'userInteractionCount' === $key && is_int( $value ) ) {
+					$sanitized[ $key ] = $value;
+					continue;
+				}
+
 				$sanitized[ $key ] = self::sanitize_metadata( $value );
 			}
 		} else {
@@ -569,16 +597,20 @@ class WPRM_Metadata {
 	 *
 	 * @since    10.8.3
 	 * @param    string $text Instruction text.
+	 * @param    object $recipe Recipe being serialized, independent of template context.
 	 */
-	private static function expand_instruction_metadata_shortcodes( $text ) {
+	private static function expand_instruction_metadata_shortcodes( $text, $recipe ) {
 		if ( ! is_string( $text ) || false === strpos( $text, '[wprm-' ) ) {
 			return $text;
 		}
 
-		$pattern = get_shortcode_regex( array( 'wprm-ingredient', 'wprm-temperature' ) );
+		// Marks a pan size without dimensions, so the whitespace around it can be collapsed afterwards.
+		$empty_pan_size = "\x1A" . 'wprm-empty-pan-size' . "\x1A";
+
+		$pattern = get_shortcode_regex( array( 'wprm-ingredient', 'wprm-temperature', 'wprm-pan-size' ) );
 		$expanded = preg_replace_callback(
 			"/$pattern/s",
-			function( $matches ) {
+			function( $matches ) use ( $recipe, $empty_pan_size ) {
 				// Leave escaped shortcode syntax for the metadata sanitizer to strip safely.
 				if ( '[' === $matches[1] && ']' === $matches[6] ) {
 					return $matches[0];
@@ -586,7 +618,25 @@ class WPRM_Metadata {
 
 				$attributes = shortcode_parse_atts( $matches[3] );
 				if ( ! is_array( $attributes ) ) {
-					return '';
+					// Older WordPress versions return a string for an attribute-free shortcode.
+					if ( 'wprm-pan-size' !== $matches[2] || '' !== trim( $matches[3] ) ) {
+						return '';
+					}
+					$attributes = array();
+				}
+
+				if ( 'wprm-pan-size' === $matches[2] ) {
+					if ( ! $recipe ) {
+						return $empty_pan_size;
+					}
+					$id = isset( $attributes['id'] ) ? trim( (string) $attributes['id'] ) : '';
+					// Metadata and its cache belong to this recipe. Never resolve foreign IDs,
+					// even for administrators whose generated metadata can be served publicly.
+					if ( '' !== $id && ( ! preg_match( '/^[0-9]+$/D', $id ) || ( 0 !== intval( $id ) && intval( $id ) !== intval( $recipe->id() ) ) ) ) {
+						return $empty_pan_size;
+					}
+					$pan_size = WPRM_Shortcode_Other::get_pan_size_text( $recipe, isset( $attributes['decimals'] ) ? $attributes['decimals'] : 'auto' );
+					return '' === $pan_size ? $empty_pan_size : $pan_size;
 				}
 
 				if ( 'wprm-ingredient' === $matches[2] ) {
@@ -606,7 +656,19 @@ class WPRM_Metadata {
 			$text
 		);
 
-		return null === $expanded ? $text : $expanded;
+		if ( null === $expanded ) {
+			return $text;
+		}
+
+		// Avoid "Bake in a  pan" when there are no pan dimensions to show.
+		if ( false !== strpos( $expanded, $empty_pan_size ) ) {
+			$marker = preg_quote( $empty_pan_size, '/' );
+			$expanded = preg_replace( '/[ \t]*' . $marker . '(?=[.,;:!?)<]|$)/', '', $expanded );
+			$expanded = preg_replace( '/(^|[ \t]+)' . $marker . '[ \t]*/', '$1', $expanded );
+			$expanded = str_replace( $empty_pan_size, '', $expanded );
+		}
+
+		return $expanded;
 	}
 
 	/**
@@ -652,6 +714,92 @@ class WPRM_Metadata {
 	}
 
 	/**
+	 * Complete or add the creator of a video.
+	 *
+	 * Provider creators are stored without @type so the type setting applies right
+	 * away. The recipe author is only used as a fallback when the settings allow it.
+	 * An existing author or complete creator is never overwritten.
+	 *
+	 * @since    10.9.0
+	 * @param    mixed  $video_metadata Video metadata.
+	 * @param    object $recipe         Recipe the video belongs to.
+	 * @param    bool   $is_upload      Whether the video was uploaded to the Media Library.
+	 */
+	public static function add_video_creator( $video_metadata, $recipe, $is_upload = false ) {
+		if ( ! is_array( $video_metadata ) || isset( $video_metadata['author'] ) ) {
+			return $video_metadata;
+		}
+
+		$creator = isset( $video_metadata['creator'] ) ? $video_metadata['creator'] : false;
+		$source = 'provider';
+
+		if ( is_array( $creator ) && isset( $creator['@type'] ) ) {
+			// Already complete.
+			return $video_metadata;
+		}
+
+		if ( ! is_array( $creator ) || empty( $creator['name'] ) ) {
+			$creator = false;
+			$fallback = WPRM_Settings::get( 'metadata_video_creator_fallback' );
+
+			if ( $recipe && ( 'all' === $fallback || ( 'uploads' === $fallback && $is_upload ) ) ) {
+				$name = $recipe->author_meta();
+
+				if ( $name ) {
+					$source = 'recipe_author';
+					$creator = array(
+						'@type' => 'Person',
+						'name' => $name,
+					);
+
+					$url = $recipe->author_meta_url();
+					if ( $url ) {
+						$creator['url'] = $url;
+					}
+				}
+			}
+		} else {
+			$type = WPRM_Settings::get( 'metadata_video_creator_type' );
+			$creator = array( '@type' => 'Person' === $type ? 'Person' : 'Organization' ) + $creator;
+		}
+
+		$creator = apply_filters( 'wprm_video_metadata_creator', $creator, $video_metadata, $recipe, $source );
+
+		if ( is_array( $creator ) && ! empty( $creator['name'] ) ) {
+			$video_metadata['creator'] = $creator;
+		} else {
+			unset( $video_metadata['creator'] );
+		}
+
+		return $video_metadata;
+	}
+
+	/**
+	 * Only keep one of creator and author on videos after external filtering.
+	 *
+	 * @since    10.9.0
+	 * @param    mixed $metadata Metadata to check.
+	 */
+	public static function remove_duplicate_video_creator( $metadata ) {
+		if ( ! is_array( $metadata ) ) {
+			return $metadata;
+		}
+
+		if ( isset( $metadata['@type'], $metadata['author'], $metadata['creator'] ) && 'VideoObject' === $metadata['@type'] ) {
+			// An author set through a filter takes priority over the creator we added.
+			unset( $metadata['creator'] );
+		}
+
+		foreach ( $metadata as $key => $value ) {
+			if ( is_array( $value ) ) {
+				$metadata[ $key ] = self::remove_duplicate_video_creator( $value );
+			}
+		}
+
+		return $metadata;
+	}
+
+	/**
 	 * Get the metadata for a recipe.
 	 *
 	 * @since    1.0.0
@@ -682,7 +830,9 @@ class WPRM_Metadata {
 		}
 
 		// Allow external filtering of metadata.
-		return apply_filters( 'wprm_recipe_metadata', $metadata, $recipe );
+		$metadata = apply_filters( 'wprm_recipe_metadata', $metadata, $recipe );
+
+		return self::remove_duplicate_video_creator( $metadata );
 	}
 
 	/**
@@ -694,21 +844,35 @@ class WPRM_Metadata {
 	public static function get_metadata_details( $recipe ) {
 		// Essentials.
 		$metadata = array(
-			'@context' => 'http://schema.org/',
+			'@context' => 'https://schema.org/',
 			'@type' => 'food' === $recipe->type() ? 'Recipe' : 'HowTo',
 			'name' => $recipe->name(),
-			'author' => array(
-				'@type' => 'Person',
-				'name' => $recipe->author_meta(),
-			),
-			'description' => wp_strip_all_tags( $recipe->summary() ),
 		);
 
-		// Dates.
-		$date_published = date( 'c', strtotime( $recipe->date() ) );
-		$metadata['datePublished'] = $date_published;
+		$author_name = trim( self::sanitize_metadata( $recipe->author_meta() ) );
+		if ( '' !== $author_name ) {
+			$metadata['author'] = array(
+				'@type' => 'Person',
+				'name' => $author_name,
+			);
+			$author_url = $recipe->author_meta_url();
+			if ( $author_url ) {
+				$metadata['author']['url'] = $author_url;
+			}
+		}
 
-		$date_modified = date( 'c', strtotime( $recipe->date_modified() ) );
+		$description = trim( self::sanitize_metadata( $recipe->summary() ) );
+		if ( '' !== $description ) {
+			$metadata['description'] = $description;
+		}
+
+		// Dates.
+		$date_published = self::get_date_published( $recipe );
+		if ( $date_published ) {
+			$metadata['datePublished'] = $date_published;
+		}
+
+		$date_modified = get_post_modified_time( 'c', true, $recipe->id() );
 		if ( $date_modified !== $date_published ) {
 			// Removed again on 2018-11-16 to see if this was causing rich snippet problems.
 			// $metadata['dateModified'] = $date_modified;
@@ -724,9 +888,15 @@ class WPRM_Metadata {
 					$recipe->image_url( 'wprm-metadata-16_9' ),
 				);
 	
-				$metadata['image'] = array_values( array_unique( $image_sizes ) );
+				$image_sizes = array_values( array_unique( array_filter( array_map( 'trim', $image_sizes ), 'strlen' ) ) );
+				if ( $image_sizes ) {
+					$metadata['image'] = $image_sizes;
+				}
 			} else {
-				$metadata['image'] = $recipe->image_url( 'full' );
+				$image_url = trim( $recipe->image_url( 'full' ) );
+				if ( '' !== $image_url ) {
+					$metadata['image'] = $image_url;
+				}
 			}
 		}
 
@@ -735,18 +905,19 @@ class WPRM_Metadata {
 		if ( $recipe->video_metadata() ) {
 			$metadata['video'] = self::sanitize_video_metadata_description( $recipe->video_metadata(), $recipe );
 			$metadata['video']['@type'] = 'VideoObject';
+			$metadata['video'] = self::add_video_creator( $metadata['video'], $recipe, (bool) ( $recipe->video_id() && get_post( $recipe->video_id() ) ) );
 			$check_video_parts = true;
 		}
 
 		// Yield.
-		if ( $recipe->servings() ) {
+		if ( $recipe->servings() || ( 'food' === $recipe->type() && $recipe->servings_nutrition() ) ) {
 			if ( 'food' === $recipe->type() ) {
 				$yield = array(
-					$recipe->servings(),
+					$recipe->servings_nutrition() ? (string) $recipe->servings_nutrition() : $recipe->servings(),
 				);
 
-				if ( $recipe->servings_unit() ) {
-					$yield[] = $recipe->servings() . ' ' . $recipe->servings_unit();
+				if ( $recipe->servings() && ( $recipe->servings_unit() || $recipe->servings_nutrition() ) ) {
+					$yield[] = trim( $recipe->servings() . ' ' . $recipe->servings_unit() );
 				}
 
 				$metadata['recipeYield'] = $yield;
@@ -809,6 +980,10 @@ class WPRM_Metadata {
 			foreach ( $ingredients as $ingredient ) {
 				if ( 'food' === $recipe->type() ) {
 					$metadata_ingredient = $ingredient['amount'] . ' ' . $ingredient['unit'] . ' ' . $ingredient['name'];
+					$metadata_ingredient = trim( preg_replace( '/\s+/u', ' ', self::sanitize_metadata( $metadata_ingredient ) ) );
+					if ( '' === $metadata_ingredient ) {
+						continue;
+					}
 					if ( WPRM_Settings::get( 'metadata_include_ingredient_notes' ) && trim( $ingredient['notes'] ) !== '' ) {
 						$ingredient_notes = ' (' . $ingredient['notes'] . ')';
 
@@ -822,7 +997,7 @@ class WPRM_Metadata {
 						}
 					}
 
-					$metadata_ingredients[] = $metadata_ingredient;
+					$metadata_ingredients[] = trim( preg_replace( '/\s+/u', ' ', self::sanitize_metadata( $metadata_ingredient ) ) );
 				} else {
 					$metadata_material = array(
 						'@type' => 'HowToSupply',
@@ -845,9 +1020,9 @@ class WPRM_Metadata {
 				}
 			}
 
-			if ( 'food' === $recipe->type() ) {
+			if ( 'food' === $recipe->type() && $metadata_ingredients ) {
 				$metadata['recipeIngredient'] = $metadata_ingredients;
-			} else {
+			} elseif ( 'howto' === $recipe->type() ) {
 				$metadata['supply'] = $metadata_ingredients;
 			}
 		}
@@ -879,7 +1054,7 @@ class WPRM_Metadata {
 
 					$metadata_instruction = array(
 						'@type' => 'HowToStep',
-						'text' => wp_strip_all_tags( self::expand_instruction_metadata_shortcodes( $instruction['text'] ) ),
+						'text' => wp_strip_all_tags( self::expand_instruction_metadata_shortcodes( $instruction['text'], $recipe ) ),
 					);
 
 					// Handle instruction step name field.
@@ -919,6 +1094,7 @@ class WPRM_Metadata {
 						if ( $video_metadata ) {
 							$metadata_instruction['video'] = self::sanitize_video_metadata_description( $video_metadata, $recipe );
 							$metadata_instruction['video']['@type'] = 'VideoObject';
+							$metadata_instruction['video'] = self::add_video_creator( $metadata_instruction['video'], $recipe, 'upload' === $video_type );
 						}
 					}
 
@@ -1195,6 +1371,42 @@ class WPRM_Metadata {
 		}
 
 		return $metadata;
+	}
+
+	/**
+	 * Get a valid publication date, including recipes with a floating draft date.
+	 *
+	 * @since 10.9.0
+	 * @param object $recipe Recipe to get the publication date for.
+	 * @return string|false Publication date in UTC, or false when unavailable.
+	 */
+	private static function get_date_published( $recipe ) {
+		$post = get_post( $recipe->id() );
+		if ( ! $post ) {
+			return false;
+		}
+
+		foreach ( array( 'post_date_gmt', 'post_date' ) as $field ) {
+			$date = $post->$field;
+			if ( ! is_string( $date ) || '' === $date || '0000' === substr( $date, 0, 4 ) ) {
+				continue;
+			}
+
+			// Reject zero and normalized invalid dates before older WP formats them.
+			$datetime = DateTime::createFromFormat( '!Y-m-d H:i:s', $date, new DateTimeZone( 'UTC' ) );
+			if ( ! $datetime || $date !== $datetime->format( 'Y-m-d H:i:s' ) ) {
+				continue;
+			}
+
+			if ( 'post_date_gmt' === $field ) {
+				return get_post_time( 'c', true, $post );
+			}
+
+			// Convert local time directly to UTC; mysql2date would reinterpret UTC as local.
+			return get_gmt_from_date( $date, 'c' );
+		}
+
+		return false;
 	}
 
 	/**

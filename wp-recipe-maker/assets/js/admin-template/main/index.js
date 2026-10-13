@@ -3,6 +3,7 @@ import React from 'react';
 import '../../../css/admin/template/main.scss';
 
 import ManageTemplates from './manage-templates';
+import KitchenTemplateRelease from './manage-templates/KitchenTemplateRelease';
 import EditTemplate from './edit-template';
 import PreviewTemplate from './preview-template';
 import ShortcodeGenerator from './shortcode-generator';
@@ -10,10 +11,21 @@ import FeatureExplorer from './feature-explorer';
 import TemplateAIComparison from './ai-comparison';
 
 const Main = (props) => {
+    const kitchen = wprm_admin_template.kitchen || {};
+    const savedTemplate = props.template && props.templates[props.template.slug];
     const showAIComparison = 'ai-assistant' === props.mode && props.aiTemplateProposal;
 
     return (
         <div id="wprm-template-main" className={`wprm-template-main-${props.mode}`}>
+            { savedTemplate?.location === 'database' && kitchen.url && kitchen.connected && savedTemplate.kitchen?.template_id && savedTemplate.kitchen?.version_id
+                ? <KitchenTemplateRelease
+                    key={ `${ savedTemplate.localTemplateId }:${ savedTemplate.revision }` }
+                    template={ savedTemplate }
+                    kitchen={ kitchen }
+                    hasUnsavedChanges={ props.changesMade }
+                />
+                : null
+            }
             {
                 'manage' === props.mode
                 &&

@@ -141,8 +141,15 @@ class WPRM_Compatibility_Divi {
 		add_filter( 'wprm_should_load_admin_assets', '__return_true' );
 
 		$GLOBALS['wprm_divi5_context'] = true;
+		// Prepare the editor while assets can still be enqueued, but keep body markup out of wp_head.
+		ob_start();
 		WPRM_Modal::add_modal_content();
+		$modal_content = ob_get_clean();
 		unset( $GLOBALS['wprm_divi5_context'] );
+
+		add_action( 'wp_body_open', static function() use ( $modal_content ) {
+			echo $modal_content;
+		} );
 
 		WPRM_Assets::enqueue_admin();
 		WPRM_Modal::enqueue();

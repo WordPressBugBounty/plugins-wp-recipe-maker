@@ -1,0 +1,146 @@
+{
+  "premium-10.8.0": {
+    "files": {
+      "1": "public-feature-add-to-collection.e447db5d.js",
+      "10": "public-feature-add-to-shopping-list.02365086.js",
+      "83": "public-feature-saved-collection.150fbe56.js",
+      "292": "public-feature-recipe-collections-jump-to-section.afe5226d.js",
+      "349": "public-feature-recipe-collections-app.ad3e2a15.js",
+      "438": "pdf-generator.cf9377d4.js",
+      "576": "public-feature-recipe-submission.b4c0038e.js",
+      "582": "public-feature-product-modal.9c7fd14e.js",
+      "830": "public-feature-shopping-list.f8c127ab.js",
+      "864": "public-feature-unit-conversion.f58d1731.js",
+      "868": "public-feature-product-icon.d9b0e0c7.js",
+      "929": "public-feature-recipe-collections-print.d4840b16.js"
+    }
+  },
+  "premium-10.8.1": {
+    "files": {
+      "1": "public-feature-add-to-collection.e447db5d.js",
+      "10": "public-feature-add-to-shopping-list.02365086.js",
+      "83": "public-feature-saved-collection.150fbe56.js",
+      "292": "public-feature-recipe-collections-jump-to-section.afe5226d.js",
+      "349": "public-feature-recipe-collections-app.ad3e2a15.js",
+      "438": "pdf-generator.cf9377d4.js",
+      "576": "public-feature-recipe-submission.b4c0038e.js",
+      "582": "public-feature-product-modal.9c7fd14e.js",
+      "830": "public-feature-shopping-list.f8c127ab.js",
+      "864": "public-feature-unit-conversion.f58d1731.js",
+      "868": "public-feature-product-icon.d9b0e0c7.js",
+      "929": "public-feature-recipe-collections-print.d4840b16.js"
+    }
+  },
+  "premium-10.8.2": {
+    "files": {
+      "1": "public-feature-add-to-collection.e447db5d.js",
+      "10": "public-feature-add-to-shopping-list.02365086.js",
+      "83": "public-feature-saved-collection.ebdadd20.js",
+      "292": "public-feature-recipe-collections-jump-to-section.afe5226d.js",
+      "349": "public-feature-recipe-collections-app.1f07e9ec.js",
+      "438": "pdf-generator.a9b0fd5c.js",
+      "576": "public-feature-recipe-submission.b4c0038e.js",
+      "582": "public-feature-product-modal.9c7fd14e.js",
+      "830": "public-feature-shopping-list.e06df6c3.js",
+      "864": "public-feature-unit-conversion.f58d1731.js",
+      "868": "public-feature-product-icon.d9b0e0c7.js",
+      "929": "public-feature-recipe-collections-print.f6240142.js"
+    }
+  },
+  "pro-10.8.0": {
+    "files": {
+      "1": "public-feature-add-to-collection.e447db5d.js",
+      "10": "public-feature-add-to-shopping-list.02365086.js",
+      "83": "public-feature-saved-collection.150fbe56.js",
+      "292": "public-feature-recipe-collections-jump-to-section.afe5226d.js",
+      "349": "public-feature-recipe-collections-app.ad3e2a15.js",
+      "438": "pdf-generator.cf9377d4.js",
+      "576": "public-feature-recipe-submission.b4c0038e.js",
+      "582": "public-feature-product-modal.9c7fd14e.js",
+      "830": "public-feature-shopping-list.f8c127ab.js",
+      "864": "public-feature-unit-conversion.f58d1731.js",
+      "868": "public-feature-product-icon.d9b0e0c7.js",
+      "929": "public-feature-recipe-collections-print.d4840b16.js"
+    }
+  },
+  "pro-10.8.1": {
+    "files": {
+      "1": "public-feature-add-to-collection.e447db5d.js",
+      "10": "public-feature-add-to-shopping-list.02365086.js",
+      "83": "public-feature-saved-collection.150fbe56.js",
+      "292": "public-feature-recipe-collections-jump-to-section.afe5226d.js",
+      "349": "public-feature-recipe-collections-app.ad3e2a15.js",
+      "438": "pdf-generator.cf9377d4.js",
+      "576": "public-feature-recipe-submission.b4c0038e.js",
+      "582": "public-feature-product-modal.9c7fd14e.js",
+      "830": "public-feature-shopping-list.f8c127ab.js",
+      "864": "public-feature-unit-conversion.f58d1731.js",
+      "868": "public-feature-product-icon.d9b0e0c7.js",
+      "929": "public-feature-recipe-collections-print.d4840b16.js"
+    }
+  },
+  "pro-10.8.2": {
+    "files": {
+      "1": "public-feature-add-to-collection.e447db5d.js",
+      "10": "public-feature-add-to-shopping-list.02365086.js",
+      "83": "public-feature-saved-collection.ebdadd20.js",
+      "292": "public-feature-recipe-collections-jump-to-section.afe5226d.js",
+      "349": "public-feature-recipe-collections-app.1f07e9ec.js",
+      "438": "pdf-generator.a9b0fd5c.js",
+      "576": "public-feature-recipe-submission.b4c0038e.js",
+      "582": "public-feature-product-modal.9c7fd14e.js",
+      "830": "public-feature-shopping-list.e06df6c3.js",
+      "864": "public-feature-unit-conversion.f58d1731.js",
+      "868": "public-feature-product-icon.d9b0e0c7.js",
+      "929": "public-feature-recipe-collections-print.f6240142.js"
+    }
+  },
+  "elite-10.8.0": {
+    "files": {
+      "1": "public-feature-add-to-collection.e447db5d.js",
+      "10": "public-feature-add-to-shopping-list.02365086.js",
+      "83": "public-feature-saved-collection.150fbe56.js",
+      "292": "public-feature-recipe-collections-jump-to-section.afe5226d.js",
+      "349": "public-feature-recipe-collections-app.ad3e2a15.js",
+      "438": "pdf-generator.cf9377d4.js",
+      "576": "public-feature-recipe-submission.b4c0038e.js",
+      "582": "public-feature-product-modal.9c7fd14e.js",
+      "830": "public-feature-shopping-list.f8c127ab.js",
+      "864": "public-feature-unit-conversion.f58d1731.js",
+      "868": "public-feature-product-icon.d9b0e0c7.js",
+      "929": "public-feature-recipe-collections-print.d4840b16.js"
+    }
+  },
+  "elite-10.8.1": {
+    "files": {
+      "1": "public-feature-add-to-collection.e447db5d.js",
+      "10": "public-feature-add-to-shopping-list.02365086.js",
+      "83": "public-feature-saved-collection.150fbe56.js",
+      "292": "public-feature-recipe-collections-jump-to-section.afe5226d.js",
+      "349": "public-feature-recipe-collections-app.ad3e2a15.js",
+      "438": "pdf-generator.cf9377d4.js",
+      "576": "public-feature-recipe-submission.b4c0038e.js",
+      "582": "public-feature-product-modal.9c7fd14e.js",
+      "830": "public-feature-shopping-list.f8c127ab.js",
+      "864": "public-feature-unit-conversion.f58d1731.js",
+      "868": "public-feature-product-icon.d9b0e0c7.js",
+      "929": "public-feature-recipe-collections-print.d4840b16.js"
+    }
+  },
+  "elite-10.8.2": {
+    "files": {
+      "1": "public-feature-add-to-collection.e447db5d.js",
+      "10": "public-feature-add-to-shopping-list.02365086.js",
+      "83": "public-feature-saved-collection.ebdadd20.js",
+      "292": "public-feature-recipe-collections-jump-to-section.afe5226d.js",
+      "349": "public-feature-recipe-collections-app.1f07e9ec.js",
+      "438": "pdf-generator.a9b0fd5c.js",
+      "576": "public-feature-recipe-submission.b4c0038e.js",
+      "582": "public-feature-product-modal.9c7fd14e.js",
+      "830": "public-feature-shopping-list.e06df6c3.js",
+      "864": "public-feature-unit-conversion.f58d1731.js",
+      "868": "public-feature-product-icon.d9b0e0c7.js",
+      "929": "public-feature-recipe-collections-print.f6240142.js"
+    }
+  }
+}

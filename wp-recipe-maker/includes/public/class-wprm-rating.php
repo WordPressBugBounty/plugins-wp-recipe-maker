@@ -92,6 +92,7 @@ class WPRM_Rating {
 		}
 
 		// Update recipe rating and average (to sort by).
+		$previous_count = intval( get_post_meta( $recipe_id, 'wprm_rating_count', true ) );
 		update_post_meta( $recipe_id, 'wprm_rating', $recipe_rating );
 		update_post_meta( $recipe_id, 'wprm_rating_average', $recipe_rating['average'] );
 		update_post_meta( $recipe_id, 'wprm_rating_count', $recipe_rating['count'] );
@@ -107,10 +108,10 @@ class WPRM_Rating {
 			update_post_meta( $parent_post_id, 'wprm_rating_count', $recipe_rating['count'] );
 		}
 
-		// Update SEO checker if this is the first rating.
-		if ( 1 === $recipe_rating['count'] ) {
+		// Update SEO checker when the recipe gets its first rating or loses its last one.
+		if ( ( 0 === $previous_count ) !== ( 0 === $recipe_rating['count'] ) ) {
 			WPRM_Seo_Checker::update_seo_for( $recipe_id );
-		}		
+		}
 
 		return $recipe_rating;
 	}

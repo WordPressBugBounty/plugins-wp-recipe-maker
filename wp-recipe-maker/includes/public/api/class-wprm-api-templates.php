@@ -86,7 +86,15 @@ class WPRM_Api_Templates {
 	public static function api_update_template( $request ) {
 		$params = $request->get_params();
 		$template = isset( $params['template'] ) ? $params['template'] : array();
-		return rest_ensure_response( WPRM_Template_Editor::prepare_template_for_editor( WPRM_Template_Manager::save_template( $template ) ) );
+		$all = WPRM_Template_Manager::get_templates();
+		$current = ! empty( $template['slug'] ) ? ( $all['modern'][ $template['slug'] ] ?? false ) : false;
+		$expected = null;
+		if ( $current && 'database' === $current['location'] ) {
+			if ( ! isset( $template['revision'] ) || ! is_int( $template['revision'] ) ) { return new WP_Error( 'wprm_template_revision_required', 'Reload the editor before saving this template.', array( 'status' => 409 ) ); }
+			$expected = $template['revision'];
+		}
+		$saved = WPRM_Template_Manager::save_template( $template, $expected );
+		return is_wp_error( $saved ) ? $saved : rest_ensure_response( WPRM_Template_Editor::prepare_template_for_editor( $saved ) );
 	}
 	
 	/**

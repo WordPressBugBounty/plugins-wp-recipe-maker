@@ -57,7 +57,7 @@ class WPRM_SC_Emeals extends WPRM_Template_Shortcode {
 
 		$css = 'border-radius: 100px; background-color: #0071CE; border: 0; box-sizing: border-box; color: #ffffff; font-family: Poppins, sans-serif; font-size: 15px; font-weight: normal; line-height: 1.25rem; padding: 16px 12px; text-align: center; text-decoration-thickness: auto; text-transform: none; cursor: pointer; user-select: none; touch-action: manipulation; width: 300px;';
 		$text = __( 'Get ingredients with', 'wp-recipe-maker' );
-		$img = '<img src="https://emeals-content.s3.amazonaws.com/web-shoppable/walmart-logo.png" style="width: auto; height: 20px; margin-right: 5px; vertical-align: bottom;"/>';
+		$img = '<img src="https://emeals-content.s3.amazonaws.com/web-shoppable/walmart-logo.png" alt="Walmart" style="width: auto; height: 20px; margin-right: 5px; vertical-align: bottom;"/>';
 
 		// Actual output.
 		$style = WPRM_Shortcode_Helper::get_inline_style( $css );

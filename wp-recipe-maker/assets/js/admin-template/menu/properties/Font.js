@@ -32,6 +32,11 @@ const PropertyFont = (props) => {
                 loadFont: 'cormorant-garamond',
             },
             {
+                value: '"Fraunces", serif',
+                label: 'Fraunces',
+                loadFont: 'fraunces',
+            },
+            {
                 value: '"Gloock", serif',
                 label: 'Gloock',
                 loadFont: 'gloock',
@@ -50,6 +55,11 @@ const PropertyFont = (props) => {
     },{
         label: 'Google Fonts - Sans Serif',
         options: [
+            {
+                value: '"Anton", sans-serif',
+                label: 'Anton',
+                loadFont: 'anton',
+            },
             {
                 value: '"Inter", sans-serif',
                 label: 'Inter',
@@ -74,6 +84,11 @@ const PropertyFont = (props) => {
                 value: '"Open Sans", sans-serif',
                 label: 'Open Sans',
                 loadFont: 'open-sans',
+            },
+            {
+                value: '"Oswald", sans-serif',
+                label: 'Oswald',
+                loadFont: 'oswald',
             },
             {
                 value: '"Poppins", sans-serif',
@@ -108,6 +123,15 @@ const PropertyFont = (props) => {
                 value: '"Pacifico", cursive',
                 label: 'Pacifico',
                 loadFont: 'pacifico',
+            },
+        ],
+    },{
+        label: 'Google Fonts - Monospace',
+        options: [
+            {
+                value: '"Courier Prime", monospace',
+                label: 'Courier Prime',
+                loadFont: 'courier-prime',
             },
         ],
     },{

@@ -642,6 +642,20 @@ class WPRM_SC_Ingredients extends WPRM_Template_Shortcode {
 					'value' => 'both',
 				),
 			),
+			'unit_conversion_both_position' => array(
+				'name' => 'Converted Unit Position',
+				'default' => 'after_amount_unit',
+				'type' => 'dropdown',
+				'options' => array(
+					'after_amount_unit' => 'After Original Amount/Unit',
+					'after_name' => 'After Ingredient Name, Before Notes',
+					'after_notes' => 'After Ingredient Notes',
+				),
+				'dependency' => array(
+					'id' => 'unit_conversion',
+					'value' => 'both',
+				),
+			),
 			'unit_conversion_show_identical' => array(
 				'name' => 'Show Identical',
 				'default' => '1',
@@ -1425,11 +1439,17 @@ class WPRM_SC_Ingredients extends WPRM_Template_Shortcode {
 						$name = apply_filters( 'wprm_recipe_ingredients_shortcode_link', false === strpos( $ingredient_display_name, '[' ) ? $ingredient_display_name : do_shortcode( $ingredient_display_name ), $ingredient, $recipe );
 					}
 
-					if ( $name || ! in_array( $atts['ingredients_style'], array( 'regular', 'grouped' ) ) ) {
+					$after_name = apply_filters( 'wprm_recipe_ingredients_shortcode_after_name', '', $atts, $ingredient );
+
+					if ( $name || $after_name || ! in_array( $atts['ingredients_style'], array( 'regular', 'grouped' ) ) ) {
 						if ( 'table-3' === substr( $atts['ingredients_style'], 0, 7 ) ) {
-							$name_output = '<span class="wprm-recipe-ingredient-name" style="flex-basis: ' . esc_attr( $atts['table_name_width'] ) .';">' . $name . '</span>'  . $separator;
+							if ( $after_name ) {
+								$name_output = '<span class="wprm-recipe-ingredient-name-conversion" style="flex-basis: ' . esc_attr( $atts['table_name_width'] ) .'; margin-right: 10px;"><span class="wprm-recipe-ingredient-name" style="margin-right: 0;">' . $name . '</span>' . $after_name . '</span>' . $separator;
+							} else {
+								$name_output = '<span class="wprm-recipe-ingredient-name" style="flex-basis: ' . esc_attr( $atts['table_name_width'] ) .';">' . $name . '</span>'  . $separator;
+							}
 						} else {
-							$name_output = '<span class="wprm-recipe-ingredient-name">' . $name . '</span>'  . $separator;
+							$name_output = '<span class="wprm-recipe-ingredient-name">' . $name . '</span>' . $after_name . $separator;
 						}
 					}
 
@@ -1444,6 +1464,15 @@ class WPRM_SC_Ingredients extends WPRM_Template_Shortcode {
 						}
 					} elseif( ! in_array( $atts['ingredients_style'], array( 'regular', 'grouped' ) ) ) {
 						$notes_output .= '<span class="wprm-recipe-ingredient-notes"></span>';
+					}
+
+					$after_notes = apply_filters( 'wprm_recipe_ingredients_shortcode_after_notes', '', $atts, $ingredient );
+					if ( $after_notes ) {
+						if ( 'table-3' === substr( $atts['ingredients_style'], 0, 7 ) ) {
+							$notes_output = '<span class="wprm-recipe-ingredient-notes-conversion" style="flex: 1;">' . $notes_output . $after_notes . '</span>';
+						} else {
+							$notes_output .= $after_notes;
+						}
 					}
 
 					// Table layout.

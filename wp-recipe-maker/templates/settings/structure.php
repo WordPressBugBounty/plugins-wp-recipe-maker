@@ -55,11 +55,8 @@ require_once( 'group-recipe-collections.php' );
 // Backend.
 require_once( 'group-recipe-defaults.php' );
 require_once( 'group-ai-assistant.php' );
-$kitchen_settings_groups = array();
-if ( WPRM_KITCHEN_UI_ENABLED ) {
-	require_once( 'group-kitchen.php' );
-	$kitchen_settings_groups[] = $kitchen;
-}
+require_once( 'group-kitchen.php' );
+$kitchen_settings_groups = array( $kitchen );
 require_once( 'group-analytics.php' );
 require_once( 'group-import.php' );
 require_once( 'group-changelog.php' );

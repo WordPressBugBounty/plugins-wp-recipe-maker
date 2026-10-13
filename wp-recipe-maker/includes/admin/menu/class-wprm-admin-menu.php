@@ -97,6 +97,7 @@ class WPRM_Admin_Menu {
 			'wprm_import_overview',
 			'wprm_settings',
 			'wprm_template_editor',
+			'wprm_kitchen',
 			'wprm_reports',
 			'wprm_tools',
 			'wprm_faq',
@@ -141,7 +142,7 @@ class WPRM_Admin_Menu {
 		?>
 		<style>
 			#adminmenu .toplevel_page_wprecipemaker .wp-submenu a[href="admin.php?page=wprm_settings"],
-			#adminmenu .toplevel_page_wprecipemaker .wp-submenu a[href="admin.php?page=wprm_reports"],
+			#adminmenu .toplevel_page_wprecipemaker .wp-submenu a[href="admin.php?page=wprm_kitchen"],
 			#adminmenu .toplevel_page_wprecipemaker .wp-submenu a[href="admin.php?page=wprm_faq"] {
 				border-top: 1px solid rgba(255, 255, 255, 0.16);
 				margin-top: 6px;

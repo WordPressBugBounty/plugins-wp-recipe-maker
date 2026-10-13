@@ -2,10 +2,10 @@
 Contributors: BrechtVds, BirtheVdm
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=QG7KZMGFU325Y
 Tags: recipe, recipes, food, cooking, schema
-Requires at least: 4.4
+Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 7.2
-Stable tag: 10.8.5
+Stable tag: 10.9.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -141,6 +141,32 @@ Please report security bugs found in the source code of the WP Recipe Maker plug
 7. Our Template Editor allows you to completely customize the look and feel.
 
 == Changelog ==
+
+= 10.9.0 =
+* Feature: WPRM Kitchen Integration
+* Feature: Video creator and interaction statistics metadata
+* Feature: GRO Save to Email block
+* Improvement: Include author URL in recipe metadata
+* Improvement: Track Google Preferred Sources button clicks
+* Improvement: Add video metadata refresh diagnostics
+* Improvement: Avoid unnecessary rich text updates when selecting text
+* Improvement: Compatibility with Public Post Preview for unpublished recipes
+* Improvement: Update Hubbub Pinterest integration with legacy compatibility
+* Improvement: Actionable SEO Metadata Checker
+* Improvement: Equipment note parsing settings
+* Improvement: Extra bundled fonts for the template editor
+* Improvement: Printing workaround for Facebook's in-app browser
+* Fix: Amazon Creators API notice dismissal
+* Fix: Recipe schema publication timezone
+* Fix: Debounce and serialize admin recipe searches
+* Fix: Preserve inherited Divi 5 button padding in Visual Builder
+* Fix: Honor unpublished recipe print permissions
+* Fix: Prevent print page caching
+* Fix: Prevent themes from breaking comment star clicks
+* Fix: Omit empty author, description, image and ingredient values from recipe metadata
+* Fix: Public recipe context for print and PDF
+* Fix: Incorrectly showing some notices
+
 = 10.8.5 =
 * Improvement: Sync Recipe Status tool
 * Fix: Empty recipes when parent post is not set and recipe is not published
@@ -634,6 +660,9 @@ Please report security bugs found in the source code of the WP Recipe Maker plug
 For earlier versions, please refer to [our full changelog](https://help.bootstrapped.ventures/article/124-wp-recipe-maker-changelog).
 
 == Upgrade notice ==
+= 10.9.0 =
+Some great new features and improvements
+
 = 10.8.5 =
 Fix empty recipe cards on public posts and split ingredient names, and add a recipe status sync tool.
 

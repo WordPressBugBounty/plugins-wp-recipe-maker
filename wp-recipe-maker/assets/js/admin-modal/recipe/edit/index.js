@@ -224,6 +224,7 @@ const EditRecipe = (props) => {
             <RecipeInstructions
                 type={ props.recipe.type }
                 ingredients={ props.recipe.ingredients_flat }
+                equipment={ props.recipe.equipment }
                 instructions={ props.recipe.instructions_flat }
                 onRecipeChange={ props.onRecipeChange }
                 allowVideo={ hasVideo && 'other' !== props.recipe.type }
@@ -255,6 +256,7 @@ const EditRecipe = (props) => {
             elem: (
                 <RecipeNutrition
                     nutrition={ props.recipe.nutrition }
+                    servingsNutrition={ props.recipe.servings_nutrition }
                     servings={{
                         amount: props.recipe.servings,
                         unit: props.recipe.servings_unit,

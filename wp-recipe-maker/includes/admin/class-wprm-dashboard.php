@@ -70,7 +70,6 @@ class WPRM_Dashboard {
 			$localize_data = apply_filters( 'wprm_admin_dashboard_localize', array(
 				'settings' => array(
 					'analytics_enabled' => WPRM_Settings::get( 'analytics_enabled' ),
-					'honey_home_integration' => WPRM_Settings::get( 'honey_home_integration' ),
 				),
 				'news' => $news['items'],
 				'recipes' => WPRM_Recipe_Manager::get_latest_recipes( 5, 'manage' ),

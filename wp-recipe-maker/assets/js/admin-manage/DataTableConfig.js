@@ -13,6 +13,7 @@ import ColumnsGlossary from './glossary/Columns';
 import ColumnsIdeas from './ideas/Columns';
 import ColumnsAnalytics from './analytics/Columns';
 import ColumnsChangelog from './changelog/Columns';
+import { openSeoTargetFromUrl } from './recipes/SeoTarget';
 
 let datatables = {
     'recipe': {
@@ -63,6 +64,10 @@ let datatables = {
                     }
                 },
             } );
+        },
+        // Open a recipe from the URL, like ?action=edit&recipe_id=123&group=times.
+        urlAction: ( datatable, urlParams ) => {
+            openSeoTargetFromUrl( urlParams, () => datatable.refreshData() );
         },
         selectedColumns: ['seo','id','date','name','parent_post', 'rating'],
         columns: ColumnsRecipe,

@@ -27,11 +27,21 @@ class WPRM_Compatibility {
 	private static $new_term_language = false;
 
 	/**
+	 * Parent authorized by Public Post Preview for this request only.
+	 *
+	 * @var int
+	 */
+	private static $public_preview_post_id = 0;
+
+	/**
 	 * Register actions and filters.
 	 *
 	 * @since	3.2.0
 	 */
 	public static function init() {
+		// Public Post Preview fires this after validating the token and enabled post.
+		add_action( 'ppp_show_public_preview', array( __CLASS__, 'public_post_preview' ) );
+
 		// Shortcode block in query loop.
 		add_filter( 'render_block', array( __CLASS__, 'shortcode_block_query_loop' ), 10, 2 );
 
@@ -90,6 +100,76 @@ class WPRM_Compatibility {
 
 		// Track created terms for multilingual plugins.
 		add_action( 'created_term', array( __CLASS__, 'maybe_set_new_term_language' ), 10, 3 );
+	}
+
+	/**
+	 * Remember a validated Public Post Preview without changing WP capabilities.
+	 *
+	 * @since 10.9.0
+	 * @param int $post_id Parent post being previewed.
+	 */
+	public static function public_post_preview( $post_id ) {
+		if ( is_admin() || wp_doing_ajax() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+			return;
+		}
+
+		self::$public_preview_post_id = intval( $post_id );
+		if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+			define( 'DONOTCACHEPAGE', true );
+		}
+		if ( ! headers_sent() ) {
+			nocache_headers();
+			header( 'Cache-Control: no-cache, must-revalidate, max-age=0, no-store, private' );
+		}
+	}
+
+	/**
+	 * Check whether a parent is the validated preview in this request.
+	 *
+	 * @since 10.9.0
+	 * @param int $post_id Parent post ID.
+	 * @return bool
+	 */
+	public static function is_public_post_preview( $post_id ) {
+		return self::$public_preview_post_id > 0 && self::$public_preview_post_id === intval( $post_id );
+	}
+
+	/**
+	 * Allow only unpublished recipes belonging to the validated preview parent.
+	 *
+	 * @since 10.9.0
+	 * @param int $recipe_id Recipe being loaded.
+	 * @return bool
+	 */
+	public static function public_post_preview_can_read_recipe( $recipe_id ) {
+		if ( ! self::$public_preview_post_id || is_admin() || wp_doing_ajax()
+			|| ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || is_feed() ) {
+			return false;
+		}
+
+		$post = get_post( $recipe_id );
+		$parent_id = intval( get_post_meta( $recipe_id, 'wprm_parent_post_id', true ) );
+		if ( ! $post instanceof WP_Post || WPRM_POST_TYPE !== $post->post_type
+			|| ! in_array( $post->post_status, array( 'draft', 'pending', 'future' ), true )
+			|| $parent_id !== self::$public_preview_post_id || $parent_id === intval( $recipe_id ) ) {
+			return false;
+		}
+
+		$parent = get_post( $parent_id );
+		if ( ! $parent instanceof WP_Post
+			|| ! in_array( $parent->post_status, array( 'publish', 'draft', 'pending', 'future' ), true )
+			|| post_password_required( $parent ) || post_password_required( $post ) ) {
+			return false;
+		}
+
+		foreach ( array( $recipe_id, $parent_id ) as $post_id ) {
+			if ( in_array( 'do_not_allow', map_meta_cap( 'read_post', get_current_user_id(), $post_id ), true ) ) {
+				return false;
+			}
+		}
+
+		// Pass the object to avoid recursively invoking the recipe accessor.
+		return WPRM_Access::can_access( $recipe_id, new WPRM_Recipe( $post ) );
 	}
 
 	/**

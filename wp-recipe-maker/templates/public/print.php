@@ -87,6 +87,15 @@ function wprm_maybe_redirect_to_parent_post( $output ) {
 					?>
 				<button id="wprm-print-button-print" class="wprm-print-button" type="button"><?php esc_html_e( 'Print', 'wp-recipe-maker' );?></button>
 			</div>
+			<div id="wprm-print-in-app-notice" hidden>
+				<p class="wprm-print-in-app-notice-text"><?php esc_html_e( 'Printing may not work inside Facebook. Open this page in Safari or Chrome using Facebook’s browser menu, then tap Print again.', 'wp-recipe-maker' ); ?></p>
+				<button id="wprm-print-button-copy-link" class="wprm-print-button" type="button" data-success="<?php echo esc_attr( __( 'Page link copied. Paste it into Safari or Chrome.', 'wp-recipe-maker' ) ); ?>" data-failure="<?php echo esc_attr( __( 'Could not copy automatically. Select and copy the link below.', 'wp-recipe-maker' ) ); ?>"><?php esc_html_e( 'Copy page link', 'wp-recipe-maker' ); ?></button>
+				<p id="wprm-print-in-app-notice-status" class="wprm-print-in-app-notice-status" role="status" aria-live="polite"></p>
+				<label for="wprm-print-in-app-notice-url" class="wprm-print-in-app-notice-url-label" hidden>
+					<span class="wprm-screen-reader-text"><?php esc_html_e( 'Page link', 'wp-recipe-maker' ); ?></span>
+					<input id="wprm-print-in-app-notice-url" class="wprm-print-in-app-notice-url" type="text" readonly />
+				</label>
+			</div>
 			<?php if ( isset( $output['header'] ) ) : ?>
 			<div id="wprm-print-header-options"><?php echo $output['header']; ?></div>
 			<?php endif; ?>
@@ -102,7 +111,7 @@ function wprm_maybe_redirect_to_parent_post( $output ) {
 		echo '</div>';
 
 		// Recipes we need the data for.
-		WPRM_Recipe_Manager::recipe_data_in_footer( $output['recipe_ids'] );
+		WPRM_Recipe_Manager::recipe_data_in_footer( $output['recipe_ids'], true );
 		?>
 		<?php
 		$print_ad = trim( WPRM_Settings::get( 'print_footer_ad' ) );

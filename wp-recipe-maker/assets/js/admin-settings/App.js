@@ -114,6 +114,15 @@ export default class App extends Component {
 
     componentDidMount() {
         window.addEventListener( 'beforeunload', this.beforeWindowClose.bind(this) );
+
+        // Jump to a specific setting when linked to with #setting_id.
+        const linkedSetting = window.location.hash.replace( /^#/, '' );
+        if ( /^[a-z0-9_]+$/i.test( linkedSetting ) && scroller.get( linkedSetting ) ) {
+            scroller.scrollTo( linkedSetting, {
+                smooth: false,
+                offset: -110,
+            } );
+        }
     }
     
     componentWillUnmount() {

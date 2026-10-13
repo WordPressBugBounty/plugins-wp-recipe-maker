@@ -144,6 +144,9 @@ class WPRM_Migrations {
 			if ( version_compare( $migrated_to_version, '9.6.0' ) < 0 ) {
 				require_once( WPRM_DIR . 'includes/admin/migrations/wprm-9-6-0-collection-structure-layout.php' );
 			}
+			if ( version_compare( $migrated_to_version, '10.9.0' ) < 0 ) {
+				require_once( WPRM_DIR . 'includes/admin/migrations/wprm-10-9-0-remove-dailygrub.php' );
+			}
 
 			// Specific migrations.
 			if ( ! self::is_migrated_to( 'ratings_db' ) ) {

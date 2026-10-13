@@ -40,8 +40,10 @@ class WPRM_Access {
 	 *
 	 * @since	8.0.0
 	 * @param	int $post_id Post ID to check access for.
+	 * @param	mixed $recipe Optional already loaded recipe, for print-only access.
+	 * @param	int $public_post_id Optional trusted/verified rendering post instead of the stored parent.
 	 */
-	public static function can_access( $post_id ) {
+	public static function can_access( $post_id, $recipe = false, $public_post_id = 0 ) {
 		// Allow overriding of this function.
 		$override_can_access = apply_filters( 'wprm_can_access', null, $post_id );
 		
@@ -75,11 +77,15 @@ class WPRM_Access {
 
 		// If we were checking a recipe, check the parent post restrictions as well.
 		if ( WPRM_POST_TYPE === get_post_type( $post_id ) ) {
-			$recipe = WPRM_Recipe_Manager::get_recipe( $post_id );
+			if ( ! $recipe instanceof WPRM_Recipe || intval( $recipe->id() ) !== intval( $post_id ) ) {
+				$recipe = WPRM_Recipe_Manager::get_recipe( $post_id );
+			}
 			if ( ! $recipe ) {
 				return false;
 			}
-			$parent_post_id = $recipe->parent_post_id();
+			// Only internal callers with an authorized rendering context may override
+			// stale parent metadata. The recipe's own restrictions are checked above.
+			$parent_post_id = $public_post_id ? intval( $public_post_id ) : $recipe->parent_post_id();
 
 			if ( $parent_post_id && $post_id !== $parent_post_id ) {
 				return self::can_access( $parent_post_id );

@@ -13,6 +13,7 @@ import { __wprm } from 'Shared/Translations';
 
 import FieldInstructionMedia from './FieldInstructionMedia';
 import FieldInstructionIngredients from './FieldInstructionIngredients';
+import FieldInstructionEquipment from './FieldInstructionEquipment';
 
 import FieldRichText from './FieldRichText';
 import FieldText from './FieldText';
@@ -281,6 +282,15 @@ const instruction = (props, provided) => {
                         { ...props }
                     />
                 }
+                {
+                    ! isTip
+                    &&
+                    'equipment' === props.editMode
+                    &&
+                    <FieldInstructionEquipment
+                        { ...props }
+                    />
+                }
             </div>
         </div>
     )
@@ -322,6 +332,8 @@ export default class FieldInstruction extends Component {
         if (
             JSON.stringify(this.props.video) !== JSON.stringify(nextProps.video)
             || JSON.stringify(this.props.ingredients) !== JSON.stringify(nextProps.ingredients)
+            || JSON.stringify(this.props.equipment) !== JSON.stringify(nextProps.equipment)
+            || ( 'equipment' === nextProps.editMode && JSON.stringify(this.props.allEquipment) !== JSON.stringify(nextProps.allEquipment) )
         ) {
              return true;
         }

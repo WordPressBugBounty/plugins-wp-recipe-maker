@@ -5,6 +5,8 @@ import Loader from 'Shared/Loader';
 
 const ManageTemplate = (props) => {
     const editable = 'database' === props.template.location;
+    const kitchen = wprm_admin_template.kitchen || {};
+    const slug = encodeURIComponent( props.template.slug );
 
     return (
         <div className="wprm-main-container">
@@ -86,6 +88,16 @@ const ManageTemplate = (props) => {
                                     className="button button-secondary button-compact"
                                 >Export</button>
                             </CopyToClipboard>
+                            {
+                                editable && kitchen.url && kitchen.connected
+                                &&
+                                <a
+                                    className="button button-secondary button-compact"
+                                    href={ `${ kitchen.url }/app/templates?view=sites&site=${ encodeURIComponent( kitchen.connection_id ) }&slug=${ slug }#template-${ slug }` }
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >Save to Kitchen ↗</a>
+                            }
                             <button
                                 className="button button-secondary button-compact"
                                 onClick={() => {

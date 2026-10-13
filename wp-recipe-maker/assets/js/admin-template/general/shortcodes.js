@@ -28,6 +28,7 @@ const getShortcodeId = (entry) => {
 const newShortcodes = [
     // New in 10.9.0
     'wprm-google-preferred-sources',
+    'wprm-gro-save-to-email',
     // New in 10.8.0
     'wprm-recipe-analytics',
     // New in 10.1.0
@@ -173,6 +174,7 @@ const shortcodeGroups = {
             { id: 'wprm-recipe-cookpal', name: 'CookPal', description: 'A button to open the CookPal assistant' },
             { id: 'wprm-recipe-my-shopping-help', name: 'My Shopping Help', description: 'A button to add the recipe to My Shopping Help' },
             { id: 'wprm-hubbub-save-this', name: 'Hubbub Save This', description: 'Display the Hubbub "Save This" form' },
+            { id: 'wprm-gro-save-to-email', name: 'GRO Save to Email', description: 'Display GRO’s save-to-email form for the current recipe' },
             { id: 'wprm-hubbub-action-buttons', name: 'Hubbub Action Buttons', description: 'Display Hubbub Action Buttons' },
         ],
     },

@@ -43,6 +43,9 @@ class WPRM_MetadataVideo {
 	 */
 	private static $locally_refreshed_recipes = array();
 
+	/** Bounded diagnostics collected only during a worker lookup. */
+	private static $lookup_diagnostics = null;
+
 	/**
 	 * Register actions and initialize the background process.
 	 *
@@ -130,21 +133,32 @@ class WPRM_MetadataVideo {
 	 * @return bool Whether new work was queued or an existing queue was dispatched.
 	 */
 	public static function schedule_refresh( $recipe, $force = false ) {
+		$result = self::schedule_refresh_result( $recipe, $force );
+		return ! empty( $result['queued'] ) || ! empty( $result['dispatched'] );
+	}
+
+	/**
+	 * Explicit scheduling outcome for admin tools. No outcome here means refreshed.
+	 * $dispatch_now is false only for an authorized synchronous recovery request.
+	 *
+	 * @return array Outcome, reason and whether a nonblocking dispatch was accepted.
+	 */
+	public static function schedule_refresh_result( $recipe, $force = false, $dispatch_now = true ) {
 		if ( ! $recipe || ! method_exists( $recipe, 'id' ) ) {
-			return false;
+			return array( 'outcome' => 'skipped', 'reason' => 'invalid_recipe' );
 		}
 
 		$recipe_id = intval( $recipe->id() );
 		if ( ! $recipe_id || ( defined( 'WPRM_POST_TYPE' ) && WPRM_POST_TYPE !== get_post_type( $recipe_id ) ) ) {
-			return false;
+			return array( 'outcome' => 'skipped', 'reason' => 'invalid_recipe' );
 		}
 		if ( isset( self::$locally_refreshed_recipes[ $recipe_id ] ) ) {
-			return false;
+			return array( 'outcome' => 'skipped', 'reason' => 'no_video' );
 		}
 
 		$lock = self::acquire_recipe_lock( $recipe_id, 30 );
 		if ( ! $lock ) {
-			return false;
+			return array( 'outcome' => 'already_pending', 'reason' => 'locked' );
 		}
 
 		// Recipes without usable video sources need no remote work. Cache the empty
@@ -154,11 +168,13 @@ class WPRM_MetadataVideo {
 			if ( $state && isset( $state['signature'] ) ) {
 				self::clear_retry_event( $recipe_id, $state['signature'] );
 			}
-			self::store_metadata( $recipe, self::get_video_metadata_for_recipe( $recipe, false ) );
-			self::$locally_refreshed_recipes[ $recipe_id ] = true;
+			$saved = self::store_metadata( $recipe, self::get_video_metadata_for_recipe( $recipe, false ) );
+			if ( $saved ) {
+				self::$locally_refreshed_recipes[ $recipe_id ] = true;
+			}
 			delete_post_meta( $recipe_id, self::REFRESH_STATE_META );
 			self::release_recipe_lock( $recipe_id, $lock );
-			return false;
+			return array( 'outcome' => $saved ? 'skipped' : 'failed', 'reason' => $saved ? 'no_video' : 'storage_failed' );
 		}
 
 		$queued = false;
@@ -181,12 +197,12 @@ class WPRM_MetadataVideo {
 
 			if ( 'processing' === $status && $started_at && $now - $started_at < self::get_processing_stale_interval() ) {
 				self::release_recipe_lock( $recipe_id, $lock );
-				return false;
+				return array( 'outcome' => 'already_pending', 'reason' => 'processing' );
 			}
 
 			if ( 'failed' === $status && ! $force && $next_attempt > $now ) {
 				self::release_recipe_lock( $recipe_id, $lock );
-				return false;
+				return array( 'outcome' => 'already_pending', 'reason' => 'retry_scheduled' );
 			}
 
 			if ( 'processing' === $status ) {
@@ -201,12 +217,17 @@ class WPRM_MetadataVideo {
 				if ( $now - $last_dispatch >= self::get_dispatch_retry_interval() ) {
 					$state['last_dispatch'] = $now;
 					if ( self::$background_process && ! self::$background_process->is_queued() ) {
-						self::$background_process->push_to_queue(
+						$queued = self::$background_process->enqueue_refresh(
 							array(
 								'recipe_id' => $recipe_id,
 								'signature' => $signature,
 							)
-						)->save();
+						);
+						if ( ! $queued ) {
+							self::release_recipe_lock( $recipe_id, $lock );
+							self::record_refresh_failure( $recipe_id, $signature, array( self::diagnostic( 'storage', 'queue_save_failed', 'The background job could not be saved.' ) ) );
+							return array( 'outcome' => 'failed', 'reason' => 'storage_failed' );
+						}
 					}
 					update_post_meta( $recipe_id, self::REFRESH_STATE_META, $state );
 					$dispatch = true;
@@ -214,7 +235,7 @@ class WPRM_MetadataVideo {
 
 				self::release_recipe_lock( $recipe_id, $lock );
 
-				return $dispatch ? self::dispatch_pending_refreshes() : false;
+				return self::schedule_result( $recipe_id, $signature, 'already_pending', $dispatch && $dispatch_now );
 			}
 		}
 
@@ -229,25 +250,34 @@ class WPRM_MetadataVideo {
 			'next_attempt' => 0,
 		);
 
+		// Keep the last failure visible until metadata is actually saved.
+		if ( $state && isset( $state['signature'], $state['diagnostics'] ) && hash_equals( (string) $state['signature'], $signature ) ) {
+			$new_state['diagnostics'] = $state['diagnostics'];
+		}
 		update_post_meta( $recipe_id, self::REFRESH_STATE_META, $new_state );
+		if ( self::get_refresh_state( $recipe_id ) !== $new_state ) {
+			self::release_recipe_lock( $recipe_id, $lock );
+			return array( 'outcome' => 'failed', 'reason' => 'storage_failed' );
+		}
 
 		if ( self::$background_process ) {
-			self::$background_process->push_to_queue(
+			$queued = self::$background_process->enqueue_refresh(
 				array(
 					'recipe_id' => $recipe_id,
 					'signature' => $signature,
 				)
-			)->save();
-			$queued = true;
+			);
 		}
 
 		self::release_recipe_lock( $recipe_id, $lock );
 
-		if ( $queued ) {
-			self::dispatch_pending_refreshes();
+		if ( ! $queued ) {
+			$diagnostic = self::$background_process ? self::diagnostic( 'storage', 'queue_save_failed', 'The background job could not be saved.' ) : self::diagnostic( 'dispatch', 'worker_unavailable', 'Background worker is unavailable.' );
+			self::record_refresh_failure( $recipe_id, $signature, array( $diagnostic ) );
+			return array( 'outcome' => 'failed', 'reason' => self::$background_process ? 'storage_failed' : 'worker_unavailable' );
 		}
 
-		return $queued;
+		return self::schedule_result( $recipe_id, $signature, 'queued', $dispatch_now );
 	}
 
 	/**
@@ -302,16 +332,34 @@ class WPRM_MetadataVideo {
 			return 'stale';
 		}
 
+		if ( 'processing' === $state['status'] && ! empty( $state['started_at'] ) && time() - intval( $state['started_at'] ) < self::get_processing_stale_interval() ) {
+			self::release_recipe_lock( $recipe_id, $lock );
+			return 'locked';
+		}
+		if ( 'failed' === $state['status'] && ! empty( $state['next_attempt'] ) && intval( $state['next_attempt'] ) > time() ) {
+			self::release_recipe_lock( $recipe_id, $lock );
+			return 'failed';
+		}
+
 		$state['status'] = 'processing';
 		$state['started_at'] = time();
 		update_post_meta( $recipe_id, self::REFRESH_STATE_META, $state );
 		self::release_recipe_lock( $recipe_id, $lock );
 
+		self::$lookup_diagnostics = array();
+		add_action( 'http_api_debug', array( __CLASS__, 'capture_provider_http' ), 10, 5 );
+		add_filter( 'pre_http_request', array( __CLASS__, 'capture_preempted_provider_http' ), PHP_INT_MAX, 3 );
 		try {
 			// Do not let provider-specific normalization mutate the recipe before the stale-work check.
 			$metadata = self::get_video_metadata_for_recipe( $recipe, false );
 		} catch ( Throwable $error ) {
-			return self::record_refresh_failure( $recipe_id, $signature );
+			self::add_lookup_diagnostic( self::exception_diagnostic( 'provider', $error ) );
+			return self::record_refresh_failure( $recipe_id, $signature, self::$lookup_diagnostics );
+		} finally {
+			$diagnostics = self::$lookup_diagnostics;
+			self::$lookup_diagnostics = null;
+			remove_action( 'http_api_debug', array( __CLASS__, 'capture_provider_http' ), 10 );
+			remove_filter( 'pre_http_request', array( __CLASS__, 'capture_preempted_provider_http' ), PHP_INT_MAX );
 		}
 
 		$current_recipe = self::get_fresh_recipe( $recipe_id, $signature );
@@ -321,7 +369,7 @@ class WPRM_MetadataVideo {
 		}
 
 		if ( self::metadata_has_failures( $current_recipe, $metadata ) ) {
-			return self::record_refresh_failure( $recipe_id, $signature );
+			return self::record_refresh_failure( $recipe_id, $signature, $diagnostics ? $diagnostics : array( self::diagnostic( 'provider', 'metadata_missing', 'A video source returned no usable metadata.' ) ) );
 		}
 
 		// Preserve the existing Mediavine duplicate-JSON-LD protection, but only after
@@ -361,11 +409,18 @@ class WPRM_MetadataVideo {
 			return 'stale';
 		}
 
-		self::store_metadata( $current_recipe, $metadata );
+		if ( ! self::store_metadata( $current_recipe, $metadata ) ) {
+			self::release_recipe_lock( $recipe_id, $lock );
+			return self::record_refresh_failure( $recipe_id, $signature, array( self::diagnostic( 'storage', 'save_failed', 'Video metadata could not be verified in storage.' ) ) );
+		}
 
 		delete_post_meta( $recipe_id, self::REFRESH_STATE_META, $state );
 		self::release_recipe_lock( $recipe_id, $lock );
 		self::clear_retry_event( $recipe_id, $signature );
+
+		if ( class_exists( 'WPRM_Seo_Checker' ) ) {
+			WPRM_Seo_Checker::update_seo_for( $recipe_id );
+		}
 
 		return 'completed';
 	}
@@ -483,7 +538,7 @@ class WPRM_MetadataVideo {
 	 * @param object $recipe Recipe object.
 	 * @return bool Whether metadata lookup has work to do.
 	 */
-	private static function has_video_sources( $recipe ) {
+	public static function has_video_sources( $recipe ) {
 		if ( $recipe->video_id() ) {
 			if ( get_post( $recipe->video_id() ) ) {
 				return true;
@@ -529,12 +584,17 @@ class WPRM_MetadataVideo {
 			$wp_embed->delete_oembed_caches( $parent_post );
 		}
 
-		update_post_meta( $recipe->id(), 'wprm_video_metadata', $metadata );
-		update_post_meta( $recipe->id(), 'wprm_video_metadata_updated', time() );
+		update_post_meta( $recipe->id(), 'wprm_video_metadata', wp_slash( $metadata ) );
+		if ( get_post_meta( $recipe->id(), 'wprm_video_metadata', true ) !== $metadata ) {
+			return false;
+		}
+		$updated_at = time();
+		update_post_meta( $recipe->id(), 'wprm_video_metadata_updated', $updated_at );
 
 		if ( class_exists( 'WPRM_Metadata' ) ) {
 			WPRM_Metadata::invalidate_metadata_for_recipe( $recipe->id() );
 		}
+		return $updated_at === intval( get_post_meta( $recipe->id(), 'wprm_video_metadata_updated', true ) );
 	}
 
 	/**
@@ -583,7 +643,7 @@ class WPRM_MetadataVideo {
 	 * @param string $signature Refresh signature.
 	 * @return string Failed status.
 	 */
-	private static function record_refresh_failure( $recipe_id, $signature ) {
+	private static function record_refresh_failure( $recipe_id, $signature, $diagnostics ) {
 		$lock = self::acquire_recipe_lock( $recipe_id, 30, 1000 );
 		if ( ! $lock ) {
 			return 'locked';
@@ -609,12 +669,17 @@ class WPRM_MetadataVideo {
 		$state['status'] = 'failed';
 		$state['attempts'] = $attempts;
 		$state['failed_at'] = time();
+		$state['diagnostics'] = array_slice( $diagnostics, 0, 5 );
 		$state['next_attempt'] = $next_attempt;
 		update_post_meta( $recipe_id, self::REFRESH_STATE_META, $state );
 		self::release_recipe_lock( $recipe_id, $lock );
 
 		if ( ! wp_next_scheduled( self::REFRESH_RETRY_HOOK, array( $recipe_id, $signature ) ) ) {
 			wp_schedule_single_event( $next_attempt, self::REFRESH_RETRY_HOOK, array( $recipe_id, $signature ) );
+		}
+
+		if ( class_exists( 'WPRM_Seo_Checker' ) ) {
+			WPRM_Seo_Checker::update_seo_for( $recipe_id );
 		}
 
 		return 'failed';
@@ -692,7 +757,7 @@ class WPRM_MetadataVideo {
 	 * Dispatch persisted work at most once per cooldown across concurrent requests.
 	 *
 	 * @since 10.9.0
-	 * @return bool Whether dispatch was attempted.
+	 * @return bool|WP_Error Accepted nonblocking request, deferred, or sanitized failure.
 	 */
 	private static function dispatch_pending_refreshes() {
 		if ( ! self::$background_process || ! apply_filters( 'wprm_video_metadata_background_dispatch', true ) ) {
@@ -718,9 +783,126 @@ class WPRM_MetadataVideo {
 			return false;
 		}
 
-		self::$background_process->dispatch();
+		try {
+			$response = self::$background_process->dispatch();
+		} catch ( Throwable $error ) {
+			return new WP_Error( 'dispatch_exception', 'Background dispatch raised an exception.', self::exception_diagnostic( 'dispatch', $error ) );
+		}
+		if ( false === $response ) {
+			return false; // The background process is already running.
+		}
+		$diagnostic = self::http_diagnostic( 'dispatch', $response );
+		if ( $diagnostic ) {
+			return new WP_Error( $diagnostic['code'], $diagnostic['message'], $diagnostic );
+		}
+		return true; // Nonblocking acceptance is not evidence that a worker ran.
 
-		return true;
+	}
+
+	/**
+	 * Describe scheduling separately from worker completion. A dispatch failure leaves
+	 * persisted work queued so the healthcheck or a later visitor can recover it.
+	 */
+	private static function schedule_result( $recipe_id, $signature, $outcome, $dispatch ) {
+		$result = $dispatch ? self::dispatch_pending_refreshes() : false;
+		if ( is_wp_error( $result ) || true === $result ) {
+			$lock = self::acquire_recipe_lock( $recipe_id, 30, 1000 );
+			if ( $lock ) {
+				$state = self::get_refresh_state( $recipe_id );
+				if ( $state && 'queued' === $state['status'] && hash_equals( (string) $state['signature'], $signature ) ) {
+					if ( is_wp_error( $result ) ) {
+						$state['dispatch_diagnostic'] = $result->get_error_data();
+					} else {
+						unset( $state['dispatch_diagnostic'] );
+					}
+					update_post_meta( $recipe_id, self::REFRESH_STATE_META, $state );
+				}
+				self::release_recipe_lock( $recipe_id, $lock );
+			}
+		}
+		return array(
+			'outcome' => is_wp_error( $result ) ? 'failed' : $outcome,
+			'reason' => is_wp_error( $result ) ? 'dispatch_failed' : ( true === $result ? 'dispatch_accepted' : 'dispatch_deferred' ),
+			'dispatched' => true === $result,
+			'queued' => 'queued' === $outcome,
+		);
+	}
+
+	/** Only internal, fixed text may enter diagnostics. Never pass remote messages here. */
+	private static function diagnostic( $stage, $code, $message ) {
+		return array( 'stage' => $stage, 'code' => $code, 'message' => $message, 'attempted_at' => time() );
+	}
+
+	/** Do not retain exception messages/traces: either may contain secrets or request bodies. */
+	private static function exception_diagnostic( $stage, $error ) {
+		$type = get_class( $error );
+		$type = in_array( $type, array( 'Exception', 'RuntimeException', 'TypeError', 'Error', 'ValueError', 'ErrorException' ), true ) ? $type : 'Throwable';
+		$diagnostic = self::diagnostic( $stage, 'exception', 'Refresh raised ' . $type . '. Inspect the server error log for this attempt.' );
+		$diagnostic['exception_code'] = intval( $error->getCode() );
+		return $diagnostic;
+	}
+
+	/** Extract bounded codes, never HTTP bodies, URLs, headers or arbitrary error text. */
+	private static function http_diagnostic( $stage, $response ) {
+		if ( is_wp_error( $response ) ) {
+			$code = $response->get_error_code();
+			$known_codes = array( 'http_request_failed', 'http_request_not_executed', 'http_request_rejected', 'http_request_host_is_external', 'https_ssl_verify_failed' );
+			$code = in_array( $code, $known_codes, true ) ? $code : 'transport_error';
+			$diagnostic = self::diagnostic( $stage, $code, 'HTTP request failed. Check network, TLS and loopback restrictions for this attempt.' );
+			if ( preg_match( '/cURL error ([0-9]{1,3})\b/', $response->get_error_message(), $match ) ) {
+				$diagnostic['curl_code'] = intval( $match[1] );
+			}
+			return $diagnostic;
+		}
+		if ( ! is_array( $response ) ) {
+			return self::diagnostic( $stage, 'invalid_http_response', 'No usable HTTP response was returned.' );
+		}
+		$status = intval( wp_remote_retrieve_response_code( $response ) );
+		// Nonblocking dispatch normally returns code 0. It confirms no worker outcome.
+		if ( ( 'dispatch' === $stage && 0 === $status ) || ( $status >= 200 && $status < 300 ) ) {
+			return false;
+		}
+		$diagnostic = self::diagnostic( $stage, 'http_error', 'HTTP request did not return a successful response.' );
+		$diagnostic['http_status'] = max( 0, min( 599, $status ) );
+		if ( 'youtube' === $stage ) {
+			$body = json_decode( wp_remote_retrieve_body( $response ), true );
+			$reason = isset( $body['error']['errors'][0]['reason'] ) ? $body['error']['errors'][0]['reason'] : '';
+			$reasons = array( 'quotaExceeded', 'dailyLimitExceeded', 'keyInvalid', 'accessNotConfigured', 'ipRefererBlocked', 'forbidden', 'videoNotFound', 'youtubeSignupRequired' );
+			if ( in_array( $reason, $reasons, true ) ) {
+				$diagnostic['provider_code'] = $reason;
+			}
+		}
+		return $diagnostic;
+	}
+
+	private static function add_lookup_diagnostic( $diagnostic ) {
+		if ( is_array( self::$lookup_diagnostics ) && $diagnostic && count( self::$lookup_diagnostics ) < 5 ) {
+			$comparison = $diagnostic;
+			unset( $comparison['attempted_at'] );
+			foreach ( self::$lookup_diagnostics as $existing ) {
+				unset( $existing['attempted_at'] );
+				if ( $comparison === $existing ) { return; }
+			}
+			self::$lookup_diagnostics[] = $diagnostic;
+		}
+	}
+
+	/** Observe only HTTP calls made inside the provider lookup; nothing is logged globally. */
+	public static function capture_provider_http( $response, $context, $transport, $args, $url ) {
+		if ( 'response' !== $context || ! is_array( self::$lookup_diagnostics ) ) {
+			return;
+		}
+		$host = wp_parse_url( $url, PHP_URL_HOST );
+		$stage = 'youtube.googleapis.com' === $host || 'www.googleapis.com' === $host ? 'youtube' : 'oembed';
+		self::add_lookup_diagnostic( self::http_diagnostic( $stage, $response ) );
+	}
+
+	/** Preempted HTTP requests do not emit http_api_debug (e.g. a firewall filter). */
+	public static function capture_preempted_provider_http( $response, $args, $url ) {
+		if ( false !== $response ) {
+			self::capture_provider_http( $response, 'response', '', $args, $url );
+		}
+		return $response;
 	}
 
 	/**
@@ -1062,6 +1244,15 @@ class WPRM_MetadataVideo {
 						if ( ! $metadata['uploadDate'] && isset( $body->upload_date ) ) {
 							$metadata['uploadDate'] = date( 'c', strtotime( $body->upload_date ) );
 						}
+						if ( ! isset( $metadata['creator'] ) ) {
+							$creator = self::get_provider_creator(
+								isset( $body->author_name ) ? $body->author_name : '',
+								isset( $body->author_url ) ? $body->author_url : ''
+							);
+							if ( $creator ) {
+								$metadata['creator'] = $creator;
+							}
+						}
 					}
 				}
 
@@ -1260,6 +1451,9 @@ class WPRM_MetadataVideo {
 
 			if ( $provider ) {
 				$oembed_data = $wp_oembed->fetch( $provider, $url );
+				if ( ! $oembed_data ) {
+					self::add_lookup_diagnostic( self::diagnostic( 'oembed', 'empty_response', 'oEmbed returned no usable video data.' ) );
+				}
 
 				if ( $oembed_data ) {
 					$name = isset( $oembed_data->title ) ? $oembed_data->title : '';
@@ -1301,6 +1495,15 @@ class WPRM_MetadataVideo {
 						'uploadDate' => $upload_date,
 						'duration' => $duration,
 					);
+
+					// Standard oEmbed author fields (channel, account or publishing site).
+					$creator = self::get_provider_creator(
+						isset( $oembed_data->author_name ) ? $oembed_data->author_name : '',
+						isset( $oembed_data->author_url ) ? $oembed_data->author_url : ''
+					);
+					if ( $creator ) {
+						$metadata['creator'] = $creator;
+					}
 				}
 
 				// Extend Youtube metadata via API.
@@ -1309,6 +1512,7 @@ class WPRM_MetadataVideo {
 
 					// Don't set YouTube metadata if uploadDate is missing.
 					if ( ! $metadata['uploadDate'] ) {
+						self::add_lookup_diagnostic( self::diagnostic( 'youtube', 'missing_upload_date', 'YouTube metadata requires uploadDate; check API access and the video response.' ) );
 						$metadata = false;
 					}
 				}
@@ -1385,9 +1589,15 @@ class WPRM_MetadataVideo {
 			$video_id = $video_parts[1];
 		}
 
+		if ( ! WPRM_Settings::get( 'metadata_youtube_agree_terms' ) ) {
+			self::add_lookup_diagnostic( self::diagnostic( 'youtube', 'terms_not_accepted', 'Accept the YouTube API terms in the video metadata settings to enable API lookup.' ) );
+		}
+		if ( ! $video_id ) {
+			self::add_lookup_diagnostic( self::diagnostic( 'youtube', 'video_id_missing', 'Could not identify a YouTube video ID.' ) );
+		}
 		if ( $video_id && WPRM_Settings::get( 'metadata_youtube_agree_terms' ) ) {
 			$api_key = self::get_youtube_api_key();
-			$api_url = 'https://youtube.googleapis.com/youtube/v3/videos?part=snippet&part=contentDetails&id=' . urlencode( $video_id ) . '&key=' . urlencode( $api_key );
+			$api_url = 'https://youtube.googleapis.com/youtube/v3/videos?part=snippet&part=contentDetails&part=statistics&id=' . urlencode( $video_id ) . '&key=' . urlencode( $api_key );
 			$request_args = apply_filters( 'wprm_youtube_metadata_request_args', array(
 				'headers' => array(
 					'Referer' => home_url( '/' ),
@@ -1401,20 +1611,113 @@ class WPRM_MetadataVideo {
 				$item = isset( $body->items[0] ) ? $body->items[0] : false;
 
 				if ( $item ) {
-					$snippet = $item->snippet;
-					$contentDetails = $item->contentDetails;
-					$metadata = array();
-
-					// Don't set empty values.
-					if ( isset ( $snippet->title ) && $snippet->title ) { $metadata['name'] = $snippet->title; }
-					if ( isset ( $snippet->description ) && $snippet->description ) { $metadata['description'] = $snippet->description; }
-					if ( isset ( $snippet->publishedAt ) && $snippet->publishedAt ) { $metadata['uploadDate'] = date( 'c', strtotime( $snippet->publishedAt ) ); }
-					if ( isset ( $contentDetails->duration ) && $contentDetails->duration ) { $metadata['duration'] = $contentDetails->duration; }
+					$metadata = self::parse_youtube_api_item( $item );
+				} else {
+					self::add_lookup_diagnostic( self::diagnostic( 'youtube', 'video_not_returned', 'YouTube API returned no video item. Check video availability and API access.' ) );
 				}
+			} else {
+				self::add_lookup_diagnostic( self::diagnostic( 'youtube', 'invalid_response', 'YouTube API returned no readable JSON data.' ) );
 			}
 		}
 
 		return $metadata;
+	}
+
+	/**
+	 * Convert a YouTube Data API video item to video metadata.
+	 *
+	 * @since   10.9.0
+	 * @param	object $item Item from the videos.list response.
+	 * @return	array Video metadata, without empty values.
+	 */
+	public static function parse_youtube_api_item( $item ) {
+		$metadata = array();
+		$snippet = isset( $item->snippet ) ? $item->snippet : false;
+		$content_details = isset( $item->contentDetails ) ? $item->contentDetails : false;
+
+		// Don't set empty values.
+		if ( $snippet ) {
+			if ( isset ( $snippet->title ) && $snippet->title ) { $metadata['name'] = $snippet->title; }
+			if ( isset ( $snippet->description ) && $snippet->description ) { $metadata['description'] = $snippet->description; }
+			if ( isset ( $snippet->publishedAt ) && $snippet->publishedAt ) { $metadata['uploadDate'] = date( 'c', strtotime( $snippet->publishedAt ) ); }
+
+			$creator = self::get_provider_creator(
+				isset( $snippet->channelTitle ) ? $snippet->channelTitle : '',
+				isset( $snippet->channelId ) && $snippet->channelId ? 'https://www.youtube.com/channel/' . rawurlencode( $snippet->channelId ) : ''
+			);
+			if ( $creator ) { $metadata['creator'] = $creator; }
+		}
+		if ( $content_details && isset ( $content_details->duration ) && $content_details->duration ) { $metadata['duration'] = $content_details->duration; }
+
+		$interaction_statistic = self::get_youtube_interaction_statistic( isset( $item->statistics ) ? $item->statistics : false );
+		if ( $interaction_statistic ) { $metadata['interactionStatistic'] = $interaction_statistic; }
+
+		return $metadata;
+	}
+
+	/**
+	 * Get the video creator as returned by the provider.
+	 *
+	 * Stored without @type so the type setting applies without a metadata refresh.
+	 *
+	 * @since   10.9.0
+	 * @param	mixed $name Creator name returned by the provider.
+	 * @param	mixed $url  Creator URL returned by the provider.
+	 * @return	array|false Creator with name and optional URL.
+	 */
+	public static function get_provider_creator( $name, $url = '' ) {
+		$name = is_scalar( $name ) ? trim( wp_strip_all_tags( (string) $name ) ) : '';
+
+		if ( ! $name ) {
+			return false;
+		}
+
+		$creator = array(
+			'name' => $name,
+		);
+
+		$url = is_scalar( $url ) ? esc_url_raw( trim( (string) $url ), array( 'http', 'https' ) ) : '';
+		if ( $url ) {
+			$creator['url'] = $url;
+		}
+
+		return $creator;
+	}
+
+	/**
+	 * Get interaction statistics from YouTube Data API statistics.
+	 *
+	 * Only counts YouTube actually returns are used. Like and comment counts are
+	 * missing when hidden or disabled, and the API has no share count.
+	 *
+	 * @since   10.9.0
+	 * @param	mixed $statistics Statistics object from the videos.list response.
+	 * @return	array InteractionCounter list.
+	 */
+	public static function get_youtube_interaction_statistic( $statistics ) {
+		$interaction_statistic = array();
+
+		if ( ! is_object( $statistics ) ) {
+			return $interaction_statistic;
+		}
+
+		$counts = array(
+			'viewCount' => 'WatchAction',
+			'likeCount' => 'LikeAction',
+			'commentCount' => 'CommentAction',
+		);
+
+		foreach ( $counts as $field => $interaction_type ) {
+			if ( isset( $statistics->$field ) && is_scalar( $statistics->$field ) && ctype_digit( (string) $statistics->$field ) ) {
+				$interaction_statistic[] = array(
+					'@type' => 'InteractionCounter',
+					'interactionType' => array( '@type' => $interaction_type ),
+					'userInteractionCount' => intval( $statistics->$field ),
+				);
+			}
+		}
+
+		return $interaction_statistic;
 	}
 }
 
@@ -1432,6 +1735,14 @@ class WPRM_Video_Metadata_Background_Process extends WPRM_WP_Background_Process 
 	protected $action = 'video_metadata_refresh';
 	protected $cron_interval = 5;
 	protected $queue_lock_time = 300;
+
+	/** Persist one job and verify its batch, without changing the vendor save contract. */
+	public function enqueue_refresh( $item ) {
+		$key = $this->generate_key();
+		$batch = array( $item );
+		update_site_option( $key, $batch );
+		return get_site_option( $key ) === $batch;
+	}
 
 	/**
 	 * Refresh a single recipe and always remove this queue item.

@@ -70,10 +70,10 @@ window.WPRecipeMaker.print = {
 			});
 
 			// Actually print.
-			WPRecipeMaker.print.recipeAsIs( recipeId, template, printIdentifier );
+			WPRecipeMaker.print.recipeAsIs( recipeId, template, printIdentifier, el.getAttribute( 'href' ) );
 		}
 	},
-	recipeAsIs: ( id, template = '', identifier = false ) => {
+	recipeAsIs: ( id, template = '', identifier = false, printUrl = false ) => {
 		let servings = false,
 			system = 1,
 			advancedServings = false;
@@ -94,20 +94,29 @@ window.WPRecipeMaker.print = {
 				advancedServings = recipe.data.currentAdvancedServings;
 			}
 
-			WPRecipeMaker.print.recipe( id, servings, system, advancedServings, template, identifier );
+			WPRecipeMaker.print.recipe( id, servings, system, advancedServings, template, identifier, printUrl );
 		} );
 	},
-	recipe: ( id, servings = false, system = 1, advancedServings = false, template = '', identifier = false ) => {
+	recipe: ( id, servings = false, system = 1, advancedServings = false, template = '', identifier = false, printUrl = false ) => {
 		let urlArgs = identifier ? identifier : id;
 		if ( template ) {
 			urlArgs += `/${template}`;
 		}
 
-		const url = WPRecipeMaker.print.getUrl( urlArgs );
+		let url = WPRecipeMaker.print.getUrl( urlArgs );
 		if ( ! url ) {
 			return;
 		}
 
+		// Preserve link-specific context only for this recipe's print destination.
+		if ( WPRecipeMaker.print.isPrintUrl( printUrl, url ) ) {
+			url = printUrl;
+		} else {
+			const data = window.wprm_recipes && window.wprm_recipes[ `recipe-${id}` ];
+			if ( data && data.public_render_context && data.public_render_context.wprm_public_post ) {
+				url += ( url.includes( '?' ) ? '&' : '?' ) + 'wprm_public_post=' + encodeURIComponent( data.public_render_context.wprm_public_post );
+			}
+		}
 		const target = wprm_public.settings.print_new_tab ? '_blank' : '_self';
 
 		// Pass along data to print window before opening it.
@@ -131,6 +140,38 @@ window.WPRecipeMaker.print = {
 					printWindow.WPRMPrint.setArgs( printArgs );
 				}
 			};
+		}
+	},
+	isPrintUrl: ( printUrl, generatedUrl ) => {
+		if ( typeof printUrl !== 'string' || ! printUrl.trim() || printUrl.trim().charAt( 0 ) === '#' ) {
+			return false;
+		}
+
+		try {
+			const link = new URL( printUrl, document.baseURI || window.location.href );
+			const expected = new URL( generatedUrl );
+			if ( ! /^https?:$/.test( link.protocol ) || link.origin !== expected.origin || link.username || link.password
+				|| link.pathname.replace( /\/$/, '' ) !== expected.pathname.replace( /\/$/, '' ) ) {
+				return false;
+			}
+			// The PHP print resolver expects the print argument first in a query URL.
+			if ( ! wprm_public.permalinks && ! link.search.startsWith( '?' + wprm_public.print_slug + '=' ) ) {
+				return false;
+			}
+
+			// This includes the configured print argument for plain permalinks and
+			// home URL parameters (for example, the language) in either URL format.
+			let matches = true;
+			expected.searchParams.forEach( ( value, key ) => {
+				const values = link.searchParams.getAll( key );
+				const expectedValues = expected.searchParams.getAll( key );
+				if ( values.length !== expectedValues.length || values.some( ( item, index ) => item !== expectedValues[ index ] ) ) {
+					matches = false;
+				}
+			} );
+			return matches;
+		} catch ( error ) {
+			return false;
 		}
 	},
 	getUrl: ( args ) => {

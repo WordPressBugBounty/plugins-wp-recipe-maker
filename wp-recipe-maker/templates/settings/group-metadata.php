@@ -179,6 +179,29 @@ $metadata = array(
 					'type' => 'text',
 					'default' => '',
 				),
+				array(
+					'id' => 'metadata_video_creator_type',
+					'name' => __( 'Video Creator Type', 'wp-recipe-maker' ),
+					'description' => __( 'Type to use for the video creator when it comes from the video provider, like a YouTube channel or the site name returned by Mediavine.', 'wp-recipe-maker' ),
+					'type' => 'dropdown',
+					'options' => array(
+						'Organization' => __( 'Organization', 'wp-recipe-maker' ),
+						'Person' => __( 'Person', 'wp-recipe-maker' ),
+					),
+					'default' => 'Organization',
+				),
+				array(
+					'id' => 'metadata_video_creator_fallback',
+					'name' => __( 'Video Creator Fallback', 'wp-recipe-maker' ),
+					'description' => __( 'When the video provider does not return a creator, optionally use the recipe author instead.', 'wp-recipe-maker' ),
+					'type' => 'dropdown',
+					'options' => array(
+						'uploads' => __( 'Use recipe author for videos uploaded to the Media Library only', 'wp-recipe-maker' ),
+						'all' => __( 'Use recipe author for all videos', 'wp-recipe-maker' ),
+						'never' => __( 'Never use the recipe author', 'wp-recipe-maker' ),
+					),
+					'default' => 'uploads',
+				),
 			),
 		),
 		array(

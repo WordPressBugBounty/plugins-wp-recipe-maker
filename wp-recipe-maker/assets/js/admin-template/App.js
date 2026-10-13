@@ -1343,7 +1343,9 @@ class App extends Component {
                 this.setState({
                     savingTemplate: false,
                 });
-                alert('An error occurred while saving the template. Please check the console for details.');
+                if (error.code === 'wprm_template_stale') {
+                    this.setState({ templateSaveConflict: parsedTemplate });
+                } else { alert(error.message || 'Template save failed. Your changes are still in the editor.'); }
             });
         }
     }
@@ -1351,6 +1353,11 @@ class App extends Component {
     render() {
         return (
             <div>
+                {this.state.templateSaveConflict ? <div role="alert" className="wprm-main-container">
+                    <p>This template changed elsewhere. Your unsaved changes are preserved.</p>
+                    <button onClick={() => { const copy = { ...this.state.templateSaveConflict, name: `${this.state.templateSaveConflict.name} (copy)`, oldSlug: this.state.templateSaveConflict.slug, slug: false }; this.setState({ templateSaveConflict: false }, () => this.onSaveTemplate(copy)); }}>Save as a copy</button>
+                    <button onClick={() => { if (confirm("Discard your unsaved changes and reload?")) window.location.reload(); }}>Discard and reload</button>
+                </div> : null}
                 <Menu
                     mode={ this.state.mode }
                     editing={ this.state.editing }
@@ -1386,6 +1393,7 @@ class App extends Component {
                     onApplyTemplateAIResult={ this.onApplyTemplateAIResult.bind(this) }
                 />
                 <Main
+                    changesMade={ this.changesMade() }
                     mode={ this.state.mode }
                     onChangeMode={ this.onChangeMode.bind(this) }
                     editing={ this.state.editing }

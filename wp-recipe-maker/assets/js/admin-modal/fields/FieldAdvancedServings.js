@@ -167,6 +167,11 @@ const FieldAdvancedServings = (props) => {
                         />
                         <div className="wprm-admin-modal-field-advanced-servings-details-text">{ servings.unit } { __wprm( 'height' ) } ({ __wprm( 'optional' ) })</div>
                     </div>
+                    {
+                        wprm_admin.addons.premium
+                        &&
+                        <p>{ __wprm( 'When visitors change servings, the suggested pan keeps the same proportions. Use the pan size button in an instruction step to show its dimensions there.' ) }</p>
+                    }
                 </Fragment>
             }
         </div>

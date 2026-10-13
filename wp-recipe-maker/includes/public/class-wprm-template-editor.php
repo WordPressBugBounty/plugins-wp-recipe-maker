@@ -230,8 +230,19 @@ class WPRM_Template_Editor {
 			$modern_templates[ $template['slug'] ] = self::prepare_template_for_editor( $template );
 		}
 
+		// Kitchen links only work with a valid origin and a connected site.
+		$kitchen_origin = WPRM_Kitchen_Client::get_origin();
+		$kitchen_url = is_wp_error( $kitchen_origin ) ? '' : $kitchen_origin;
+		$kitchen_connection_id = $kitchen_url ? WPRM_Api_App_Kitchen::get_connection_id() : '';
+
 		wp_localize_script( 'wprm-admin-template', 'wprm_admin_template', array(
 			'templates' => $modern_templates,
+			'kitchen' => array(
+				'url' => $kitchen_url,
+				'connected' => '' !== $kitchen_connection_id,
+				'connection_id' => $kitchen_connection_id,
+				'page_url' => admin_url( 'admin.php?page=wprm_kitchen' ),
+			),
 			'default_template_usages' => self::get_default_template_usages( $modern_templates ),
 			'shortcodes' => WPRM_Template_Shortcodes::get_shortcodes(),
 			'icons' => WPRM_Icon::get_all(),
@@ -478,6 +489,11 @@ class WPRM_Template_Editor {
 	 * @param	mixed $template Template to prepare.
 	 */
 	public static function prepare_template_for_editor( $template ) {
+		// Compare the saved native content before editor compatibility rewrites.
+		if ( ! empty( $template['kitchen']['version_id'] ) ) {
+			$template['kitchenChecksum'] = WPRM_Template_Package::checksum( $template );
+			$template['kitchenAlgorithm'] = WPRM_Template_Package::ALGORITHM;
+		}
 		$template['style'] = self::extract_style_with_properties( $template );
 
 		// Fix deprecated shortcodes.

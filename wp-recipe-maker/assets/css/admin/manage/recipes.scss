@@ -160,7 +160,10 @@
     background-color: white;
 
     display: flex;
-    cursor: pointer;
+
+    &.wprm-admin-manage-seo-indicator-clickable {
+        cursor: pointer;
+    }
 
     .wprm-admin-manage-seo-indicator-block {
         flex: 0 0 25%;
@@ -216,6 +219,131 @@
         .wprm-admin-manage-seo-indicator-block {
             background-color: #27ae60;
         }
+    }
+}
+
+$wprm-seo-bad: #d63638;
+$wprm-seo-warning: #e67e22;
+$wprm-seo-rating: #dba617;
+$wprm-seo-good: #00a32a;
+
+.tippy-box[data-theme~="wprm-seo"] {
+    background-color: #fff;
+    color: #1d2327;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    box-shadow: 0 6px 20px rgba( 0, 0, 0, 0.12 );
+    font-size: 13px;
+    line-height: 1.4;
+
+    .tippy-content {
+        padding: 0;
+    }
+
+    > .tippy-arrow {
+        color: #fff;
+    }
+}
+
+.wprm-admin-manage-seo-popover {
+    .wprm-admin-manage-seo-popover-header {
+        padding: 10px 12px;
+        border-bottom: 1px solid #f0f0f1;
+        border-top: 3px solid #dcdcde;
+        border-radius: 5px 5px 0 0;
+        font-weight: 600;
+
+        &.wprm-admin-manage-seo-popover-header-bad { border-top-color: $wprm-seo-bad; }
+        &.wprm-admin-manage-seo-popover-header-warning { border-top-color: $wprm-seo-warning; }
+        &.wprm-admin-manage-seo-popover-header-rating { border-top-color: $wprm-seo-rating; }
+        &.wprm-admin-manage-seo-popover-header-good { border-top-color: $wprm-seo-good; }
+    }
+
+    .wprm-admin-manage-seo-popover-issues {
+        margin: 0;
+        padding: 4px 0;
+        list-style: none;
+    }
+
+    .wprm-admin-manage-seo-popover-issue {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin: 0;
+        padding: 6px 12px;
+
+        .wprm-admin-manage-seo-popover-issue-dot {
+            flex: 0 0 8px;
+            height: 8px;
+            margin-top: 5px;
+            border-radius: 50%;
+        }
+
+        &.wprm-admin-manage-seo-popover-issue-required .wprm-admin-manage-seo-popover-issue-dot { background-color: $wprm-seo-bad; }
+        &.wprm-admin-manage-seo-popover-issue-recommended .wprm-admin-manage-seo-popover-issue-dot { background-color: $wprm-seo-warning; }
+        &.wprm-admin-manage-seo-popover-issue-rating .wprm-admin-manage-seo-popover-issue-dot { background-color: $wprm-seo-rating; }
+
+        .wprm-admin-manage-seo-popover-issue-text {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .wprm-admin-manage-seo-popover-issue-title {
+            font-weight: 500;
+        }
+
+        .wprm-admin-manage-seo-popover-issue-detail {
+            color: #646970;
+            font-size: 12px;
+        }
+
+        .button {
+            flex-shrink: 0;
+        }
+    }
+
+    .wprm-admin-manage-seo-popover-notes,
+    .wprm-admin-manage-seo-popover-message {
+        padding: 8px 12px;
+        color: #646970;
+        font-size: 12px;
+
+        p {
+            margin: 0;
+        }
+
+        p + p {
+            margin-top: 4px;
+        }
+    }
+
+    .wprm-admin-manage-seo-popover-notes {
+        border-top: 1px solid #f0f0f1;
+    }
+
+    .wprm-admin-manage-seo-popover-test {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 12px;
+        padding: 8px 12px;
+        border-top: 1px solid #f0f0f1;
+        background-color: #f6f7f7;
+        border-radius: 0 0 5px 5px;
+        font-size: 12px;
+
+        span {
+            flex-basis: 100%;
+            color: #646970;
+        }
+
+        a::after {
+            content: " \2197";
+        }
+    }
+
+    .wprm-admin-manage-seo-popover-message {
+        color: #1d2327;
+        font-size: 13px;
     }
 }
 

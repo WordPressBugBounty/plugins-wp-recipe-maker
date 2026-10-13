@@ -88,11 +88,17 @@ export default class AddRecipeToPost extends Component {
                     {__wprm('Add Recipe to Post')}
                 </Header>
                 <div className="wprm-admin-modal-add-recipe-to-post-container">
-                    <p>
-                        {__wprm('What would you like to do with this new')}
-                        {this.props.args.recipeName ? ` "${this.props.args.recipeName}"` : ''}
-                        {__wprm(' recipe?')}
-                    </p>
+                    {
+                        this.props.args.notInPost
+                        ?
+                        <p>{__wprm('This recipe isn\'t in any post yet, so Google can\'t see its recipe metadata. Where would you like to add it?')}</p>
+                        :
+                        <p>
+                            {__wprm('What would you like to do with this new')}
+                            {this.props.args.recipeName ? ` "${this.props.args.recipeName}"` : ''}
+                            {__wprm(' recipe?')}
+                        </p>
+                    }
                     
                     <div className="wprm-admin-modal-add-recipe-to-post-options">
                         <div className="wprm-admin-modal-add-recipe-to-post-section">

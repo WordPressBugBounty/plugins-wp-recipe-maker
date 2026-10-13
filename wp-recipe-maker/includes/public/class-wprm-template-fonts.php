@@ -584,6 +584,150 @@ class WPRM_Template_Fonts {
 				src: url({$font_url}gloock/Iurb6YFw84WUY4NJiBakJLRBjA.woff2) format('woff2');
 				unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 				}",
+			'fraunces' => "/* latin-ext */
+				@font-face {
+				font-family: 'Fraunces';
+				font-style: italic;
+				font-weight: 300 900;
+				font-display: swap;
+				src: url({$font_url}fraunces/6NUs8FyLNQOQZAnv9ZwNjucMHVn85Ni7emAe9lKqZTnbB-gzTK0K1ChJdt9vIVYX9G37lvd9mvMiQublWIIkfg.woff2) format('woff2');
+				unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+				}
+				/* latin */
+				@font-face {
+				font-family: 'Fraunces';
+				font-style: italic;
+				font-weight: 300 900;
+				font-display: swap;
+				src: url({$font_url}fraunces/6NUs8FyLNQOQZAnv9ZwNjucMHVn85Ni7emAe9lKqZTnbB-gzTK0K1ChJdt9vIVYX9G37lvd9mv0iQublWII.woff2) format('woff2');
+				unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+				}
+				/* latin-ext */
+				@font-face {
+				font-family: 'Fraunces';
+				font-style: normal;
+				font-weight: 300 900;
+				font-display: swap;
+				src: url({$font_url}fraunces/6NUu8FyLNQOQZAnv9bYEvDiIdE9Ea92uemAk_WBq8U_9v0c2Wa0K7iN7hzFUPJH58nib14c1qv8oRcTnaIM.woff2) format('woff2');
+				unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+				}
+				/* latin */
+				@font-face {
+				font-family: 'Fraunces';
+				font-style: normal;
+				font-weight: 300 900;
+				font-display: swap;
+				src: url({$font_url}fraunces/6NUu8FyLNQOQZAnv9bYEvDiIdE9Ea92uemAk_WBq8U_9v0c2Wa0K7iN7hzFUPJH58nib14c7qv8oRcTn.woff2) format('woff2');
+				unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+				}",
+			'oswald' => "/* latin-ext */
+				@font-face {
+				font-family: 'Oswald';
+				font-style: normal;
+				font-weight: 300 700;
+				font-display: swap;
+				src: url({$font_url}oswald/TK3iWkUHHAIjg752Fz8Gl-1PK62t.woff2) format('woff2');
+				unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+				}
+				/* latin */
+				@font-face {
+				font-family: 'Oswald';
+				font-style: normal;
+				font-weight: 300 700;
+				font-display: swap;
+				src: url({$font_url}oswald/TK3iWkUHHAIjg752GT8Gl-1PKw.woff2) format('woff2');
+				unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+				}",
+			'anton' => "/* latin-ext */
+				@font-face {
+				font-family: 'Anton';
+				font-style: normal;
+				font-weight: 400;
+				font-display: swap;
+				src: url({$font_url}anton/1Ptgg87LROyAm3K9-C8CSKlvPfE.woff2) format('woff2');
+				unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+				}
+				/* latin */
+				@font-face {
+				font-family: 'Anton';
+				font-style: normal;
+				font-weight: 400;
+				font-display: swap;
+				src: url({$font_url}anton/1Ptgg87LROyAm3Kz-C8CSKlv.woff2) format('woff2');
+				unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+				}",
+			'courier-prime' => "/* latin-ext */
+				@font-face {
+				font-family: 'Courier Prime';
+				font-style: italic;
+				font-weight: 400;
+				font-display: swap;
+				src: url({$font_url}courier-prime/u-4n0q2lgwslOqpF_6gQ8kELawRZVsf6hPvhPUWH.woff2) format('woff2');
+				unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+				}
+				/* latin */
+				@font-face {
+				font-family: 'Courier Prime';
+				font-style: italic;
+				font-weight: 400;
+				font-display: swap;
+				src: url({$font_url}courier-prime/u-4n0q2lgwslOqpF_6gQ8kELawRZWMf6hPvhPQ.woff2) format('woff2');
+				unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+				}
+				/* latin-ext */
+				@font-face {
+				font-family: 'Courier Prime';
+				font-style: italic;
+				font-weight: 700;
+				font-display: swap;
+				src: url({$font_url}courier-prime/u-4i0q2lgwslOqpF_6gQ8kELawRR4-Lvp9nsF3-OA6Fw.woff2) format('woff2');
+				unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+				}
+				/* latin */
+				@font-face {
+				font-family: 'Courier Prime';
+				font-style: italic;
+				font-weight: 700;
+				font-display: swap;
+				src: url({$font_url}courier-prime/u-4i0q2lgwslOqpF_6gQ8kELawRR4-LvqdnsF3-OAw.woff2) format('woff2');
+				unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+				}
+				/* latin-ext */
+				@font-face {
+				font-family: 'Courier Prime';
+				font-style: normal;
+				font-weight: 400;
+				font-display: swap;
+				src: url({$font_url}courier-prime/u-450q2lgwslOqpF_6gQ8kELaw9pWs39pvnRPA.woff2) format('woff2');
+				unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+				}
+				/* latin */
+				@font-face {
+				font-family: 'Courier Prime';
+				font-style: normal;
+				font-weight: 400;
+				font-display: swap;
+				src: url({$font_url}courier-prime/u-450q2lgwslOqpF_6gQ8kELawFpWs39pvk.woff2) format('woff2');
+				unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+				}
+				/* latin-ext */
+				@font-face {
+				font-family: 'Courier Prime';
+				font-style: normal;
+				font-weight: 700;
+				font-display: swap;
+				src: url({$font_url}courier-prime/u-4k0q2lgwslOqpF_6gQ8kELY7pMT-7fq9PrNX2-Ag.woff2) format('woff2');
+				unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+				}
+				/* latin */
+				@font-face {
+				font-family: 'Courier Prime';
+				font-style: normal;
+				font-weight: 700;
+				font-display: swap;
+				src: url({$font_url}courier-prime/u-4k0q2lgwslOqpF_6gQ8kELY7pMT-Dfq9PrNX0.woff2) format('woff2');
+				unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+				}",
 		);
 	}
 }

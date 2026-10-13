@@ -151,7 +151,7 @@ class WPRM_Modal {
 		}
 		
 		wp_enqueue_style( 'wprm-admin-modal', WPRM_URL . 'dist/admin-modal.css', array(), WPRM_VERSION, 'all' );
-		wp_enqueue_script( 'wprm-admin-modal', WPRM_URL . 'dist/admin-modal.js', array(), WPRM_VERSION, true );
+		wp_enqueue_script( 'wprm-admin-modal', WPRM_URL . 'dist/admin-modal.js', array( 'wprm-shared' ), WPRM_VERSION, true );
 
 		// Starting recipe for modal.
 		$empty_recipe = new WPRM_Recipe_Shell(array(
@@ -206,6 +206,8 @@ class WPRM_Modal {
 				'term_link_nofollow' => self::get_term_link_nofollow_options(),
 			),
 			'settings' => array(
+				'import_equipment_notes_identifier' => WPRM_Settings::get( 'import_equipment_notes_identifier' ),
+				'import_equipment_notes_remove_identifier' => WPRM_Settings::get( 'import_equipment_notes_remove_identifier' ),
 				'import_instructions_split' => WPRM_Settings::get( 'import_instructions_split' ),
 			),
 			'multilingual' => WPRM_Compatibility::multilingual(),

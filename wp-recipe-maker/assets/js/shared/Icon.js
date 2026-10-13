@@ -34,6 +34,7 @@ import IconMerge from '../../icons/admin/merge.svg';
 import IconMovie from '../../icons/admin/movie.svg';
 import IconPencil from '../../icons/admin/pencil.svg';
 import IconPhoto from '../../icons/admin/photo.svg';
+import IconPanSize from '../../icons/admin/pan-size.svg';
 import IconPlus from '../../icons/admin/plus.svg';
 import IconPlusText from '../../icons/admin/plus-text.svg';
 import IconPrint from '../../icons/admin/print.svg';
@@ -86,6 +87,7 @@ const icons = {
     movie: IconMovie,
     pencil: IconPencil,
     photo: IconPhoto,
+    'pan-size': IconPanSize,
     plus: IconPlus,
     'plus-text': IconPlusText,
     print: IconPrint,

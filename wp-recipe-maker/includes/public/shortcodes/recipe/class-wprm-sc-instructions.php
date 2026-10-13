@@ -1540,19 +1540,12 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 
 						if ( 'ingredient' === $found_ingredient['type'] ) {
 							$get_unit_for_amount = function( $default_unit, $unit_id, $amount_parsed ) {
-								if ( ! $unit_id || $amount_parsed <= 0 ) {
+								if ( $amount_parsed <= 0 ) {
 									return $default_unit;
 								}
 
-								$plural = get_term_meta( $unit_id, 'wprm_ingredient_unit_plural', true );
-								if ( ! $plural ) {
-									return $default_unit;
-								}
-
-								$term = get_term( $unit_id, 'wprm_ingredient_unit' );
-								$singular = ( $term && ! is_wp_error( $term ) ) ? $term->name : $default_unit;
-
-								return $amount_parsed <= 1 ? $singular : $plural;
+								$forms = WPRM_Recipe_Parser::get_ingredient_unit_forms_for_term( $default_unit, $unit_id );
+								return $forms ? ( $amount_parsed <= 1 ? $forms['singular'] : $forms['plural'] ) : $default_unit;
 							};
 							$decimals = intval( WPRM_Settings::get( 'adjustable_servings_round_to_decimals' ) );
 							if ( $decimals < 0 ) {
@@ -1610,9 +1603,7 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 
 							if ( $is_split && $split_amount_parsed_for_plural > 0 ) {
 								// Split-specific unit singular/plural.
-								if ( isset( $found_ingredient['unit_id'] ) && $found_ingredient['unit_id'] ) {
-									$unit = $get_unit_for_amount( $unit, intval( $found_ingredient['unit_id'] ), $split_amount_parsed_for_plural );
-								}
+								$unit = $get_unit_for_amount( $unit, isset( $found_ingredient['unit_id'] ) ? intval( $found_ingredient['unit_id'] ) : 0, $split_amount_parsed_for_plural );
 
 								// Split-specific ingredient name singular/plural.
 								if ( isset( $found_ingredient['id'] ) && $found_ingredient['id'] && WPRM_Ingredient_Display::connector_allows_ingredient_plural( $found_ingredient, intval( $recipe->unit_system() ) ) ) {
@@ -1664,13 +1655,11 @@ class WPRM_SC_Instructions extends WPRM_Template_Shortcode {
 												// Check system-specific fraction setting, fall back to general setting.
 												$allow_fractions = WPRM_Settings::get( 'unit_conversion_system_' . $system . '_fractions' );
 												$ingredient_for_output['converted'][ $system ]['amount'] = WPRM_Recipe_Parser::format_quantity( $converted_split, $decimals, $allow_fractions, true );
-												if ( isset( $converted['unit_id'] ) && $converted['unit_id'] ) {
-													$ingredient_for_output['converted'][ $system ]['unit'] = $get_unit_for_amount(
+												$ingredient_for_output['converted'][ $system ]['unit'] = $get_unit_for_amount(
 														isset( $converted['unit'] ) ? $converted['unit'] : '',
-														intval( $converted['unit_id'] ),
+														isset( $converted['unit_id'] ) ? intval( $converted['unit_id'] ) : 0,
 														$converted_split
 													);
-												}
 											} else {
 												$ingredient_for_output['converted'][ $system ]['amount'] = '';
 											}

@@ -194,6 +194,7 @@ class WPRM_Recipe_Saver {
 		if ( isset( $recipe['author_bio'] ) )					{ $meta['wprm_author_bio'] = $recipe['author_bio']; }
 		if ( isset( $recipe['servings'] ) )						{ $meta['wprm_servings'] = $recipe['servings']; }
 		if ( isset( $recipe['servings_unit'] ) )				{ $meta['wprm_servings_unit'] = $recipe['servings_unit']; }
+		if ( isset( $recipe['servings_nutrition'] ) )			{ $meta['wprm_servings_nutrition'] = $recipe['servings_nutrition']; }
 		if ( isset( $recipe['servings_advanced_enabled'] ) )	{ $meta['wprm_servings_advanced_enabled'] = $recipe['servings_advanced_enabled']; }
 		if ( isset( $recipe['servings_advanced'] ) )			{ $meta['wprm_servings_advanced'] = $recipe['servings_advanced']; }
 		if ( isset( $recipe['cost'] ) )							{ $meta['wprm_cost'] = $recipe['cost']; }
@@ -641,11 +642,17 @@ class WPRM_Recipe_Saver {
 		if ( $query->have_posts() ) {
 			$ids = $query->posts;
 
+			$removed_recipe_ids = array();
+
 			foreach ( $ids as $id ) {
 				if ( ! in_array( intval( $id ), $recipe_ids, true ) && current_user_can( 'edit_post', $id ) ) {
 					delete_post_meta( $id, 'wprm_parent_post_id' );
+					$removed_recipe_ids[] = $id;
 				}
 			}
+
+			// These recipes are no longer in a post, so they won't output metadata anymore.
+			WPRM_Seo_Checker::update_seo_for_recipes( $removed_recipe_ids );
 		}
 	}
 
@@ -678,6 +685,54 @@ class WPRM_Recipe_Saver {
 				update_option( 'wprm_post_recipes_to_update', $post_recipes_to_update );
 			}
 		}
+	}
+
+	/**
+	 * Check if a post containing a recipe may sync its data to that recipe.
+	 *
+	 * Only a locked parent post can update its recipe. Without a lock, another post
+	 * can only take over when its status does not rank lower than the current parent's.
+	 *
+	 * @since	10.9.0
+	 * @param	int     $recipe_id Recipe that could get updated.
+	 * @param	WP_Post $post      Post containing the recipe.
+	 * @return	bool
+	 */
+	public static function post_can_sync_recipe( $recipe_id, $post ) {
+		$parent_id = intval( get_post_meta( $recipe_id, 'wprm_parent_post_id', true ) );
+
+		if ( ! $parent_id || $parent_id === intval( $post->ID ) ) {
+			return true;
+		}
+
+		// A deleted or trashed parent no longer owns the recipe.
+		$parent_status = get_post_status( $parent_id );
+		if ( ! $parent_status || 'trash' === $parent_status ) {
+			return true;
+		}
+
+		if ( WPRM_Settings::get( 'parent_post_autolock' ) ) {
+			return false;
+		}
+
+		return self::post_status_rank( $post->post_status ) >= self::post_status_rank( $parent_status );
+	}
+
+	/**
+	 * Rank post statuses by how visible a recipe is when following them.
+	 *
+	 * @since	10.9.0
+	 * @param	string $status Post status.
+	 * @return	int
+	 */
+	private static function post_status_rank( $status ) {
+		$ranks = array(
+			'publish' => 4,
+			'future' => 3,
+			'private' => 2,
+		);
+
+		return isset( $ranks[ $status ] ) ? $ranks[ $status ] : 1;
 	}
 
 	/**
@@ -739,6 +794,13 @@ class WPRM_Recipe_Saver {
 			$parent_language = WPRM_Compatibility::get_language_for( $post_id );
 			$parent_is_wpml_translation = WPRM_Compatibility::is_wpml_translation_post( $post_id );
 
+			// The saving user authorizes reassignment; the credited writer need not be able to edit the recipe.
+			$recipe_post_type = get_post_type_object( WPRM_POST_TYPE );
+			$can_take_over_author = 'parent' === WPRM_Settings::get( 'recipe_use_author' )
+				&& get_userdata( $post->post_author )
+				&& $recipe_post_type
+				&& user_can( $acting_user_id, $recipe_post_type->cap->edit_others_posts );
+
 			// Update recipes.
 			foreach ( $recipe_ids as $recipe_id ) {
 				$recipe_id = intval( $recipe_id );
@@ -750,6 +812,11 @@ class WPRM_Recipe_Saver {
 
 				// Check the permissions of the user that originally requested this update.
 				if ( ! self::user_can_edit_recipe( $acting_user_id, $recipe_id ) ) {
+					continue;
+				}
+
+				// Reusing a recipe in another post must not overwrite its parent's data.
+				if ( ! self::post_can_sync_recipe( $recipe_id, $post ) ) {
 					continue;
 				}
 
@@ -771,26 +838,14 @@ class WPRM_Recipe_Saver {
 					'edit_date'		=> true, // Required when going from draft to future.
 				);
 
-				if ( 'parent' === WPRM_Settings::get( 'recipe_use_author' ) && self::user_can_edit_recipe( $post->post_author, $recipe_id ) ) {
+				if ( $can_take_over_author && intval( $post->post_author ) !== intval( get_post_field( 'post_author', $recipe_id ) ) ) {
 					$recipe['post_author'] = $post->post_author;
 				}
 
-				// Check if parent post for this recipe should be updated.
 				wp_update_post( $recipe );
 
-				$should_update_parent_post = true;
-				if ( WPRM_Settings::get( 'parent_post_autolock' ) ) {
-					$current_parent_id = get_post_meta( $recipe_id, 'wprm_parent_post_id', true );
-
-					if ( $current_parent_id && false !== get_post_type( $current_parent_id ) ) {
-						// A current parent exists and is still a valid post, so do not update.
-						$should_update_parent_post = false;
-					}
-				}
-
-				if ( $should_update_parent_post ) {
-					update_post_meta( $recipe_id, 'wprm_parent_post_id', $post_id );
-				}
+				// Locked parents were already skipped above, so this post becomes the parent.
+				update_post_meta( $recipe_id, 'wprm_parent_post_id', $post_id );
 
 				// Make sure recipe language matches parent language, unless manually setting the language for public post type.
 				if ( 'public' !== WPRM_Settings::get( 'post_type_structure' ) ) {
@@ -829,6 +884,9 @@ class WPRM_Recipe_Saver {
 				delete_post_meta( $recipe_id, 'wprm_parent_post_id' );
 			}
 		}
+
+		// The parent post and its status affect whether metadata gets output.
+		WPRM_Seo_Checker::update_seo_for_recipes( $recipe_ids );
 	}
 
 	/**

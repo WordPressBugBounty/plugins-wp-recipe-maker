@@ -38,13 +38,12 @@ class WPRM_App_Token_Store {
 	 *
 	 * @since 10.9.0
 	 * @param string $name Token display name.
-	 * @param array  $scopes Explicit scopes.
+	 * @param array  $scopes Ignored legacy argument; Kitchen access covers every feature.
 	 * @param array  $metadata Additional non-secret metadata.
 	 * @return array|WP_Error Token secret, id, and metadata on success.
 	 */
 	public static function create( $name, $scopes = array(), $metadata = array() ) {
 		$access = array();
-		$scopes = array_values( array_unique( array_filter( array_map( array( __CLASS__, 'sanitize_scope' ), (array) $scopes ) ) ) );
 		$token = self::generate_secret();
 		$id = self::generate_id( $access );
 		$data = array_merge(
@@ -53,7 +52,7 @@ class WPRM_App_Token_Store {
 				'id' => $id,
 				'name' => sanitize_text_field( $name ),
 				'kind' => 'kitchen',
-				'scopes' => $scopes,
+				'access' => 'kitchen',
 				'created_at' => current_time( 'mysql' ),
 				'created_by' => get_current_user_id(),
 				'last_used_at' => '',
@@ -175,17 +174,15 @@ class WPRM_App_Token_Store {
 	}
 
 	/**
-	 * Check whether token metadata grants a scope.
+	 * Legacy helper: a typed Kitchen connection grants all Kitchen features.
+	 * Existing Kitchen records work without scope migration or token rotation.
 	 *
-	 * @since 10.9.0
 	 * @param array  $data Token metadata.
-	 * @param string $scope Required scope.
+	 * @param string $scope Ignored legacy scope.
 	 * @return bool
 	 */
 	public static function has_scope( $data, $scope ) {
-		$scopes = isset( $data['scopes'] ) && is_array( $data['scopes'] ) ? $data['scopes'] : array();
-
-		return in_array( $scope, $scopes, true );
+		return is_array( $data ) && isset( $data['kind'] ) && 'kitchen' === $data['kind'];
 	}
 
 	/**
@@ -247,8 +244,4 @@ class WPRM_App_Token_Store {
 		return $sanitized;
 	}
 
-	/** Sanitize an OAuth-style scope while preserving its separator. */
-	private static function sanitize_scope( $scope ) {
-		return preg_replace( '/[^a-z0-9:_-]/', '', strtolower( (string) $scope ) );
-	}
 }

@@ -18,6 +18,12 @@
  * @author     Brecht Vandersmissen <brecht@bootstrapped.ventures>
  */
 class WPRM_Print {
+	/** @var array Public post contexts carried by dedicated PDF tickets, for this request only. */
+	private static $public_render_contexts = array();
+	/** @var bool Public post parameters apply only to individual recipe print pages. */
+	private static $single_recipe_context = true;
+	/** @var array Visible recipe IDs per visitor and parent post, for this request only. */
+	private static $parent_content_recipe_ids = array();
 
 	/**
 	 * Register actions and filters.
@@ -147,12 +153,21 @@ class WPRM_Print {
 		}
 
 		if ( $print_args && 1 <= count( $print_args ) && $print_args[0] ) {
+			// Print permissions can change between requests and depend on the visitor.
+			// Do this before redirects too, so neither access nor denials are cached.
+			if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+				define( 'DONOTCACHEPAGE', true );
+			}
+			nocache_headers();
+			header( 'Cache-Control: no-cache, must-revalidate, max-age=0, no-store, private' );
+
 			if ( ! self::has_access() ) {
 				wp_redirect( home_url() );
 				exit();
 			}
 
 			WPRM_Context::set( 'print' );
+			self::$single_recipe_context = 'recipe' === $print_args[0];
 
 			// Convert slug to ID if we're printing a single recipe.
 			if ( 'recipe' === $print_args[0] && 'slug' === WPRM_Settings::get( 'print_recipe_identifier' ) ) {
@@ -304,6 +319,11 @@ class WPRM_Print {
 	public static function output_first( $output, $args ) {
 		$is_pdf_download_page = apply_filters( 'wprm_print_is_pdf_download_page', false, $args );
 
+        // Direct print documents bypass wp_enqueue_scripts and its localization.
+        $output['assets'][] = array(
+            'type' => 'custom',
+            'html' => '<script>var wprm_public = ' . wp_json_encode( WPRM_Assets::localize_public(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ) . ';</script>',
+        );
 		// Default assets to load.
 		$output['assets'][] = array(
 			'type' => 'css',
@@ -352,9 +372,9 @@ class WPRM_Print {
 			$recipe_id = intval( $args[1] );
 
 			if ( WPRM_POST_TYPE === get_post_type( $recipe_id ) ) {
-				$recipe = WPRM_Recipe_Manager::get_recipe( $recipe_id );
+				$recipe = self::get_recipe( $recipe_id );
 
-				if ( ! self::has_permission( $recipe ) ) {
+				if ( ! $recipe ) {
 					return $output;
 				}
 
@@ -382,7 +402,7 @@ class WPRM_Print {
 				$output['recipe'] = $recipe;
 				$output['recipe_ids'][] = $recipe_id;
 				$output['title'] = $recipe->name() . ' - ' . get_bloginfo( 'name' );
-				$output['url'] = $recipe->permalink();
+				$output['url'] = self::recipe_permalink( $recipe );
 				$output['html'] = '<div id="wprm-print-recipe-0" data-recipe-id="' . $recipe_id . '" class="wprm-print-recipe wprm-print-recipe-' . $recipe_id . '"  data-servings="' . esc_attr( $recipe->servings() ) . '">' . WPRM_Template_Manager::get_template( $recipe, 'print', $template['slug'] ) . '</div>';
 			}
 		}
@@ -438,9 +458,9 @@ class WPRM_Print {
 				$output['html'] = '';
 				foreach ( $unique_recipes as $unique_recipe ) {
 					if ( WPRM_POST_TYPE === get_post_type( $unique_recipe['id'] ) ) {
-						$recipe = WPRM_Recipe_Manager::get_recipe( $unique_recipe['id'] );
+						$recipe = self::get_recipe( $unique_recipe['id'] );
 	
-						if ( ! self::has_permission( $recipe ) ) {
+						if ( ! $recipe ) {
 							continue;
 						}
 	
@@ -462,6 +482,7 @@ class WPRM_Print {
 
 						// Update ID for adjustable servings.
 						$recipe_template = str_replace( 'wprm-recipe-servings-' . $unique_recipe['id'], 'wprm-recipe-servings-' . $uid, $recipe_template );
+						$recipe_template = str_replace( 'wprm-nutrition-portions-' . $unique_recipe['id'], 'wprm-nutrition-portions-' . $uid, $recipe_template );
 						$recipe_template = str_replace( 'wprm-recipe-adjustable-servings-' . $unique_recipe['id'] . '-container', 'wprm-recipe-adjustable-servings-' . $uid . '-container', $recipe_template );
 						$recipe_template = str_replace( 'wprm-recipe-advanced-servings-' . $unique_recipe['id'] . '-container', 'wprm-recipe-advanced-servings-' . $uid . '-container', $recipe_template );
 
@@ -620,7 +641,7 @@ class WPRM_Print {
 			// Add optional QR code and print credit.
 			if ( 'recipe' === $args[0] && isset( $output['html'] ) ) {
 				$footer_html = '';
-				$recipe = WPRM_Recipe_Manager::get_recipe( intval( $args[1] ) );
+				$recipe = self::get_recipe( intval( $args[1] ) );
 
 				// Optional print credit.
 				if ( WPRM_Settings::get( 'print_credit_use_html' ) ) {
@@ -641,7 +662,7 @@ class WPRM_Print {
 
 				// Optional QR Code.
 				if ( $recipe && WPRM_Settings::get( 'print_qr_code' ) ) {
-					$url = $recipe->permalink();
+					$url = self::recipe_permalink( $recipe );
 
 					if ( ! $url && WPRM_Settings::get( 'print_qr_code_use_homepage' ) ) {
 						$url = WPRM_Compatibility::get_home_url();
@@ -782,13 +803,90 @@ class WPRM_Print {
 		return $hashids->decode( $encoded );
 	}
 
+	/** Attach the actual rendering post to a generated print link when needed. */
+	public static function add_public_render_context( $url, $recipe_id ) {
+		$parameters = WPRM_Recipe_Manager::public_render_context_parameters( $recipe_id, get_the_ID() );
+		return $parameters ? add_query_arg( $parameters, $url ) : $url;
+	}
+
+	/** Read an individual post parameter or the context carried by a PDF ticket. */
+	private static function request_public_render_parameters( $recipe_id ) {
+		if ( isset( self::$public_render_contexts[ $recipe_id ] ) ) {
+			return self::$public_render_contexts[ $recipe_id ];
+		}
+		return self::$single_recipe_context ? $_GET : array();
+	}
+
+	/** Keep a PDF ticket's accessible post context available to nested print lookups. */
+	public static function remember_public_render_context( $recipe_id, $parameters ) {
+		if ( WPRM_Recipe_Manager::get_public_render_post_id( $recipe_id, $parameters ) ) {
+			self::$public_render_contexts[ $recipe_id ] = $parameters;
+		}
+	}
+
+	/** Use the validated rendering page for return links and QR codes. */
+	public static function recipe_permalink( $recipe ) {
+		$post_id = WPRM_Recipe_Manager::get_public_render_post_id( $recipe->id(), self::request_public_render_parameters( $recipe->id() ) );
+		return $post_id ? get_permalink( $post_id ) : $recipe->permalink();
+	}
+
+	/**
+	 * Load a recipe for printing without relaxing the ordinary recipe accessor.
+	 *
+	 * Unpublished direct-link sharing applies only to print documents. Never put
+	 * these objects in the recipe manager's cache or override WP capabilities.
+	 *
+	 * @since 10.9.0
+	 * @param int $recipe_id Recipe to print.
+	 */
+	public static function get_recipe( $recipe_id ) {
+		$recipe_id = intval( $recipe_id );
+		$parameters = self::request_public_render_parameters( $recipe_id );
+		$recipe = WPRM_Recipe_Manager::get_recipe_with_public_context( $recipe_id, $parameters, $public_post_id );
+
+		if ( ! $recipe ) {
+			if ( 'print' !== WPRM_Context::get() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || wp_doing_ajax()
+				|| ! self::has_access() || WPRM_Settings::get( 'print_published_recipes_only' ) ) {
+				return false;
+			}
+
+			$post = get_post( $recipe_id );
+			if ( ! $post instanceof WP_Post || WPRM_POST_TYPE !== $post->post_type
+				|| ! in_array( $post->post_status, array( 'draft', 'pending', 'future' ), true ) || '' !== $post->post_password ) {
+				return false;
+			}
+
+			// Respect explicit access denials from capability integrations.
+			$caps = map_meta_cap( 'read_post', get_current_user_id(), $recipe_id );
+			if ( in_array( 'do_not_allow', $caps, true ) ) {
+				return false;
+			}
+
+			$parent_id = intval( get_post_meta( $recipe_id, 'wprm_parent_post_id', true ) );
+			if ( $parent_id ) {
+				$parent = get_post( $parent_id );
+				if ( ! $parent instanceof WP_Post || $parent_id === $recipe_id
+					|| ! in_array( $parent->post_status, array( 'publish', 'draft', 'pending', 'future' ), true ) || '' !== $parent->post_password ) {
+					return false;
+				}
+				if ( in_array( 'do_not_allow', map_meta_cap( 'read_post', get_current_user_id(), $parent_id ), true ) ) {
+					return false;
+				}
+			}
+
+			$recipe = new WPRM_Recipe( $post );
+		}
+
+		return self::has_permission( $recipe, $public_post_id ) ? $recipe : false;
+	}
+
 	/**
 	 * Check if current user has the permissions to print a particular recipe.
 	 * 
 	 * @since	6.3.0
 	 * @param	mixed $recipe Recipe to print.
 	 */
-	public static function has_permission( $recipe ) {
+	public static function has_permission( $recipe, $public_post_id = 0 ) {
 		if ( ! $recipe || ! self::has_access() ) {
 			return false;
 		}
@@ -802,20 +900,53 @@ class WPRM_Print {
 		if ( WPRM_Settings::get( 'print_published_recipes_only' ) && 'publish' !== $recipe->post_status() ) {
 			return false;
 		}
+		if ( in_array( $recipe->post_status(), array( 'private', 'trash' ), true ) && ! current_user_can( 'read_post', $recipe->id() ) ) {
+			return false;
+		}
+
+		// Preserve password and membership protection when sharing print links.
+		if ( post_password_required( $recipe->id() ) && ! current_user_can( 'edit_post', $recipe->id() ) ) {
+			return false;
+		}
+		$parent_post = $public_post_id ? get_post( $public_post_id ) : $recipe->parent_post();
+		if ( $parent_post && in_array( $parent_post->post_status, array( 'private', 'trash' ), true ) && ! current_user_can( 'read_post', $parent_post->ID ) ) {
+			return false;
+		}
+		if ( $parent_post && post_password_required( $parent_post ) && ! current_user_can( 'edit_post', $parent_post->ID ) ) {
+			return false;
+		}
+		if ( ! WPRM_Access::can_access( $recipe->id(), $recipe, $public_post_id ) ) {
+			return false;
+		}
 
 		// Advanced check: is recipe readable in parent post?
 		if ( WPRM_Settings::get( 'print_recipes_in_parent_content_only' ) ) {
-			$parent_post = $recipe->parent_post();
+			$parent_post = $public_post_id ? get_post( $public_post_id ) : $recipe->parent_post();
 
 			if ( $parent_post ) {
-				// Make sure the_content filter gets applied correctly (membership plugins).
-				$GLOBALS['post'] = $parent_post;
-				setup_postdata( $parent_post );
+				$cache_key = get_current_user_id() . ':' . $parent_post->ID;
+				if ( isset( self::$parent_content_recipe_ids[ $cache_key ] ) ) {
+					return isset( self::$parent_content_recipe_ids[ $cache_key ][ $recipe->id() ] );
+				}
 
-				$post_content = apply_filters( 'the_content', $parent_post->post_content );
-
-				if ( false !== strpos( $post_content, 'id="wprm-recipe-container-' . $recipe->id() . '"') ) {
-					return true;
+				// Membership integrations must still filter the actual rendering post.
+				$previous_post = $GLOBALS['post'] ?? null;
+				$previous_context = WPRM_Template_Shortcodes::get_recipe_context();
+				try {
+					$GLOBALS['post'] = $parent_post;
+					setup_postdata( $parent_post );
+					$post_content = apply_filters( 'the_content', $parent_post->post_content );
+					preg_match_all( '/id="wprm-recipe-container-(\d+)"/', $post_content, $matches );
+					// Share the filtered visibility snapshot across single and bulk print lookups.
+					// Content/filter changes take effect on the next request, including empty results.
+					self::$parent_content_recipe_ids[ $cache_key ] = array_fill_keys( $matches[1], true );
+					return isset( self::$parent_content_recipe_ids[ $cache_key ][ $recipe->id() ] );
+				} finally {
+					$GLOBALS['post'] = $previous_post;
+					if ( $previous_post instanceof WP_Post ) {
+						setup_postdata( $previous_post );
+					}
+					WPRM_Template_Shortcodes::set_current_recipe_id( ...$previous_context );
 				}
 			}
 			

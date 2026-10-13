@@ -71,7 +71,11 @@ export default {
             template,
         };
 
-        return ApiWrapper.call( templateEndpoint, 'POST', data );
+        return fetch(templateEndpoint, { method: 'POST', headers: { 'X-WP-Nonce': wprm_admin.api_nonce, 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(data) }).then(async response => {
+            const result = await response.json();
+            if (!response.ok) { const error = new Error(result.message || 'Template save failed.'); error.code = result.code; throw error; }
+            return result;
+        });
     },
     delete(slug) {
         const data = {

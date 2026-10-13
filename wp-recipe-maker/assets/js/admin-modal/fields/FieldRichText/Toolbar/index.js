@@ -177,6 +177,14 @@ const Toolbar = (props) => {
 							after="[/adjustable]"
 							Icon={ () => <Icon type="adjustable" title={ __wprm( 'Add Adjustable Shortcode' ) } /> }
 						/>
+						{
+							props.isInstruction && wprm_admin.addons.premium
+							&&
+							<ButtonWrap
+								before="[wprm-pan-size]"
+								Icon={ () => <Icon type="pan-size" title={ __wprm( 'Insert adjustable pan size' ) } /> }
+							/>
+						}
 						<ButtonWrap
 							before="[timer minutes=0]"
 							after="[/timer]"

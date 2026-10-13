@@ -1,10 +1,12 @@
 import '../../css/admin/tools.scss';
+import { __wprm } from 'Shared/Translations';
 
 let action = false;
 let args = {};
 let posts = [];
 let posts_total = 0;
 let reportData = false;
+let videoRecipeIds = [];
 
 async function postJSON(data) {
 	const body = new URLSearchParams(data).toString();
@@ -45,20 +47,32 @@ async function handle_posts() {
 				mergeReportData(out.data.report);
 			}
 			update_progress_bar();
+			if ('refresh_video_metadata' === action) { render_report(); }
 
 			if (posts.length > 0) {
 				await handle_posts();
 			} else {
 				render_report();
+				setVideoControlsDisabled(false);
 				const finished = document.querySelector('#wprm-tools-finished');
 				if (finished) {
+					if ('finding_parents' === action && reportData?.entries?.length) {
+						finished.textContent = __wprm( 'Finished with warnings. Review the posts below before continuing.' );
+					}
 					finished.style.display = 'block';
 				}
 			}
 		} else {
+			if ('refresh_video_metadata' === action) {
+				throw new Error(out?.data?.message || __wprm( 'Scheduling failed. Check refresh status before trying again.' ));
+			}
 			window.location = out.data.redirect;
 		}
 	} catch (error) {
+		if ('refresh_video_metadata' === action) {
+			setVideoMessage(__wprm( 'The request did not finish. Check refresh status; some recipes may already be queued.' ));
+			setVideoControlsDisabled(false);
+		}
 		// eslint-disable-next-line no-console
 		console.error('WPRM tools request failed', error);
 	}
@@ -76,7 +90,7 @@ function getContrastClass(color) {
 }
 
 function update_progress_bar() {
-	const percentage = (1.0 - posts.length / posts_total) * 100;
+	const percentage = posts_total ? (1.0 - posts.length / posts_total) * 100 : 100;
 	const isComplete = percentage >= 100;
 	const bar = document.querySelector('#wprm-tools-progress-bar');
 	if (bar) {
@@ -178,7 +192,13 @@ function mergeReportData(report) {
 		reportData.columns = normalized.columns;
 	}
 
-	reportData.entries = reportData.entries.concat(normalized.entries);
+	if ('refresh_video_metadata' === action) {
+		const entries = new Map(reportData.entries.map((entry) => [entry.recipe_id, entry]));
+		normalized.entries.forEach((entry) => entries.set(entry.recipe_id, entry));
+		reportData.entries = Array.from(entries.values());
+	} else {
+		reportData.entries = reportData.entries.concat(normalized.entries);
+	}
 }
 
 function stringifyReportValue(value) {
@@ -226,6 +246,14 @@ function getReportColumns(entries, configuredColumns) {
 	}));
 }
 
+function translateVideoDiagnostic(message) {
+	// Diagnostics remain canonical in storage; translate them for the current admin.
+	const exception = /^Refresh raised (Exception|RuntimeException|TypeError|Error|ValueError|ErrorException|Throwable)\. Inspect the server error log for this attempt\.$/.exec(message);
+	return exception
+		? __wprm( 'Refresh raised %s. Inspect the server error log for this attempt.' ).replace( /%(?:1\$)?s/g, exception[1] )
+		: __wprm( message );
+}
+
 function renderReportTable(reportContainer, entries, columns) {
 	if (!entries.length || !columns.length) {
 		return;
@@ -250,7 +278,18 @@ function renderReportTable(reportContainer, entries, columns) {
 
 		columns.forEach((column) => {
 			const td = document.createElement('td');
-			td.textContent = stringifyReportValue(entry[column.key]);
+			if ('refresh_video_metadata' === action && 'diagnostics' === column.key && Array.isArray(entry.diagnostics)) {
+				entry.diagnostics.forEach((diagnostic) => {
+					const line = document.createElement('p');
+					const date = new Date(diagnostic.attempted_at * 1000).toISOString();
+					const codes = [diagnostic.code, diagnostic.http_status && `HTTP ${diagnostic.http_status}`, diagnostic.curl_code && `cURL ${diagnostic.curl_code}`, diagnostic.provider_code].filter(Boolean).join(', ');
+					line.textContent = `${date} · ${diagnostic.stage} · ${codes}: ${translateVideoDiagnostic(diagnostic.message)}`;
+					td.appendChild(line);
+				});
+			} else {
+				const value = stringifyReportValue(entry[column.key]);
+				td.textContent = 'refresh_video_metadata' === action && 'status' === column.key ? __wprm( value ) : value;
+			}
 			row.appendChild(td);
 		});
 
@@ -274,6 +313,7 @@ function render_report() {
 	reportContainer.textContent = '';
 
 	const details = document.createElement('details');
+	details.open = 'refresh_video_metadata' === action || 'finding_parents' === action;
 
 	const toggle = document.createElement('summary');
 	toggle.textContent = reportData.toggle || 'Detailed Report';
@@ -306,6 +346,41 @@ function render_report() {
 	reportContainer.appendChild(details);
 }
 
+function setVideoMessage(message) {
+	const target = document.querySelector('#wprm-video-tool-message');
+	if (target) { target.textContent = message; }
+}
+
+function setVideoControlsDisabled(disabled) {
+	document.querySelectorAll('#wprm-video-check-status, #wprm-video-refresh-now button').forEach((button) => {
+		button.disabled = disabled;
+	});
+}
+
+async function updateVideoReport(mode, recipeIds) {
+	setVideoControlsDisabled(true);
+	setVideoMessage('now' === mode ? __wprm( 'Refreshing this recipe. Waiting for a saved result…' ) : __wprm( 'Checking saved refresh status…' ));
+	try {
+		let remaining = recipeIds;
+		do {
+			const out = await postJSON({ action: 'wprm_refresh_video_metadata', security: wprm_admin.nonce, mode, posts: JSON.stringify(remaining) });
+			if (!out.success) {
+				setVideoMessage(out?.data?.message || __wprm( 'Could not read refresh status.' ));
+				return;
+			}
+			mergeReportData(out.data.report);
+			render_report();
+			remaining = out.data.posts_left;
+		} while (remaining.length);
+		videoRecipeIds = Array.from(new Set(videoRecipeIds.concat(recipeIds)));
+		setVideoMessage(__wprm( 'Status updated. Review the results below.' ));
+	} catch (error) {
+		setVideoMessage(__wprm( 'The request did not finish. Check refresh status before trying again.' ));
+	} finally {
+		setVideoControlsDisabled(false);
+	}
+}
+
 function getFilenameFromHeader(header) {
 	if (!header) {
 		return null;
@@ -322,9 +397,17 @@ document.addEventListener('DOMContentLoaded', () => {
 		args = wprm_tools.args;
 		posts = wprm_tools.posts;
 		posts_total = wprm_tools.posts.length;
+		videoRecipeIds = posts.slice();
 		reportData = false;
 		handle_posts();
 	}
+
+	document.querySelector('#wprm-video-check-status')?.addEventListener('click', () => updateVideoReport('status', videoRecipeIds));
+	document.querySelector('#wprm-video-refresh-now')?.addEventListener('submit', (event) => {
+		event.preventDefault();
+		const recipeId = Number(document.querySelector('#wprm-video-recipe-id').value);
+		if (Number.isSafeInteger(recipeId) && recipeId > 0) { updateVideoReport('now', [recipeId]); }
+	});
 
 	// Reset settings
 	const resetButton = document.querySelector('#tools_reset_settings');

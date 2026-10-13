@@ -135,11 +135,21 @@ export default class DataTable extends Component {
                     });
                 }
             }
+        } else if ( action && this.props.options.urlAction ) {
+            if ( shouldRunOnce() ) {
+                // Copy, because the parameters get removed from the URL below.
+                const urlActionParams = new URLSearchParams( urlParams );
+                setTimeout(() => {
+                    this.props.options.urlAction( this, urlActionParams );
+                });
+            }
         }
 
-        // Remove query parameter again.
+        // Remove query parameters again.
         if ( history.replaceState ) {
             urlParams.delete( 'action' );
+            urlParams.delete( 'recipe_id' );
+            urlParams.delete( 'group' );
             const searchString = urlParams.toString().length > 0 ? '?' + urlParams.toString() : '';
             const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + searchString + window.location.hash;
             history.replaceState (null, '', newUrl );

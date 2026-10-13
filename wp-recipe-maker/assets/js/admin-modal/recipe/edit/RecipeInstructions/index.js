@@ -45,7 +45,8 @@ export default class RecipeInstructions extends Component {
             || this.props.type !== nextProps.type
             || this.props.allowVideo !== nextProps.allowVideo
             || JSON.stringify( this.props.instructions ) !== JSON.stringify( nextProps.instructions )
-            || JSON.stringify( this.props.ingredients ) !== JSON.stringify( nextProps.ingredients );
+            || JSON.stringify( this.props.ingredients ) !== JSON.stringify( nextProps.ingredients )
+            || JSON.stringify( this.props.equipment ) !== JSON.stringify( nextProps.equipment );
     }
     
     componentDidUpdate( prevProps ) {
@@ -116,6 +117,7 @@ export default class RecipeInstructions extends Component {
                 image: 0,
                 image_url: '',
                 ingredients: [],
+                equipment: [],
             }
         }
         newField = hooks.applyFilters( 'modalRecipeInstructionDefaults', newField, type );
@@ -163,12 +165,14 @@ export default class RecipeInstructions extends Component {
             };
         }
 
-        // Show ingredients field last.
+        // Keep the two ingredient editing modes together.
         editModes.ingredients = { label: __wprm( 'Associated Ingredients' ) };
         editModes.inline = { label: __wprm( 'Inline Ingredients' ) };
+        editModes.equipment = { label: __wprm( 'Associated Equipment' ) };
 
         // Get all ingredients.
         const allIngredients = this.props.ingredients.filter( (ingredient) => 'ingredient' === ingredient.type && '' !== ingredient.name );
+        const allEquipment = this.props.equipment.filter( equipment => equipment.name );
 
         // Get used ingredients in instructions.
         let usedIngredients = [];
@@ -282,8 +286,8 @@ export default class RecipeInstructions extends Component {
                                                     key={ `instruction-${field.uid}` }
                                                     instructionsRef={ this.instructionsRef }
                                                     onTab={(event) => {
-                                                        // Only if edit mode is not metadata summary or associated ingredients.
-                                                        if ( this.state.editMode !== 'summary' && this.state.editMode !== 'ingredients' ) {
+                                                        // Selection modes should not add an instruction when tabbing through controls.
+                                                        if ( this.state.editMode !== 'summary' && this.state.editMode !== 'ingredients' && this.state.editMode !== 'equipment' ) {
                                                             // Create new instruction if we're tabbing in the last one.
                                                             if ( index === this.props.instructions.length - 1) {
                                                                 event.preventDefault();
@@ -440,6 +444,7 @@ export default class RecipeInstructions extends Component {
                                                     }}
                                                     instructions={ this.props.instructions }
                                                     allIngredients={ allIngredients }
+                                                    allEquipment={ allEquipment }
                                                     usedIngredients={ usedIngredients }
                                                     onChangeIngredients={ ( ingredients ) => {
                                                         this.props.onRecipeChange((recipe) => {
@@ -461,6 +466,28 @@ export default class RecipeInstructions extends Component {
                                                             historyMode: 'immediate',
                                                             historyBoundary: true,
                                                             historyKey: `instructions:${ field.uid }:ingredients`,
+                                                        });
+                                                    }}
+                                                    onChangeEquipment={ ( equipment ) => {
+                                                        this.props.onRecipeChange((recipe) => {
+                                                            const instructions = recipe && recipe.instructions_flat ? recipe.instructions_flat : [];
+                                                            const findIndex = instructions.findIndex( ( i ) => field.uid === i.uid );
+                                                            const instructionIndex = 0 <= findIndex ? findIndex : index;
+
+                                                            if ( ! instructions[ instructionIndex ] ) {
+                                                                return {};
+                                                            }
+
+                                                            let newFields = JSON.parse( JSON.stringify( instructions ) );
+                                                            newFields[instructionIndex].equipment = equipment;
+
+                                                            return {
+                                                                instructions_flat: newFields,
+                                                            };
+                                                        }, {
+                                                            historyMode: 'immediate',
+                                                            historyBoundary: true,
+                                                            historyKey: `instructions:${ field.uid }:equipment`,
                                                         });
                                                     }}
                                                     onChangeTipIcon={ ( tipIcon ) => {

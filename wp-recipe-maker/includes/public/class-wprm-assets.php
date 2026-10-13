@@ -171,6 +171,7 @@ class WPRM_Assets {
 		return array(
 			'user' => get_current_user_id(),
 			'assets_url' => WPRM_URL . 'dist/',
+			'legacy_runtime' => WPRM_JS_Runtime::legacy_config(),
 			'endpoints' => array(
 				'analytics' => rtrim( get_rest_url( null, 'wp-recipe-maker/v1/analytics' ), '/' ),
 				'integrations' => rtrim( get_rest_url( null, 'wp-recipe-maker/v1/integrations' ), '/' ),
@@ -276,6 +277,7 @@ class WPRM_Assets {
 
 		$wprm_admin = array(
 			'wprm_url' => WPRM_URL,
+			'legacy_runtime' => WPRM_JS_Runtime::legacy_config(),
 			'home_url' => WPRM_Compatibility::get_home_url(),
 			'print_slug' => WPRM_Print::slug(),
 			'permalinks' => get_option( 'permalink_structure' ),

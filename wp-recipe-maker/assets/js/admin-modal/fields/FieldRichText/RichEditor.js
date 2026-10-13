@@ -104,6 +104,13 @@ const RichEditor = React.memo((props) => {
             onChange={value => {
                     setValue(value);
 
+                    // Selection changes still update Slate's toolbar, but do not change HTML.
+                    // Leave any pending content update alone so moving the cursor cannot
+                    // cancel or postpone the last edit.
+                    if ( ! editor.operations.some( operation => 'set_selection' !== operation.type ) ) {
+                        return;
+                    }
+
                     if ( debounceRef.current ) {
                         clearTimeout( debounceRef.current );
                     }
@@ -125,6 +132,7 @@ const RichEditor = React.memo((props) => {
             }
             <Toolbar
                 type={ props.toolbar ? props.toolbar : 'all' }
+                isInstruction={ 'wprm-admin-modal-field-instruction-text' === props.className }
                 language={ props.suggestionLanguage }
                 onSelectSuggestion={ (suggestion) => {
                     if ( debounceRef.current ) {

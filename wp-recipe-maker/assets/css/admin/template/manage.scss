@@ -30,6 +30,18 @@
             background-color: #ddd;
         }
 
+        &.wprm-manage-templates-type-kitchen {
+            border-color: #2271b1;
+            color: #2271b1;
+            text-decoration: none;
+
+            &:hover,
+            &:focus {
+                border-color: #135e96;
+                color: #135e96;
+            }
+        }
+
         .wprm-manage-templates-type-name {
             font-weight: bold;
             font-size: 1.2em;
@@ -114,7 +126,8 @@
     flex-wrap: wrap;
     justify-content: center;
 
-    button {
+    button,
+    a.button {
         margin: 0 5px !important;
     }
 }

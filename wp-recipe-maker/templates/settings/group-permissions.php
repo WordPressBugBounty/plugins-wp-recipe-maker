@@ -20,7 +20,7 @@ $permissions = array(
 				array(
 					'id' => 'print_published_recipes_only',
 					'name' => __( 'Prevent printing of non-published recipes', 'wp-recipe-maker' ),
-					'description' => __( 'Redirect visitors to the homepage when trying to print a recipe that has not been published yet. Can cause problems if the parent post is not set correctly.', 'wp-recipe-maker' ),
+					'description' => __( 'Redirect visitors to the homepage when trying to print a recipe that has not been published yet. When disabled, visitors with print access can use direct print links for draft, pending and scheduled recipes, even if the parent post is unpublished. Private, password-protected and membership-restricted content remains protected.', 'wp-recipe-maker' ),
 					'type' => 'toggle',
 					'default' => false,
 					'dependency' => array(

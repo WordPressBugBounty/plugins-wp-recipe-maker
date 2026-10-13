@@ -12,6 +12,7 @@ import Tooltip from 'Shared/Tooltip';
 
 import '../../../css/admin/manage/recipes.scss';
 import SeoIndicator from './SeoIndicator';
+import { openSeoTarget } from './SeoTarget';
 
 const getFormattedTime = ( timeMins, showZero = false ) => {
     const time = parseInt( timeMins );
@@ -58,13 +59,14 @@ const getImageSizeStatus = ( dimensions ) => {
     const label = `${ dimensions.width }x${ dimensions.height }`;
     let status = 'ok';
 
-    if ( dimensions.width < 500 || dimensions.height < 500 ) {
+    // Same rule as the SEO checker. Only the width matters, as landscape photos are fine for the square and 4:3 crops.
+    if ( dimensions.width < 500 ) {
         status = 'danger';
-    } else if ( dimensions.width < 1200 || dimensions.height < 1200 ) {
+    } else if ( dimensions.width < 1200 ) {
         status = 'warning';
     }
 
-    const tooltip = 'ok' === status ? '' : __wprm( 'We recommend uploading an image that is at least 1200x1200px for best performance on search and social platforms.' );
+    const tooltip = 'ok' === status ? '' : __wprm( 'Google recommends images that are at least 1200px wide for large previews in Search and Discover.' );
 
     return {
         label,
@@ -190,6 +192,12 @@ export default {
                 Cell: row => (
                     <SeoIndicator
                         seo={ row.value }
+                        recipeType={ row.original.type }
+                        testUrl={ row.original.seo_test_url }
+                        onOpenTarget={ row.original.editable ? ( target ) => openSeoTarget( {
+                            ...row.original,
+                            name: row.original.name ? he.decode( getTextWithoutHtml( row.original.name ) ) : '',
+                        }, () => recipes.refreshData(), target ) : false }
                     />
                 ),
             },{

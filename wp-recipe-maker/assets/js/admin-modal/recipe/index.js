@@ -62,9 +62,10 @@ export default class Recipe extends Component {
                         historyPast: [],
                         historyFuture: [],
                         mode: 'recipe',
+                    }, () => {
+                        // Scroll once the loaded recipe has been rendered.
+                        this.scrollToGroup( this.props.args.scrollToGroup );
                     });
-
-                    this.scrollToGroup();
                 } else {
                     // Loading recipe failed.
                     this.setState({
@@ -112,7 +113,7 @@ export default class Recipe extends Component {
 
     componentDidMount() {
         if ( ! this.state.loadingRecipe ) {
-            this.scrollToGroup();
+            this.scrollToGroup( this.props.args.scrollToGroup );
         }
     }
 
@@ -357,6 +358,11 @@ export default class Recipe extends Component {
 
 
     scrollToGroup( group = 'media' ) {
+        // Not all groups are shown for every recipe.
+        if ( ! group || ! document.getElementById( `wprm-admin-modal-fields-group-${ group }` ) ) {
+            group = 'media';
+        }
+
         scroller.scrollTo( `wprm-admin-modal-fields-group-${ group }`, {
             containerId: 'wprm-admin-modal-recipe-content',
             offset: -10,

@@ -344,6 +344,30 @@ class WPRM_Recipe_Parser {
 
 		return false;
 	}
+
+	/**
+	 * Get explicitly configured unit forms without inferring standard forms.
+	 *
+	 * @since	10.8.6
+	 * @param	mixed $unit    Unit displayed for the ingredient.
+	 * @param	int   $unit_id Ingredient unit term ID, if available.
+	 */
+	public static function get_ingredient_unit_forms_for_term( $unit, $unit_id = 0 ) {
+		$term = $unit_id ? get_term( $unit_id, 'wprm_ingredient_unit' ) : false;
+		$term = $term && ! is_wp_error( $term ) ? $term : false;
+
+		if ( $term ) {
+			$plural = get_term_meta( $unit_id, 'wprm_ingredient_unit_plural', true );
+			if ( $plural ) {
+				return array(
+					'singular' => $term->name,
+					'plural' => $plural,
+				);
+			}
+		}
+
+		return false;
+	}
 	
 	/**
 	 * Parse ingredient amount.

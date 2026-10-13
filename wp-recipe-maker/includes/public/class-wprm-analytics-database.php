@@ -113,6 +113,9 @@ class WPRM_Analytics_Database {
 
 		// Arrays.
 		$action['meta'] = isset( $unsanitized_action['meta'] ) ? $unsanitized_action['meta'] : array();
+		if ( in_array( $action['type'], array( 'ingredient-link', 'equipment-link', 'instruction-link' ), true ) && is_array( $action['meta'] ) ) {
+			$action['meta']['link_target'] = WPRM_Analytics_Export::normalize_link_target( isset( $action['meta']['url'] ) ? $action['meta']['url'] : '' );
+		}
 		$action['meta'] = maybe_serialize( $action['meta'] );
 
 		$action['visitor'] = isset( $unsanitized_action['visitor'] ) ? $unsanitized_action['visitor'] : array();
@@ -146,10 +149,11 @@ class WPRM_Analytics_Database {
 		$table_name = self::get_table_name();
 
 		$days = intval( $days );
-		$datetime = new DateTime( $days . ' days ago' );
+		// Keep whole site-local days, matching created_at and the export boundary.
+		$datetime = current_datetime()->modify( $days . ' days ago' )->setTime( 0, 0 );
 		$created_at = $datetime->format( 'Y-m-d H:i:s' );
 
-		$wpdb->query( 'DELETE FROM ' . $table_name . ' WHERE created_at < "' . $created_at . '"' );
+		$wpdb->query( $wpdb->prepare( "DELETE FROM `$table_name` WHERE created_at < %s", $created_at ) );
 
 		return true;
 	}

@@ -31,12 +31,9 @@ class WP_Recipe_Maker {
 	 * @since    1.0.0
 	 */
 	private function define_constants() {
-		define( 'WPRM_VERSION', '10.8.5' );
-		define( 'WPRM_PREMIUM_VERSION_RECOMMENDED', '10.8.2' );
-		define( 'WPRM_PREMIUM_VERSION_REQUIRED', '7.0.0' );
-		if ( ! defined( 'WPRM_KITCHEN_UI_ENABLED' ) ) {
-			define( 'WPRM_KITCHEN_UI_ENABLED', false );
-		}
+		define( 'WPRM_VERSION', '10.9.0' );
+		define( 'WPRM_PREMIUM_VERSION_RECOMMENDED', '10.9.0' );
+		define( 'WPRM_PREMIUM_VERSION_REQUIRED', '10.8.0' );
 		define( 'WPRM_POST_TYPE', 'wprm_recipe' );
 		define( 'WPRM_IDEA_POST_TYPE', 'wprm_idea' );
 		define( 'WPRM_LIST_POST_TYPE', 'wprm_list' );
@@ -84,6 +81,7 @@ class WP_Recipe_Maker {
 		require_once( WPRM_DIR . 'includes/public/api/class-wprm-app-token-store.php' );
 		require_once( WPRM_DIR . 'includes/public/api/class-wprm-api-app.php' );
 		require_once( WPRM_DIR . 'includes/public/api/class-wprm-api-app-kitchen.php' );
+		require_once( WPRM_DIR . 'includes/public/class-wprm-analytics-export.php' );
 		require_once( WPRM_DIR . 'includes/public/api/class-wprm-api-app-analytics.php' );
 		require_once( WPRM_DIR . 'includes/public/api/class-wprm-api-app-recipes.php' );
 		require_once( WPRM_DIR . 'includes/public/api/class-wprm-api-comments.php' );
@@ -123,6 +121,7 @@ class WP_Recipe_Maker {
 		require_once( WPRM_DIR . 'includes/public/class-wprm-changelog-database.php' );
 		require_once( WPRM_DIR . 'includes/public/class-wprm-changelog-track.php' );
 		require_once( WPRM_DIR . 'includes/public/class-wprm-changelog.php' );
+		require_once( WPRM_DIR . 'includes/public/class-wprm-js-runtime.php' );
 		require_once( WPRM_DIR . 'includes/public/class-wprm-assets.php' );
 		require_once( WPRM_DIR . 'includes/public/class-wprm-blocks.php' );
 		require_once( WPRM_DIR . 'includes/public/class-wprm-cache.php' );
@@ -179,7 +178,11 @@ class WP_Recipe_Maker {
 		require_once( WPRM_DIR . 'includes/public/class-wprm-template-conditions.php' );
 		require_once( WPRM_DIR . 'includes/public/class-wprm-template-editor.php' );
 		require_once( WPRM_DIR . 'includes/public/class-wprm-template-fonts.php' );
+		require_once( WPRM_DIR . 'includes/public/class-wprm-template-store.php' );
+		require_once( WPRM_DIR . 'includes/public/class-wprm-template-package.php' );
 		require_once( WPRM_DIR . 'includes/public/class-wprm-template-manager.php' );
+		require_once( WPRM_DIR . 'includes/public/api/class-wprm-api-app-templates.php' );
+		require_once( WPRM_DIR . 'includes/public/api/class-wprm-api-app-template-preview.php' );
 		require_once( WPRM_DIR . 'includes/public/class-wprm-template-shortcode.php' );
 		require_once( WPRM_DIR . 'includes/public/class-wprm-template-shortcodes.php' );
 		require_once( WPRM_DIR . 'includes/public/class-wprm-tooltip.php' );
@@ -251,10 +254,15 @@ class WP_Recipe_Maker {
 		if ( defined( 'WPRMP_VERSION' ) ) {
 			if ( version_compare( WPRMP_VERSION, WPRM_PREMIUM_VERSION_REQUIRED ) < 0 ) {
 				// Require version.
-				$text = '<p>' . __( 'Please update to at least the following plugin versions:', 'wp-recipe-maker' );
-				$text .= '<br/>WP Recipe Maker Premium ' . WPRM_PREMIUM_VERSION_REQUIRED . '</p>';
+				$text = '<p>' . esc_html__( 'Premium features are currently disabled because your installed version of WP Recipe Maker Premium is not compatible with this version of the free plugin.', 'wp-recipe-maker' ) . '</p>';
+				$text .= '<p>' . sprintf(
+					/* translators: %s: minimum required WP Recipe Maker Premium version. */
+					esc_html__( 'To restore Premium features, update WP Recipe Maker Premium to version %s or newer, or downgrade the free WP Recipe Maker plugin to an older compatible version.', 'wp-recipe-maker' ),
+					esc_html( WPRM_PREMIUM_VERSION_REQUIRED )
+				) . '</p>';
 				$text .= '<p>';
-				$text .= '<a href="https://help.bootstrapped.ventures/docs/wp-recipe-maker/updating-wp-recipe-maker/" target="_blank">' . __( 'More information on updating add-ons', 'wp-recipe-maker' ) . '</a>';
+				$text .= '<a href="https://help.bootstrapped.ventures/docs/wp-recipe-maker/updating-wp-recipe-maker/" target="_blank" rel="noopener noreferrer">' . esc_html__( 'How to update Premium', 'wp-recipe-maker' ) . '</a>';
+				$text .= '<br/><a href="https://wordpress.org/plugins/wp-recipe-maker/advanced/" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Download older versions of the free plugin', 'wp-recipe-maker' ) . '</a>';
 				$text .= '</p>';
 
 				$notices[] = array(

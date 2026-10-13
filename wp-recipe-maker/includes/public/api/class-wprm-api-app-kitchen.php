@@ -355,7 +355,7 @@ class WPRM_Api_App_Kitchen {
 
 		return rest_ensure_response( array(
 			'protocol_version' => self::PROTOCOL_VERSION,
-			'capabilities' => array( 'kitchen_pairing', 'app_info', 'app_recipes', 'signed_events' ),
+			'capabilities' => array( 'kitchen_pairing', 'app_info', 'app_recipes', 'analytics_export_v1', 'analytics_metadata_v1', 'analytics_link_targets_v1', 'signed_events', 'modern_templates_v1' ),
 			'site_id' => self::get_site_id(),
 			'site_url' => untrailingslashit( home_url() ),
 			'api_url' => self::api_url(),
@@ -508,7 +508,7 @@ class WPRM_Api_App_Kitchen {
 
 	/**
 	 * Ingest a Kitchen-start request or plugin-start callback, then immediately
-	 * redirect to a clean settings URL. Actual connection mutations happen via
+	 * redirect to a clean Kitchen URL. Actual connection mutations happen via
 	 * the nonce-protected REST actions above.
 	 */
 	public static function handle_admin_callback() {
@@ -546,7 +546,7 @@ class WPRM_Api_App_Kitchen {
 			$notice = is_wp_error( $result ) ? $result->get_error_code() : 'completing';
 		}
 
-		wp_safe_redirect( add_query_arg( array( 'page' => 'wprm_settings', 'wprm_kitchen_notice' => sanitize_key( $notice ) ), admin_url( 'admin.php' ) ) );
+		wp_safe_redirect( add_query_arg( 'wprm_kitchen_notice', sanitize_key( $notice ), self::authorize_url() ) );
 		exit;
 	}
 
@@ -701,7 +701,7 @@ class WPRM_Api_App_Kitchen {
 
 		return WPRM_App_Token_Store::create(
 			__( 'WPRM Kitchen', 'wp-recipe-maker' ),
-			array( 'site:read', 'recipes:read', 'analytics:read' ),
+			array(),
 			array( 'pairing_id' => $pairing_id )
 		);
 	}
@@ -720,7 +720,8 @@ class WPRM_Api_App_Kitchen {
 		$event = array(
 			'protocol_version' => self::PROTOCOL_VERSION,
 			'type' => $type,
-			'occurred_at' => gmdate( 'c' ),
+			// UTC with a "Z" suffix: Kitchen validates RFC 3339 timestamps and rejects "+00:00" offsets.
+			'occurred_at' => gmdate( 'Y-m-d\TH:i:s\Z' ),
 		);
 		if ( 'connection.status' === $type ) {
 			$event['status'] = 'connected';
@@ -841,6 +842,18 @@ class WPRM_Api_App_Kitchen {
 		return $base;
 	}
 
+	/**
+	 * Get the Kitchen connection ID for this site.
+	 *
+	 * @since 10.9.0
+	 * @return string Connection ID, or an empty string when not connected.
+	 */
+	public static function get_connection_id() {
+		$connection = self::get_connection();
+
+		return $connection ? (string) $connection['id'] : '';
+	}
+
 	/** Get connection metadata, including only encrypted callback material. */
 	private static function get_connection() {
 		$connection = get_option( self::CONNECTION_OPTION, false );
@@ -937,7 +950,7 @@ class WPRM_Api_App_Kitchen {
 
 	/** Fixed wp-admin authorize/callback URL. */
 	private static function authorize_url() {
-		return add_query_arg( array( 'page' => 'wprm_settings' ), admin_url( 'admin.php' ) );
+		return add_query_arg( array( 'page' => 'wprm_kitchen' ), admin_url( 'admin.php' ) );
 	}
 
 	/** Validate an opaque Kitchen resource id. */

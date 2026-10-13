@@ -161,8 +161,23 @@ export default class EquipmentEdit extends Component {
                                                     let newFields = JSON.parse( JSON.stringify( currentEquipment ) );
                                                     newFields.splice(index, 1);
 
+                                                    // Clear step associations before a later equipment row can
+                                                    // reuse this UID in the same editing session.
+                                                    const instructions = recipe && recipe.instructions_flat ? recipe.instructions_flat : [];
+                                                    const instructionsFlat = instructions.map( instruction => {
+                                                        if ( ! Array.isArray( instruction.equipment ) || ! instruction.equipment.some( uid => Number( uid ) === field.uid ) ) {
+                                                            return instruction;
+                                                        }
+
+                                                        return {
+                                                            ...instruction,
+                                                            equipment: instruction.equipment.filter( uid => Number( uid ) !== field.uid ),
+                                                        };
+                                                    } );
+
                                                     return {
                                                         equipment: newFields,
+                                                        instructions_flat: instructionsFlat,
                                                     };
                                                 }, {
                                                     historyMode: 'immediate',

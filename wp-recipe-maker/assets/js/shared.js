@@ -1,3 +1,4 @@
+import { publishAdminRuntime } from './runtime/admin';
 // Shared vendors.
 import ReactDOM from 'react-dom';
 import React from 'react';
@@ -5,7 +6,7 @@ import ApiWrapper from './shared/ApiWrapper';
 
 // Global variables.
 import { createHooks } from '@wordpress/hooks';
-let hooks = createHooks();
+let hooks = publishAdminRuntime( createHooks() );
 
 const getModalEndpoint = () => {
 	if (
@@ -53,5 +54,10 @@ hooks.addFilter( 'api', 'wp-recipe-maker/ingredient-metadata-api', ( api ) => {
 	};
 	return api;
 } );
+
+// Queued Premium entries can import Free's shared API before Webpack assigns
+// this entry's library export. Publish the existing hook namespace first.
+window.WPRecipeMakerAdmin = window.WPRecipeMakerAdmin || {};
+window.WPRecipeMakerAdmin['wp-recipe-maker/dist/shared'] = { hooks };
 
 export { hooks };

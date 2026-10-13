@@ -19,6 +19,21 @@
  */
 class WPRM_Nutrition {
 	/**
+	 * Normalize an optional number of nutritional portions in the base recipe.
+	 * Empty or invalid counts use the recipe servings instead.
+	 *
+	 * @param mixed $value Optional nutrition serving count.
+	 * @return float|false
+	 */
+	public static function parse_servings( $value ) {
+		if ( ! is_string( $value ) && ! is_int( $value ) && ! is_float( $value ) ) {
+			return false;
+		}
+		$value = str_replace( ',', '.', trim( (string) $value ) );
+		return is_numeric( $value ) && is_finite( floatval( $value ) ) && 0 < floatval( $value ) ? floatval( $value ) : false;
+	}
+
+	/**
 	 * Get nutrition fields.
 	 *
 	 * @since    5.3.0

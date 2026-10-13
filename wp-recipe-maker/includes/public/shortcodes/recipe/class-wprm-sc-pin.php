@@ -137,7 +137,7 @@ class WPRM_SC_Pin extends WPRM_Template_Shortcode {
 		$atts = parent::get_attributes( $atts );
 
 		$recipe = WPRM_Template_Shortcodes::get_recipe( $atts['id'] );
-		if ( ! $recipe || ( ! $recipe->pin_image_url() && ! $recipe->pin_image_repin_id() && 'any' !== $atts['action'] ) ) {
+		if ( ! $recipe ) {
 			return apply_filters( parent::get_hook(), '', $atts, $recipe );
 		}
 		
@@ -152,22 +152,19 @@ class WPRM_SC_Pin extends WPRM_Template_Shortcode {
 
 			if ( $parent_post_id ) {
 				// Hubbub Pro.
-				$hubbub = get_post_meta( $parent_post_id, 'dpsp_share_options', true );
-				if ( is_array( $hubbub ) ) {
-					if ( isset( $hubbub['custom_image_pinterest'] ) && is_array( $hubbub['custom_image_pinterest'] ) && $hubbub['custom_image_pinterest']['src'] ) {
-						$media = $hubbub['custom_image_pinterest']['src'];
+				$hubbub = self::get_hubbub_share_options( $parent_post_id );
+				if ( isset( $hubbub['custom_image_pinterest'] ) && is_array( $hubbub['custom_image_pinterest'] ) && ! empty( $hubbub['custom_image_pinterest']['src'] ) && is_string( $hubbub['custom_image_pinterest']['src'] ) ) {
+					$media = $hubbub['custom_image_pinterest']['src'];
 
-						if ( isset( $hubbub['custom_description_pinterest'] ) && $hubbub['custom_description_pinterest'] ) {
-							$description = $hubbub['custom_description_pinterest'];
-						}
+					$hubbub_description = self::get_hubbub_description( $hubbub );
+					if ( '' !== $hubbub_description ) {
+						$description = $hubbub_description;
 					}
 				}
-
-				
 			}
 		}
 
-		// Make sure we have something to pin, otherwise return.
+		// Validate after integrations, as Hubbub can supply an image when the recipe has none.
 		if ( ! $media && ! $repin_id && 'any' !== $atts['action'] ) {
 			return apply_filters( parent::get_hook(), '', $atts, $recipe );
 		}
@@ -256,6 +253,64 @@ class WPRM_SC_Pin extends WPRM_Template_Shortcode {
 
 		$output = '<a href="' . esc_attr( $pin_url ) . '"' . $attributes . '>' . $icon . WPRM_Shortcode_Helper::sanitize_html( $text ) . '</a>';
 		return apply_filters( parent::get_hook(), $output, $atts, $recipe );
+	}
+
+	/**
+	 * Read current Hubbub share options, falling back to older versions' metadata.
+	 *
+	 * @param int $post_id Parent post ID.
+	 * @return array
+	 */
+	private static function get_hubbub_share_options( $post_id ) {
+		$json = get_post_meta( $post_id, 'dpsp_share_options_json', true );
+		if ( is_string( $json ) && '' !== $json ) {
+			$options = json_decode( $json, true );
+			if ( JSON_ERROR_NONE === json_last_error() ) {
+				// An explicitly cleared JSON value must not restore stale legacy options.
+				return is_array( $options ) ? $options : array();
+			}
+		}
+
+		$options = get_post_meta( $post_id, 'dpsp_share_options', true );
+		return is_array( $options ) ? $options : array();
+	}
+
+	/**
+	 * Follow Hubbub's share-button description priority for its selected image.
+	 *
+	 * @param array $options Hubbub share options.
+	 * @return string
+	 */
+	private static function get_hubbub_description( $options ) {
+		if ( ! empty( $options['custom_description_pinterest'] ) && is_string( $options['custom_description_pinterest'] ) ) {
+			return $options['custom_description_pinterest'];
+		}
+
+		$image_id = isset( $options['custom_image_pinterest']['id'] ) ? absint( $options['custom_image_pinterest']['id'] ) : 0;
+		if ( ! $image_id ) {
+			return '';
+		}
+
+		$description = get_post_meta( $image_id, 'pin_description', true );
+		if ( ! empty( $description ) && is_string( $description ) ) {
+			return $description;
+		}
+
+		// Use Hubbub's settings API when available so its settings filters still apply.
+		$settings = is_callable( array( 'Mediavine\\Grow\\Settings', 'get_setting' ) )
+			? \Mediavine\Grow\Settings::get_setting( 'dpsp_pinterest_share_images_setting', array() )
+			: get_option( 'dpsp_pinterest_share_images_setting', array() );
+		$source = is_array( $settings ) && ! empty( $settings['share_image_pin_description_source'] ) ? $settings['share_image_pin_description_source'] : 'image_alt_tag';
+
+		if ( 'image_alt_tag' === $source ) {
+			$description = get_post_meta( $image_id, '_wp_attachment_image_alt', true );
+		} elseif ( 'image_title' === $source ) {
+			$description = get_the_title( $image_id );
+		} else {
+			$description = '';
+		}
+
+		return is_string( $description ) ? $description : '';
 	}
 }
 

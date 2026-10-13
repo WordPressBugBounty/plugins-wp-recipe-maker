@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
+import { __wprm } from 'Shared/Translations';
 
 const kitchenEndpoint = `${wprm_admin.endpoints.app}/kitchen`;
 
@@ -38,7 +39,7 @@ const callKitchen = async (path = '', method = 'GET') => {
     }
 
     if ( ! response.ok ) {
-        const requestError = new Error(body.message || 'WPRM Kitchen could not complete the request.');
+        const requestError = new Error(body.message || __wprm( 'WPRM Kitchen could not complete the request.' ));
         requestError.code = body.code || 'wprm_kitchen_unknown_error';
         throw requestError;
     }
@@ -62,7 +63,7 @@ const KitchenConnection = (props) => {
     };
 
     const handleError = (error) => {
-        setMessage(error && error.message ? error.message : 'WPRM Kitchen could not complete the request.');
+        setMessage(error && error.message ? error.message : __wprm( 'WPRM Kitchen could not complete the request.' ));
         setBusy(false);
         setLoading(false);
     };
@@ -80,9 +81,9 @@ const KitchenConnection = (props) => {
         if ( status && 'complete' === status.action_required && ! completionStarted.current ) {
             completionStarted.current = true;
             setBusy(true);
-            setMessage('Finishing the secure connection...');
+            setMessage(__wprm( 'Finishing the secure connection...' ));
             callKitchen('/complete', 'POST').then((data) => {
-                setMessage('WPRM Kitchen is connected.');
+                setMessage(__wprm( 'WPRM Kitchen is connected.' ));
                 setBusy(false);
                 updateStatus(data);
             }).catch(handleError);
@@ -91,7 +92,7 @@ const KitchenConnection = (props) => {
 
     const ensureSettingsSaved = () => {
         if ( props.settingsChanged ) {
-            alert('Please save or cancel your settings changes before managing the WPRM Kitchen connection.');
+            alert(__wprm( 'Please save or cancel your settings changes before managing the WPRM Kitchen connection.' ));
             return false;
         }
 
@@ -104,14 +105,14 @@ const KitchenConnection = (props) => {
         }
 
         setBusy(true);
-        setMessage('Creating a secure WPRM Kitchen pairing...');
+        setMessage(__wprm( 'Creating a secure WPRM Kitchen pairing...' ));
         callKitchen('/connect', 'POST').then((data) => {
             updateStatus(data);
             if ( data.authorize_url ) {
                 window.location.assign(data.authorize_url);
             } else {
                 setBusy(false);
-                setMessage('WPRM Kitchen did not return a login URL. Please try again.');
+                setMessage(__wprm( 'WPRM Kitchen did not return a login URL. Please try again.' ));
             }
         }).catch(handleError);
     };
@@ -122,10 +123,10 @@ const KitchenConnection = (props) => {
         }
 
         setBusy(true);
-        setMessage('Approving and exchanging credentials securely...');
+        setMessage(__wprm( 'Approving and exchanging credentials securely...' ));
         callKitchen('/approve', 'POST').then((data) => {
             setBusy(false);
-            setMessage('WPRM Kitchen is connected.');
+            setMessage(__wprm( 'WPRM Kitchen is connected.' ));
             updateStatus(data);
             if ( data.kitchen_return_url ) {
                 window.location.assign(data.kitchen_return_url);
@@ -137,37 +138,37 @@ const KitchenConnection = (props) => {
         setBusy(true);
         callKitchen('/cancel', 'POST').then((data) => {
             setBusy(false);
-            setMessage('The pending pairing was cancelled.');
+            setMessage(__wprm( 'The pending pairing was cancelled.' ));
             updateStatus(data);
         }).catch(handleError);
     };
 
     const testConnection = () => {
         setBusy(true);
-        setMessage('Testing the signed connection...');
+        setMessage(__wprm( 'Testing the signed connection...' ));
         callKitchen('/test', 'POST').then((data) => {
             setBusy(false);
-            setMessage(data.test && data.test.ok ? 'The signed WPRM Kitchen connection is working.' : 'The connection test completed.');
+            setMessage(data.test && data.test.ok ? __wprm( 'The signed WPRM Kitchen connection is working.' ) : __wprm( 'The connection test completed.' ));
             updateStatus(data);
         }).catch(handleError);
     };
 
     const disconnect = () => {
-        if ( ! ensureSettingsSaved() || ! confirm('Disconnect WPRM Kitchen? Its site access will be revoked immediately.') ) {
+        if ( ! ensureSettingsSaved() || ! confirm(__wprm( 'Disconnect WPRM Kitchen? Its site access will be revoked immediately.' )) ) {
             return;
         }
 
         setBusy(true);
-        setMessage('Revoking the WPRM Kitchen connection...');
+        setMessage(__wprm( 'Revoking the WPRM Kitchen connection...' ));
         callKitchen('', 'DELETE').then((data) => {
             setBusy(false);
-            setMessage(data.warning ? `Disconnected locally. ${data.warning.message}` : 'WPRM Kitchen was disconnected.');
+            setMessage(data.warning ? __wprm( 'Disconnected locally. %s' ).replace( /%(?:1\$)?s/g, () => data.warning.message ) : __wprm( 'WPRM Kitchen was disconnected.' ));
             updateStatus(data);
         }).catch(handleError);
     };
 
     if ( loading ) {
-        return <div className="wprm-setting-kitchen-connection">Loading WPRM Kitchen connection...</div>;
+        return <div className="wprm-setting-kitchen-connection">{ __wprm( 'Loading WPRM Kitchen connection...' ) }</div>;
     }
 
     const state = status ? status.state : 'error';
@@ -180,11 +181,11 @@ const KitchenConnection = (props) => {
                     'connected' === state
                     ?
                     <React.Fragment>
-                        <strong>Connected</strong>
+                        <strong>{ __wprm( 'Connected' ) }</strong>
                         <span>
-                            {status.connection.workspace_name ? `Workspace: ${status.connection.workspace_name}` : 'WPRM Kitchen workspace connected'}
+                            {status.connection.workspace_name ? __wprm( 'Workspace: %s' ).replace( /%(?:1\$)?s/g, () => status.connection.workspace_name ) : __wprm( 'WPRM Kitchen workspace connected' )}
                         </span>
-                        {status.connection.connected_at ? <span>Connected: {status.connection.connected_at}</span> : null}
+                        {status.connection.connected_at ? <span>{ __wprm( 'Connected: %s' ).replace( /%(?:1\$)?s/g, () => status.connection.connected_at ) }</span> : null}
                     </React.Fragment>
                     : null
                 }
@@ -192,8 +193,8 @@ const KitchenConnection = (props) => {
                     'awaiting_kitchen' === state
                     ?
                     <React.Fragment>
-                        <strong>Waiting for WPRM Kitchen approval</strong>
-                        <span>Log in and choose a workspace to continue. This pairing expires shortly.</span>
+                        <strong>{ __wprm( 'Waiting for WPRM Kitchen approval' ) }</strong>
+                        <span>{ __wprm( 'Log in and choose a workspace to continue. This pairing expires shortly.' ) }</span>
                     </React.Fragment>
                     : null
                 }
@@ -201,8 +202,8 @@ const KitchenConnection = (props) => {
                     'awaiting_approval' === state
                     ?
                     <React.Fragment>
-                        <strong>Approval required</strong>
-                        <span>WPRM Kitchen is requesting access to recipes and analytics on this site.</span>
+                        <strong>{ __wprm( 'Approval required' ) }</strong>
+                        <span>{ __wprm( 'WPRM Kitchen is requesting access to this site’s recipes, templates and other supported features. Approving also syncs daily aggregate analytics counts to Kitchen.' ) }</span>
                     </React.Fragment>
                     : null
                 }
@@ -210,8 +211,8 @@ const KitchenConnection = (props) => {
                     'callback_received' === state
                     ?
                     <React.Fragment>
-                        <strong>Finishing connection</strong>
-                        <span>The one-time Kitchen approval was received and is being exchanged securely.</span>
+                        <strong>{ __wprm( 'Finishing connection' ) }</strong>
+                        <span>{ __wprm( 'The one-time Kitchen approval was received and is being exchanged securely.' ) }</span>
                     </React.Fragment>
                     : null
                 }
@@ -219,8 +220,8 @@ const KitchenConnection = (props) => {
                     'error' === state
                     ?
                     <React.Fragment>
-                        <strong>Connection error</strong>
-                        <span>{error || message || 'The WPRM Kitchen connection could not be completed.'}</span>
+                        <strong>{ __wprm( 'Connection error' ) }</strong>
+                        <span>{error || message || __wprm( 'The WPRM Kitchen connection could not be completed.' )}</span>
                     </React.Fragment>
                     : null
                 }
@@ -228,8 +229,8 @@ const KitchenConnection = (props) => {
                     'disconnected' === state
                     ?
                     <React.Fragment>
-                        <strong>Not connected</strong>
-                        <span>Connect this WordPress site to a WPRM Kitchen workspace.</span>
+                        <strong>{ __wprm( 'Not connected' ) }</strong>
+                        <span>{ __wprm( 'Connect this WordPress site to a WPRM Kitchen workspace.' ) }</span>
                     </React.Fragment>
                     : null
                 }
@@ -238,9 +239,20 @@ const KitchenConnection = (props) => {
                 status && false === status.premium_active
                 ?
                 <div className="wprm-setting-kitchen-notice">
-                    Connection management is available, but recipe and analytics access requires WP Recipe Maker Premium.
+                    { __wprm( 'Connection management is available, but recipe and analytics access requires WP Recipe Maker Premium.' ) }
                 </div>
                 : null
+            }
+            {
+                'connected' !== state
+                ?
+                <div className="wprm-setting-kitchen-notice">
+                    { __wprm( 'Connecting grants WPRM Kitchen access to recipes, templates and other supported features, and syncs daily analytics counts per recipe, post and action. Individual events, visitor identifiers, IP addresses and user agents stay in WordPress.' ) }
+                </div>
+                :
+                <div className="wprm-setting-kitchen-notice">
+                    { __wprm( 'This connection grants WPRM Kitchen access to all supported features. Disconnect to revoke that access and stop syncing.' ) }
+                </div>
             }
             {message && message !== error ? <div className="wprm-setting-kitchen-message">{message}</div> : null}
             <div className="wprm-setting-kitchen-actions">
@@ -248,36 +260,36 @@ const KitchenConnection = (props) => {
                     'disconnected' === state || 'error' === state
                     ?
                     <button className="button button-primary button-compact" disabled={busy} onClick={(event) => { event.preventDefault(); connect(); }}>
-                        {busy ? 'Working...' : 'Connect to WPRM Kitchen'}
+                        {busy ? __wprm( 'Working...' ) : __wprm( 'Connect to WPRM Kitchen' )}
                     </button>
                     : null
                 }
                 {
                     'awaiting_kitchen' === state && status.authorize_url
                     ?
-                    <a className="button button-primary button-compact" href={status.authorize_url}>Continue in WPRM Kitchen</a>
+                    <a className="button button-primary button-compact" href={status.authorize_url}>{ __wprm( 'Continue in WPRM Kitchen' ) }</a>
                     : null
                 }
                 {
                     'awaiting_approval' === state
                     ?
                     <button className="button button-primary button-compact" disabled={busy} onClick={(event) => { event.preventDefault(); approve(); }}>
-                        {busy ? 'Working...' : 'Approve Connection'}
+                        {busy ? __wprm( 'Working...' ) : __wprm( 'Approve Connection' )}
                     </button>
                     : null
                 }
                 {
                     [ 'awaiting_kitchen', 'awaiting_approval', 'callback_received' ].includes(state)
                     ?
-                    <button className="button button-secondary button-compact" disabled={busy} onClick={(event) => { event.preventDefault(); cancel(); }}>Cancel</button>
+                    <button className="button button-secondary button-compact" disabled={busy} onClick={(event) => { event.preventDefault(); cancel(); }}>{ __wprm( 'Cancel' ) }</button>
                     : null
                 }
                 {
                     'connected' === state
                     ?
                     <React.Fragment>
-                        <button className="button button-secondary button-compact" disabled={busy} onClick={(event) => { event.preventDefault(); testConnection(); }}>Test Connection</button>
-                        <button className="button button-secondary button-compact" disabled={busy} onClick={(event) => { event.preventDefault(); disconnect(); }}>Disconnect</button>
+                        <button className="button button-secondary button-compact" disabled={busy} onClick={(event) => { event.preventDefault(); testConnection(); }}>{ __wprm( 'Test Connection' ) }</button>
+                        <button className="button button-secondary button-compact" disabled={busy} onClick={(event) => { event.preventDefault(); disconnect(); }}>{ __wprm( 'Disconnect' ) }</button>
                     </React.Fragment>
                     : null
                 }

@@ -135,6 +135,12 @@ class WPRM_Version {
 
 		// If we already know a migration is needed, avoid running the resource-intensive query again.
 		$migration_needed_versions = get_option( 'wprm_versions_migration_needed', array() );
+		if ( 1 !== (int) get_option( 'wprm_versions_migration_cache_version', 0 ) ) {
+			// Text comparisons could flag 10.x recipes as older than 7.6.0. Recheck old positive results once.
+			$migration_needed_versions = array();
+			update_option( 'wprm_versions_migration_needed', $migration_needed_versions, false );
+			update_option( 'wprm_versions_migration_cache_version', 1, false );
+		}
 		if ( in_array( $version, $migration_needed_versions, true ) ) {
 			return true;
 		}
@@ -195,6 +201,7 @@ class WPRM_Version {
 					'key'		=> 'wprm_version',
 					'compare'	=> '<',
 					'value' 	=> $version_as_number,
+					'type'		=> 'NUMERIC',
 				),
 				array(
 					'key' => 'wprm_version',

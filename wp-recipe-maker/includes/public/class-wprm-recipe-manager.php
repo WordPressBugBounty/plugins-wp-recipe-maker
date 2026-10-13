@@ -37,6 +37,9 @@ class WPRM_Recipe_Manager {
 	 */
 	private static $posts = array();
 
+	/** @var array Public rendering posts remembered per recipe, for this request only. */
+	private static $public_render_contexts = array();
+
 	/**
 	 * Register actions and filters.
 	 *
@@ -760,12 +763,19 @@ class WPRM_Recipe_Manager {
 		// Recipes are embedded publicly even when their post type is not public.
 		$status = get_post_status_object( get_post_status( $post ) );
 		if ( ( ! $status || ! $status->public ) && ! current_user_can( 'read_post', $recipe_id ) ) {
+			// A public parent only makes up for an out-of-sync unpublished recipe.
+			// Private and trashed recipes were restricted deliberately.
+			if ( ! in_array( $post->post_status, array( 'draft', 'pending', 'future' ), true ) ) {
+				return false;
+			}
+
 			$public_post_id = intval( $public_post_id );
 			if ( ! $public_post_id ) {
 				$public_post_id = intval( get_post_meta( $recipe_id, 'wprm_parent_post_id', true ) );
 			}
 
-			if ( ! self::is_public_recipe_context( $recipe_id, $public_post_id ) ) {
+			if ( ! WPRM_Compatibility::public_post_preview_can_read_recipe( $recipe_id )
+				&& ! self::is_public_recipe_context( $recipe_id, $public_post_id ) ) {
 				return false;
 			}
 		}
@@ -790,7 +800,9 @@ class WPRM_Recipe_Manager {
 	 */
 	private static function is_public_recipe_context( $recipe_id, $post_id ) {
 		$post_id = intval( $post_id );
-		if ( $post_id <= 0 || $post_id === intval( $recipe_id ) ) {
+		// PPP temporarily marks its parent as published in memory. That must not
+		// make unrelated recipes embedded in this preview publicly accessible.
+		if ( $post_id <= 0 || $post_id === intval( $recipe_id ) || WPRM_Compatibility::is_public_post_preview( $post_id ) ) {
 			return false;
 		}
 
@@ -805,6 +817,118 @@ class WPRM_Recipe_Manager {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Validate a public rendering context before carrying it to other page lookups.
+	 * This does not grant ordinary REST/AJAX access or authorize a preview parent.
+	 *
+	 * @since 10.9.0
+	 */
+	public static function can_use_public_render_context( $recipe_id, $post_id ) {
+		return ! is_admin() && ! wp_doing_ajax() && ! ( defined( 'REST_REQUEST' ) && REST_REQUEST ) && ! is_feed()
+			&& self::can_access_public_render_context( $recipe_id, $post_id );
+	}
+
+	/** Check live restrictions for a public recipe/post pair. */
+	private static function can_access_public_render_context( $recipe_id, $post_id ) {
+		if ( ! self::is_public_recipe_context( $recipe_id, $post_id ) ) {
+			return false;
+		}
+		$post = get_post( $recipe_id );
+		if ( ! $post instanceof WP_Post || WPRM_POST_TYPE !== $post->post_type
+			|| ! in_array( $post->post_status, array( 'publish', 'draft', 'pending', 'future' ), true )
+			|| post_password_required( $post ) ) {
+			return false;
+		}
+		foreach ( array( $recipe_id, $post_id ) as $id ) {
+			if ( in_array( 'do_not_allow', map_meta_cap( 'read_post', get_current_user_id(), $id ), true ) ) {
+				return false;
+			}
+		}
+		return WPRM_Access::can_access( $post_id ) && WPRM_Access::can_access( $recipe_id, new WPRM_Recipe( $post ), $post_id );
+	}
+
+	/**
+	 * Carry the rendering post to individual print/PDF requests when needed.
+	 * Separate requests validate current access and recipe membership in the post.
+	 */
+	public static function public_render_context_parameters( $recipe_id, $post_id = 0 ) {
+		$post_id = self::get_public_render_context( $recipe_id, $post_id );
+		if ( ! $post_id || ( 'publish' === get_post_status( $recipe_id ) && $post_id === intval( get_post_meta( $recipe_id, 'wprm_parent_post_id', true ) ) ) ) {
+			return array();
+		}
+		return array(
+			'wprm_public_post' => $post_id,
+		);
+	}
+
+	/** Accept a supplied post only while it is accessible and contains the recipe. */
+	public static function get_public_render_post_id( $recipe_id, $parameters ) {
+		if ( ! is_array( $parameters ) || ! isset( $parameters['wprm_public_post'] ) ) {
+			return 0;
+		}
+		$post_id = $parameters['wprm_public_post'];
+		if ( ! is_int( $post_id ) && ! ( is_string( $post_id ) && ctype_digit( $post_id ) ) ) {
+			return 0;
+		}
+		$post_id = intval( $post_id );
+		if ( ! self::can_access_public_render_context( $recipe_id, $post_id ) ) {
+			return 0;
+		}
+		// Share one containment snapshot per post for this request, including empty results.
+		// Access restrictions above are still checked on every lookup.
+		$recipe_ids = self::get_recipe_ids_from_post( $post_id, false, true );
+		return in_array( intval( $recipe_id ), array_map( 'intval', (array) $recipe_ids ), true ) ? $post_id : 0;
+	}
+
+	/**
+	 * Load for a public action without changing ordinary REST/admin access.
+	 *
+	 * @param int   $recipe_id Recipe to load.
+	 * @param array $parameters Optional public rendering context.
+	 * @param int   $public_post_id Receives the validated post ID, or zero.
+	 */
+	public static function get_recipe_with_public_context( $recipe_id, $parameters = array(), &$public_post_id = 0 ) {
+		$recipe = self::get_recipe( $recipe_id );
+		$public_post_id = self::get_public_render_post_id( $recipe_id, $parameters );
+		if ( $public_post_id ) {
+			return self::get_recipe( $recipe_id, $public_post_id );
+		}
+		if ( ! $recipe || ( in_array( $recipe->post_status(), array( 'private', 'trash' ), true ) && ! current_user_can( 'read_post', $recipe_id ) )
+			|| ( post_password_required( $recipe_id ) && ! current_user_can( 'edit_post', $recipe_id ) )
+			|| ! WPRM_Access::can_access( $recipe_id, $recipe ) ) {
+			return false;
+		}
+		$parent = $recipe->parent_post();
+		if ( $parent && ( ( in_array( $parent->post_status, array( 'private', 'trash' ), true ) && ! current_user_can( 'read_post', $parent->ID ) )
+			|| ( post_password_required( $parent ) && ! current_user_can( 'edit_post', $parent->ID ) ) ) ) {
+			return false;
+		}
+		return $recipe;
+	}
+
+	/** Remember a context only when server-side recipe rendering has authorized it. */
+	public static function remember_public_render_context( $recipe_id, $post_id ) {
+		$recipe_id = intval( $recipe_id );
+		$post_id = intval( $post_id );
+		if ( self::can_use_public_render_context( $recipe_id, $post_id ) ) {
+			self::$public_render_contexts[ $recipe_id ][ $post_id ] = $post_id;
+		}
+	}
+
+	/** Get a remembered context, rechecking current restrictions even on cache hits. */
+	public static function get_public_render_context( $recipe_id, $post_id = 0 ) {
+		$contexts = self::$public_render_contexts[ intval( $recipe_id ) ] ?? array();
+		if ( $post_id ) {
+			$contexts = isset( $contexts[ $post_id ] ) ? array( $post_id ) : array();
+		}
+		foreach ( $contexts as $id ) {
+			if ( self::can_use_public_render_context( $recipe_id, $id ) ) {
+				return $id;
+			}
+		}
+		return 0;
 	}
 
 	/**
@@ -1063,34 +1187,37 @@ class WPRM_Recipe_Manager {
 	 * @since	4.2.0
 	 * @param	mixed	$post_id Optional post ID. Uses current post if not set.
 	 * @param	boolean	$ignore_cache Whether the cache should be ignored.
+	 * @param	boolean	$for_public_context Whether to check print/PDF containment instead of ordinary discovery.
 	 */
-	public static function get_recipe_ids_from_post( $post_id = false, $ignore_cache = false ) {
+	public static function get_recipe_ids_from_post( $post_id = false, $ignore_cache = false, $for_public_context = false ) {
 		// Default to current post ID and sanitize.
 		if ( ! $post_id ) {
 			$post_id = get_the_ID();
 		}
 		$post_id = intval( $post_id );
+		// Containment scans must not populate the list used by syncing and metadata.
+		$cache_key = $for_public_context ? $post_id . ':containment' : $post_id;
 
 		// Search through post content if not in cache only.
-		if ( $ignore_cache || ! isset( self::$posts[ $post_id ] ) ) {
+		if ( $ignore_cache || ! isset( self::$posts[ $cache_key ] ) ) {
 			$post = get_post( $post_id );
 
 			if ( $post ) {
 				if ( WPRM_POST_TYPE === $post->post_type ) {
-					self::$posts[ $post_id ] = array( $post_id );
+					self::$posts[ $cache_key ] = array( $post_id );
 				} else {
-					$recipe_ids = self::get_recipe_ids_from_content( $post->post_content );
+					$recipe_ids = self::get_recipe_ids_from_content( $post->post_content, $for_public_context );
 
 					// Thrive Architect compatibility.
 					if ( function_exists( 'tve_get_post_meta' ) ) {
-						$content = tve_get_post_meta( get_the_ID(), 'tve_updated_post', true );
-						$thrive_recipe_ids = self::get_recipe_ids_from_content( $content );
+						$content = tve_get_post_meta( $post_id, 'tve_updated_post', true );
+						$thrive_recipe_ids = self::get_recipe_ids_from_content( $content, $for_public_context );
 
-						$recipe_ids = array_unique( $recipe_ids + $thrive_recipe_ids );
+						$recipe_ids = array_values( array_unique( array_merge( $recipe_ids, $thrive_recipe_ids ) ) );
 					}
 
 					// Themify Builder compatibility.
-					if ( '<!-- wp:themify-builder/canvas /-->' === substr( $post->post_content, 0, 38 ) ) {
+					if ( 0 === strpos( $post->post_content, '<!-- wp:themify-builder/canvas /-->' ) ) {
 						$ThemifyBuilder = isset( $GLOBALS['ThemifyBuilder'] ) ? $GLOBALS['ThemifyBuilder'] : false;
 
 						if ( $ThemifyBuilder ) {
@@ -1098,7 +1225,7 @@ class WPRM_Recipe_Manager {
 						
 							if ( $content ) {
 								preg_match_all( '/id="wprm-recipe-container-(\d+)"/m', $content, $matches );
-								$recipe_ids = array_unique( $recipe_ids + $matches[1] );
+								$recipe_ids = array_values( array_unique( array_merge( $recipe_ids, $matches[1] ) ) );
 							}
 						}
 					}
@@ -1122,8 +1249,8 @@ class WPRM_Recipe_Manager {
 									$bricks_output = ob_get_contents();
 									ob_end_clean();
 		
-									$bricks_recipe_ids = self::get_recipe_ids_from_content( $bricks_output );
-									$recipe_ids = array_unique( $recipe_ids + $bricks_recipe_ids );
+									$bricks_recipe_ids = self::get_recipe_ids_from_content( $bricks_output, $for_public_context );
+									$recipe_ids = array_values( array_unique( array_merge( $recipe_ids, $bricks_recipe_ids ) ) );
 									
 									$processing_bricks = false;
 								}
@@ -1134,7 +1261,7 @@ class WPRM_Recipe_Manager {
 					// Allow for filtering of recipe IDs found in the post.
 					$recipe_ids = apply_filters( 'wprm_get_recipe_ids_from_post', $recipe_ids, $post_id );
 					
-					self::$posts[ $post_id ] = $recipe_ids;
+					self::$posts[ $cache_key ] = $recipe_ids;
 				}
 			} else {
 				// Fail now and give another chance to find ids later.
@@ -1142,7 +1269,7 @@ class WPRM_Recipe_Manager {
 			}
 		}
 
-		return self::$posts[ $post_id ];
+		return self::$posts[ $cache_key ];
 	}
 
 	/**
@@ -1150,12 +1277,18 @@ class WPRM_Recipe_Manager {
 	 *
 	 * @since    1.0.0
 	 * @param		 mixed $content Content we want to check for recipes.
+	 * @param		 boolean $for_public_context Whether to check print/PDF containment, excluding attribute-only references and including synced patterns.
 	 */
-	public static function get_recipe_ids_from_content( $content ) {
+	public static function get_recipe_ids_from_content( $content, $for_public_context = false ) {
+		// Ordinary comments are not embeds. Keep block delimiters and legacy recipe
+		// markers for their respective parsers. Only ordinary discovery scans block attributes.
+		$discovery_content = preg_replace_callback( '/<!--.*?(?:-->|$)/s', function( $match ) {
+			return preg_match( '/^<!--(?:\s+\/?wp:|WPRM Recipe \d+-->|End WPRM Recipe-->)/', $match[0] ) ? $match[0] : ' ';
+		}, (string) $content );
 		// Gutenberg.
 		$gutenberg_matches = array();
 		$gutenberg_patern = '/<!--\s+wp:(wp\-recipe\-maker\/recipe)(\s+(\{.*?\}))?\s+(\/)?-->/';
-		preg_match_all( $gutenberg_patern, $content, $matches );
+		preg_match_all( $gutenberg_patern, $discovery_content, $matches );
 
 		if ( isset( $matches[3] ) ) {
 			foreach ( $matches[3] as $block_attributes_json ) {
@@ -1171,43 +1304,100 @@ class WPRM_Recipe_Manager {
 		}
 
 		// Classic Editor.
-		preg_match_all( WPRM_Fallback_Recipe::get_fallback_regex(), $content, $matches );
+		preg_match_all( WPRM_Fallback_Recipe::get_fallback_regex(), $discovery_content, $matches );
 		$classic_matches = isset( $matches[1] ) ? array_map( 'intval', $matches[1] ) : array();
 
 		// Site Origin Page Builder Compatibility.
 		$content = str_ireplace( '\&quot;', '"', $content );
 
-		// Match shortcodes (need for Site Origin Page Builder, for example).
-		$shortcode_pattern = '/\[wprm-recipe\s.*?id=\"?\'?(\d+)\"?\'?.*?\]/mi';
-		preg_match_all( $shortcode_pattern, $content, $matches );
-		$shortcode_matches = isset( $matches[1] ) ? array_map( 'intval', $matches[1] ) : array();
-
-		// Divi Builder.
+		// Use WordPress shortcode syntax, including its double-bracket escape rule.
+		$shortcode_matches = array();
 		$divi_matches = array();
+		$tags = array( 'wprm-recipe' );
 		if ( function_exists( 'et_core_is_builder_used_on_current_request' ) ) {
-			$pattern = get_shortcode_regex( array( 'divi_wprm_recipe' ) );
-
-			if ( preg_match_all( '/' . $pattern . '/s', $content, $matches ) && array_key_exists( 2, $matches ) ) {
-				foreach ( $matches[2] as $key => $value ) {
-					if ( 'divi_wprm_recipe' === $value ) {
-						$divi_atts = shortcode_parse_atts( stripslashes( $matches[3][ $key ] ) );
-
-						if ( isset( $divi_atts['recipe_id'] ) ) {
-							$divi_matches[] = intval( $divi_atts['recipe_id'] );
-						}
+			$tags[] = 'divi_wprm_recipe';
+		}
+		$shortcode_pattern = '/' . get_shortcode_regex( $tags ) . '/s';
+		// Scan outside comments separately so removal cannot join text into a shortcode.
+		$shortcode_contents = array();
+		foreach ( preg_split( '/(<!--.*?(?:-->|$))/s', $content, -1, PREG_SPLIT_DELIM_CAPTURE ) as $part ) {
+			if ( 0 === strpos( $part, '<!--' ) ) {
+				if ( ! $for_public_context && preg_match( '/^<!--\s+wp:/', $part ) && function_exists( 'parse_blocks' ) ) {
+					$shortcode_contents = array_merge( $shortcode_contents, self::get_shortcode_content_from_block_attributes( parse_blocks( $part ) ) );
+				}
+			} else {
+				$shortcode_contents[] = $part;
+			}
+		}
+		foreach ( $shortcode_contents as $shortcode_content ) {
+			preg_match_all( $shortcode_pattern, $shortcode_content, $matches, PREG_SET_ORDER );
+			foreach ( $matches as $match ) {
+				if ( '[' === $match[1] && ']' === $match[6] ) {
+					continue;
+				}
+				$attributes = shortcode_parse_atts( stripslashes( $match[3] ) );
+				$key = 'wprm-recipe' === $match[2] ? 'id' : 'recipe_id';
+				$recipe_id = is_array( $attributes ) && isset( $attributes[ $key ] ) ? intval( $attributes[ $key ] ) : 0;
+				if ( $recipe_id > 0 ) {
+					if ( 'wprm-recipe' === $match[2] ) {
+						$shortcode_matches[] = $recipe_id;
+					} else {
+						$divi_matches[] = $recipe_id;
 					}
 				}
 			}
 		}
 
-		$divi5_matches = self::get_recipe_ids_from_divi5_blocks( $content );
+		$divi5_matches = self::get_recipe_ids_from_divi5_blocks( $discovery_content );
+		$synced_matches = $for_public_context && function_exists( 'parse_blocks' ) ? self::get_recipe_ids_from_synced_blocks( parse_blocks( $discovery_content ) ) : array();
 
-		$recipe_ids = $gutenberg_matches + $classic_matches + $shortcode_matches + $divi_matches + $divi5_matches;
+		$recipe_ids = array_values( array_unique( array_merge( $gutenberg_matches, $synced_matches, $classic_matches, $shortcode_matches, $divi_matches, $divi5_matches ) ) );
 
 		// Allow for filtering of recipe IDs found in the content.
 		$recipe_ids = apply_filters( 'wprm_get_recipe_ids_from_content', $recipe_ids, $content );
 
 		return $recipe_ids;
+	}
+
+	/** Preserve block-attribute shortcode discovery without treating it as public containment. */
+	private static function get_shortcode_content_from_block_attributes( $blocks ) {
+		$content = array();
+		foreach ( $blocks as $block ) {
+			$attributes = $block['attrs'] ?? array();
+			array_walk_recursive( $attributes, function( $value ) use ( &$content ) {
+				if ( is_string( $value ) ) {
+					$content[] = $value;
+				}
+			} );
+			if ( ! empty( $block['innerBlocks'] ) ) {
+				$content = array_merge( $content, self::get_shortcode_content_from_block_attributes( $block['innerBlocks'] ) );
+			}
+		}
+		return $content;
+	}
+
+	/** Follow published, unprotected synced patterns with a guard for reference cycles. */
+	private static function get_recipe_ids_from_synced_blocks( $blocks ) {
+		static $seen_refs = array();
+		$ids = array();
+		foreach ( $blocks as $block ) {
+			if ( 'core/block' === ( $block['blockName'] ?? '' ) ) {
+				$ref = intval( $block['attrs']['ref'] ?? 0 );
+				$post = $ref ? get_post( $ref ) : false;
+				if ( $post && 'wp_block' === $post->post_type && 'publish' === $post->post_status && ! $post->post_password && ! isset( $seen_refs[ $ref ] ) ) {
+					$seen_refs[ $ref ] = true;
+					try {
+						$ids = array_merge( $ids, self::get_recipe_ids_from_content( $post->post_content, true ) );
+					} finally {
+						unset( $seen_refs[ $ref ] );
+					}
+				}
+			}
+			if ( ! empty( $block['innerBlocks'] ) ) {
+				$ids = array_merge( $ids, self::get_recipe_ids_from_synced_blocks( $block['innerBlocks'] ) );
+			}
+		}
+		return $ids;
 	}
 
 	/**
@@ -1380,8 +1570,10 @@ class WPRM_Recipe_Manager {
 	 * Recipe data to pass along in footer.
 	 *
 	 * @since	8.10.0
+	 * @param array $recipe_ids Recipes rendered on this page.
+	 * @param bool $for_print Load data using print permissions for a print document.
 	 */
-	public static function recipe_data_in_footer( $recipe_ids = array() ) {
+	public static function recipe_data_in_footer( $recipe_ids = array(), $for_print = false ) {
 		// add_action will pass along empty string, so make sure we have an array.
 		$recipe_ids = is_array( $recipe_ids ) ? $recipe_ids : array();
 
@@ -1392,10 +1584,14 @@ class WPRM_Recipe_Manager {
 			$recipes = array_unique( $recipes );
 
 			foreach( $recipes as $recipe_id ) {
-				$recipe = self::get_recipe( $recipe_id );
+				$recipe = $for_print ? WPRM_Print::get_recipe( $recipe_id ) : self::get_recipe( $recipe_id, self::get_public_render_context( $recipe_id ) );
 
 				if ( $recipe ) {
 					$recipe_data[ 'recipe-' . $recipe_id ] = $recipe->get_data_frontend();
+					$context = self::public_render_context_parameters( $recipe_id );
+					if ( $context ) {
+						$recipe_data[ 'recipe-' . $recipe_id ]['public_render_context'] = $context;
+					}
 				}
 			}
 

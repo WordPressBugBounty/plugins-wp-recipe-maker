@@ -1,6 +1,7 @@
 import React, { Component, Fragment } from 'react';
 
 import Api from 'Shared/Api';
+import { parseNutritionServings } from 'Shared/nutrition';
 import FieldContainer from '../../fields/FieldContainer';
 import FieldText from '../../fields/FieldText';
 import Button from 'Shared/Button';
@@ -27,6 +28,7 @@ export default class RecipeNutrition extends Component {
 
     shouldComponentUpdate(nextProps, nextState) {
         return this.state.calculing !== nextState.calculating
+               || this.props.servingsNutrition !== nextProps.servingsNutrition
                || JSON.stringify( this.props.servings ) !== JSON.stringify( nextProps.servings )
                || JSON.stringify( this.props.nutrition ) !== JSON.stringify( nextProps.nutrition )
                || JSON.stringify( this.props.ingredients ) !== JSON.stringify( nextProps.ingredients );
@@ -53,7 +55,8 @@ export default class RecipeNutrition extends Component {
         }
 
         // Notify parent if warning state changed
-        if ( JSON.stringify( this.props.ingredients ) !== JSON.stringify( prevProps.ingredients ) ||
+        if ( this.props.servingsNutrition !== prevProps.servingsNutrition ||
+             JSON.stringify( this.props.ingredients ) !== JSON.stringify( prevProps.ingredients ) ||
              JSON.stringify( this.props.servings ) !== JSON.stringify( prevProps.servings ) ||
              JSON.stringify( this.props.nutrition ) !== JSON.stringify( prevProps.nutrition ) ) {
             this.notifyWarningChange();
@@ -73,6 +76,7 @@ export default class RecipeNutrition extends Component {
             this.originalState = {
                 ingredients: JSON.parse( JSON.stringify( this.props.ingredients ) ),
                 servings: JSON.parse( JSON.stringify( this.props.servings ) ),
+                servingsNutrition: this.props.servingsNutrition,
             };
         }
     }
@@ -121,6 +125,7 @@ export default class RecipeNutrition extends Component {
         const changes = {
             servingsChanged: false,
             servingsDetails: null,
+            nutritionServingsChanged: parseNutritionServings( this.props.servingsNutrition ) !== parseNutritionServings( this.originalState.servingsNutrition ),
             ingredientsChanged: [],
             ingredientsAdded: [],
             ingredientsRemoved: [],
@@ -215,7 +220,7 @@ export default class RecipeNutrition extends Component {
         }
 
         // Return changes object if there are any changes, otherwise return null
-        if ( changes.servingsChanged || 
+        if ( changes.servingsChanged || changes.nutritionServingsChanged ||
              changes.ingredientsChanged.length > 0 || 
              changes.ingredientsAdded.length > 0 || 
              changes.ingredientsRemoved.length > 0 ) {
@@ -268,6 +273,8 @@ export default class RecipeNutrition extends Component {
         const serving_size = props.nutrition.hasOwnProperty('serving_size') && props.nutrition['serving_size'] ? props.nutrition['serving_size'] : '';
         const serving_unit = props.nutrition.hasOwnProperty('serving_unit') && props.nutrition['serving_unit'] ? props.nutrition['serving_unit'] : '';
 
+        const nutritionServings = props.servingsNutrition || '';
+        const invalidNutritionServings = '' !== String( nutritionServings ).trim() && ! parseNutritionServings( nutritionServings );
         const changes = this.hasSignificantChanges();
         const showWarning = changes !== null;
 
@@ -276,7 +283,10 @@ export default class RecipeNutrition extends Component {
                 <p>
                     { __wprm( 'These should be the nutrition facts for 1 serving of your recipe.' ) }<br/>
                     {
-                        props.servings.amount
+                        parseNutritionServings( nutritionServings )
+                        ?
+                        <Fragment>{ __wprm( 'Nutrition servings per recipe:' ) } { parseNutritionServings( nutritionServings ) }</Fragment>
+                        : props.servings.amount
                         ?
                         <Fragment>{ __wprm( 'Total servings for this recipe:' ) } { `${props.servings.amount} ${props.servings.unit}`}</Fragment>
                         :
@@ -292,6 +302,7 @@ export default class RecipeNutrition extends Component {
                         </div>
                         <p>{ __wprm( 'You have made changes that could affect the nutrition facts:' ) }</p>
                         <ul className="wprm-admin-modal-field-nutrition-warning-changes">
+                            { changes.nutritionServingsChanged && <li>{ __wprm( 'Nutrition servings per recipe changed.' ) }</li> }
                             {
                                 changes.servingsChanged
                                 &&
@@ -329,10 +340,22 @@ export default class RecipeNutrition extends Component {
                     </div>
                 }
                 <div className="wprm-admin-modal-field-nutrition-container">
+                    <FieldContainer id="servings_nutrition" label={ __wprm( 'Nutrition Servings' ) } help={ __wprm( 'Optional: the number of nutritional portions in the complete recipe as entered. Leave empty to use Servings under General. Does not change the displayed yield or ingredient scaling. Recalculate nutrition after changing this number.' ) }>
+                        <FieldText
+                            type="number"
+                            name="servings-nutrition"
+                            min="0"
+                            step="any"
+                            value={ nutritionServings }
+                            onChange={ (servings_nutrition) => props.onRecipeChange( { servings_nutrition }, { historyMode: 'debounced', historyKey: 'nutrition:servings' } ) }
+                            onBlur={ (servings_nutrition) => props.onRecipeChange( { servings_nutrition: parseNutritionServings( servings_nutrition ) || '' }, { historyMode: 'debounced', historyBoundary: true, historyKey: 'nutrition:servings' } ) }
+                        />
+                        { invalidNutritionServings && <p role="alert">{ __wprm( 'Enter a number greater than zero, or leave empty to use recipe Servings.' ) }</p> }
+                    </FieldContainer>
                     {
                         wprm_admin.addons.premium
                         ?
-                        <FieldContainer id="nutrition_serving_size" label={ __wprm( 'Serving Size' ) } help={ __wprm( 'The weight of 1 serving. Does not affect the calculation.' ) }>
+                        <FieldContainer id="nutrition_serving_size" label={ __wprm( 'Serving Size' ) } help={ __wprm( 'The size of 1 nutritional portion, in the serving unit. Does not affect the calculation. Gram values allow conversion to nutrition per 100g.' ) }>
                             <FieldText
                                 type="number"
                                 value={ serving_size }
@@ -465,7 +488,7 @@ export default class RecipeNutrition extends Component {
                         e.stopPropagation();
                         props.openSecondaryModal('nutrition-calculation', {
                             nutrition: props.nutrition,
-                            servings: props.servings.amount,
+                            servings: parseNutritionServings( props.servingsNutrition ) || props.servings.amount,
                             ingredients: props.ingredients,
                             name: props.recipe?.name,
                             onNutritionChange: (calculated) => {

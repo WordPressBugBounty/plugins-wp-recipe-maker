@@ -34,12 +34,14 @@ body:not(:hover) fieldset.wprm-comment-ratings-container:focus-within span {
 }
 
 .comment-form-wprm-rating {
+    flex-wrap: wrap;
     text-align: left;
 	margin-top: 5px;
     margin-bottom: 20px;
 
     .wprm-rating-stars {
         display: inline-block;
+        flex-shrink: 0;
         vertical-align: middle;
     }
 }

@@ -35,6 +35,8 @@ export default class ManageTemplates extends Component {
             'Your Own Templates': [],
         }
     
+        const kitchen = wprm_admin_template.kitchen || {};
+
         // Use type from props instead of state
         const type = props.type !== undefined ? props.type : false;
         
@@ -124,6 +126,33 @@ export default class ManageTemplates extends Component {
                                 }
                             }}
                         >Import template...</div>
+                        {
+                            kitchen.url
+                            &&
+                            (
+                                kitchen.connected
+                                ?
+                                <Fragment>
+                                    <a
+                                        className="wprm-manage-templates-type wprm-manage-templates-type-kitchen"
+                                        href={ `${ kitchen.url }/app/templates?view=discover` }
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >Browse Kitchen ↗</a>
+                                    <a
+                                        className="wprm-manage-templates-type wprm-manage-templates-type-kitchen"
+                                        href={ `${ kitchen.url }/app/templates?view=mine` }
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >Restore from Kitchen ↗</a>
+                                </Fragment>
+                                :
+                                <a
+                                    className="wprm-manage-templates-type wprm-manage-templates-type-kitchen"
+                                    href={ kitchen.page_url }
+                                >Get more templates with WPRM Kitchen</a>
+                            )
+                        }
                     </div>
                     {
                         'import' === type

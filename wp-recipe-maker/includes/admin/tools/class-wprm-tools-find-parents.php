@@ -84,6 +84,7 @@ class WPRM_Tools_Find_Parents {
 
 				$posts_left = array();
 				$posts_processed = array();
+				$result = array();
 
 				if ( count( $posts ) > 0 ) {
 					$posts_left = $posts;
@@ -101,6 +102,7 @@ class WPRM_Tools_Find_Parents {
 				wp_send_json_success( array(
 					'posts_processed' => $posts_processed,
 					'posts_left' => $posts_left,
+					'report' => isset( $result['report'] ) ? $result['report'] : false,
 				) );
 			}
 		}
@@ -113,10 +115,18 @@ class WPRM_Tools_Find_Parents {
 	 *
 	 * @since	2.1.0
 	 * @param	array $posts IDs of posts to search.
+	 * @return array Report of posts whose imported embeds could not be converted.
 	 */
 	public static function find_parents( $posts ) {
+		$entries = array();
+
 		foreach ( $posts as $post_id ) {
 			$post = get_post( $post_id );
+			if ( ! $post ) {
+				$entries[] = self::conversion_warning( $post_id, 'post_missing', __( 'The post no longer exists.', 'wp-recipe-maker' ) );
+				continue;
+			}
+
 			$content = WPRM_Shortcode::replace_imported_shortcodes( $post->post_content );
 
 			if ( $content !== $post->post_content ) {
@@ -124,7 +134,18 @@ class WPRM_Tools_Find_Parents {
 					'ID' => $post_id,
 					'post_content' => wp_slash( $content ),
 				);
-				wp_update_post( $update_content );
+				$updated = wp_update_post( $update_content, true );
+
+				if ( is_wp_error( $updated ) || ! $updated ) {
+					$entries[] = self::conversion_warning( $post_id, 'update_failed', __( 'WordPress could not save the converted recipe embeds. Resolve the save error and rerun Find Parent Posts.', 'wp-recipe-maker' ) );
+					continue;
+				}
+
+				// Read raw stored content: editor filters can make an unsaved conversion look successful.
+				$saved_post = get_post( $post_id );
+				if ( ! $saved_post || WPRM_Shortcode::replace_imported_shortcodes( $saved_post->post_content ) !== $saved_post->post_content ) {
+					$entries[] = self::conversion_warning( $post_id, 'conversion_not_saved', __( 'Imported recipe embeds remain after saving. A plugin or save filter may have prevented the conversion. Check for plugin conflicts on staging, then rerun Find Parent Posts.', 'wp-recipe-maker' ) );
+				}
 			} else {
 				$recipe_ids = WPRM_Recipe_Manager::get_recipe_ids_from_post( $post_id );
 
@@ -133,19 +154,9 @@ class WPRM_Tools_Find_Parents {
 
 					if ( $recipe ) {
 						$current_parent_post_id = $recipe->parent_post_id();
-						if ( $current_parent_post_id !== $post_id && $post_id !== $recipe_id ) {
-							// Check if we should actually update the parent post ID.
-							$should_update_parent_post = true;
-							if ( WPRM_Settings::get( 'parent_post_autolock' ) ) {
-								if ( $current_parent_post_id && false !== get_post_type( $current_parent_post_id ) ) {
-									// A current parent exists and is still a valid post, so do not update.
-									$should_update_parent_post = false;
-								}
-							}
-
-							if ( $should_update_parent_post ) {
-								update_post_meta( $recipe_id, 'wprm_parent_post_id', $post_id );
-							}
+						// Respect locked parents and don't let a less visible post take over.
+						if ( $current_parent_post_id !== $post_id && $post_id !== $recipe_id && WPRM_Recipe_Saver::post_can_sync_recipe( $recipe_id, $post ) ) {
+							update_post_meta( $recipe_id, 'wprm_parent_post_id', $post_id );
 						}
 					}
 				}
@@ -178,6 +189,42 @@ class WPRM_Tools_Find_Parents {
 				}
 			}
 		}
+
+		return array(
+			'report' => array(
+				'toggle' => __( 'Posts Requiring Attention', 'wp-recipe-maker' ),
+				'title' => __( 'Find Parent Posts Warnings', 'wp-recipe-maker' ),
+				'summary' => __( 'Some posts could not be processed completely. Review the posts below, resolve the save blocker, and rerun Find Parent Posts.', 'wp-recipe-maker' ),
+				'columns' => array(
+					array( 'key' => 'post_id', 'label' => __( 'Post ID', 'wp-recipe-maker' ) ),
+					array( 'key' => 'post', 'label' => __( 'Post', 'wp-recipe-maker' ) ),
+					array( 'key' => 'details', 'label' => __( 'Details', 'wp-recipe-maker' ) ),
+				),
+				'entries' => $entries,
+				'json_label' => __( 'Full Report JSON', 'wp-recipe-maker' ),
+			),
+		);
+	}
+
+	/**
+	 * Identify a post requiring attention without exposing its content in the report.
+	 *
+	 * @param int    $post_id Post ID.
+	 * @param string $result Machine-readable result.
+	 * @param string $details Explanation for the administrator.
+	 * @return array Report entry.
+	 */
+	private static function conversion_warning( $post_id, $result, $details ) {
+		if ( in_array( $result, array( 'update_failed', 'conversion_not_saved' ), true ) && is_plugin_active( 'tasty-pins/tasty-pins.php' ) ) {
+			$details .= ' ' . __( 'Tasty Pins is active. A known Tasty Pins issue may be preventing the conversion. Try temporarily deactivating Tasty Pins on staging, then rerun Find Parent Posts.', 'wp-recipe-maker' );
+		}
+
+		return array(
+			'post_id' => intval( $post_id ),
+			'post' => get_the_title( $post_id ),
+			'result' => $result,
+			'details' => $details,
+		);
 	}
 }
 

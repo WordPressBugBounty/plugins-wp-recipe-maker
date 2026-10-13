@@ -21,20 +21,20 @@ class WPRM_SC_Google_Preferred_Sources extends WPRM_Template_Shortcode {
 	public static $shortcode = 'wprm-google-preferred-sources';
 
 	/**
-	 * Whether the custom button integration script was added.
+	 * Whether the button integration script was added.
 	 *
 	 * @since 10.9.0
 	 * @var bool
 	 */
-	private static $custom_script_added = false;
+	private static $button_script_added = false;
 
 	/**
-	 * Whether the custom script needs the WordPress 4.4 footer fallback.
+	 * Whether the button script needs the WordPress 4.4 footer fallback.
 	 *
 	 * @since 10.9.0
 	 * @var bool
 	 */
-	private static $custom_script_fallback = false;
+	private static $button_script_fallback = false;
 
 	/**
 	 * Initialize the shortcode and Google script integration.
@@ -196,7 +196,7 @@ class WPRM_SC_Google_Preferred_Sources extends WPRM_Template_Shortcode {
 		parent::init();
 
 		add_filter( 'script_loader_tag', array( __CLASS__, 'add_async_attribute' ), 10, 2 );
-		add_action( 'wp_footer', array( __CLASS__, 'output_custom_button_script_fallback' ), 19 );
+		add_action( 'wp_footer', array( __CLASS__, 'output_button_script_fallback' ), 19 );
 	}
 
 	/**
@@ -221,7 +221,7 @@ class WPRM_SC_Google_Preferred_Sources extends WPRM_Template_Shortcode {
 		}
 
 		if ( ! $is_preview ) {
-			self::enqueue_google_script( 'custom' === $atts['display_mode'] );
+			self::enqueue_google_script();
 		}
 
 		return apply_filters( parent::get_hook(), $output, $atts );
@@ -265,7 +265,14 @@ class WPRM_SC_Google_Preferred_Sources extends WPRM_Template_Shortcode {
 			$icon = WPRM_Icon::get( 'google-color' );
 			$button = '<div' . $attributes . '><span class="wprm-recipe-icon wprm-google-preferred-sources-icon">' . $icon . '</span> ' . esc_html__( 'Add to Preferred Sources', 'wp-recipe-maker' ) . '</div>';
 		} else {
-			$button = '<div google-add-preferred-source-btn' . $attributes . '></div>';
+			// Google's rendered button can live in an iframe, so its click cannot be observed by recipe analytics.
+			// Keep the official badge as the visual and let an accessible WPRM control start the same SDK flow.
+			$trigger = '<button type="button" class="wprm-google-preferred-sources-trigger" data-wprm-google-preferred-sources data-wprm-google-preferred-sources-mode="official" data-theme="' . esc_attr( $theme ) . '"';
+			if ( $language ) {
+				$trigger .= ' data-lang="' . esc_attr( $language ) . '"';
+			}
+			$trigger .= ' aria-label="' . esc_attr__( 'Add this site to your Google Preferred Sources', 'wp-recipe-maker' ) . '"></button>';
+			$button = '<div class="wprm-google-preferred-sources-official-control"><div google-add-preferred-source-btn aria-hidden="true" inert' . $attributes . '></div>' . $trigger . '</div>';
 		}
 
 		return '<div class="wprm-google-preferred-sources-official-wrapper">' . $button . '</div>';
@@ -312,21 +319,20 @@ class WPRM_SC_Google_Preferred_Sources extends WPRM_Template_Shortcode {
 
 		$text = WPRM_i18n::maybe_translate( $atts['text'] );
 		$aria_label = $text ? '' : ' aria-label="' . esc_attr__( 'Add this site to your Google Preferred Sources', 'wp-recipe-maker' ) . '"';
-		$preview_attribute = $is_preview ? '' : ' data-wprm-google-preferred-sources';
+		$preview_attribute = $is_preview ? '' : ' data-wprm-google-preferred-sources data-wprm-google-preferred-sources-mode="custom"';
 
 		return '<button type="button" class="' . esc_attr( implode( ' ', $classes ) ) . '" style="' . esc_attr( $style ) . '"' . $aria_label . $preview_attribute . '>' . $icon . WPRM_Shortcode_Helper::sanitize_html( $text ) . '</button>';
 	}
 
 	/**
-	 * Load Google's library and add the custom-button callback when needed.
+	 * Load Google's library and add the button callback.
 	 *
 	 * The script is deliberately loaded without preferred-sources-control="manual"
 	 * so official declarative buttons and custom buttons can coexist on a page.
 	 *
 	 * @since 10.9.0
-	 * @param bool $custom Whether a custom button is present.
 	 */
-	private static function enqueue_google_script( $custom ) {
+	private static function enqueue_google_script() {
 		if ( ! apply_filters( 'wprm_load_google_preferred_sources', true ) ) {
 			return;
 		}
@@ -339,32 +345,32 @@ class WPRM_SC_Google_Preferred_Sources extends WPRM_Template_Shortcode {
 			true
 		);
 
-		if ( $custom && ! self::$custom_script_added ) {
-			self::$custom_script_added = true;
+		if ( ! self::$button_script_added ) {
+			self::$button_script_added = true;
 
 			if ( function_exists( 'wp_add_inline_script' ) ) {
 				wp_add_inline_script(
 					'wprm-google-preferred-sources',
-					self::get_custom_button_script(),
+					self::get_button_script(),
 					'before'
 				);
 			} else {
-				self::$custom_script_fallback = true;
+				self::$button_script_fallback = true;
 			}
 		}
 	}
 
 	/**
-	 * Output the custom integration script on WordPress 4.4.
+	 * Output the button integration script on WordPress 4.4.
 	 *
 	 * wp_add_inline_script() was added in WordPress 4.5, while WPRM supports
 	 * WordPress 4.4. This runs before footer scripts are printed.
 	 *
 	 * @since 10.9.0
 	 */
-	public static function output_custom_button_script_fallback() {
-		if ( self::$custom_script_fallback ) {
-			echo '<script>' . self::get_custom_button_script() . '</script>';
+	public static function output_button_script_fallback() {
+		if ( self::$button_script_fallback ) {
+			echo '<script>' . self::get_button_script() . '</script>';
 		}
 	}
 
@@ -384,17 +390,17 @@ class WPRM_SC_Google_Preferred_Sources extends WPRM_Template_Shortcode {
 	}
 
 	/**
-	 * JavaScript that connects custom WPRM buttons to Google's flow.
+	 * JavaScript that connects WPRM button controls to Google's flow.
 	 *
 	 * Uses one delegated click listener so buttons added after page load work too.
 	 *
 	 * @since 10.9.0
 	 */
-	private static function get_custom_button_script() {
+	private static function get_button_script() {
 		return <<<'JS'
 (function () {
 	(self.PREFERRED_SOURCE = self.PREFERRED_SOURCE || []).push(function (preferredSource) {
-		preferredSource.init({ theme: 'light' });
+		var initializedWith = '';
 
 		document.addEventListener('click', function (event) {
 			var target = event.target;
@@ -407,6 +413,16 @@ class WPRM_SC_Google_Preferred_Sources extends WPRM_Template_Shortcode {
 			}
 
 			event.preventDefault();
+			var options = { theme: button.getAttribute('data-theme') === 'dark' ? 'dark' : 'light' };
+			var language = button.getAttribute('data-lang');
+			if (language) {
+				options.lang = language;
+			}
+			var optionsKey = JSON.stringify(options);
+			if (optionsKey !== initializedWith) {
+				preferredSource.init(options);
+				initializedWith = optionsKey;
+			}
 			preferredSource.addPreferredSource();
 		});
 	});

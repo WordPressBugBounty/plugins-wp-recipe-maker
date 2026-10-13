@@ -319,7 +319,6 @@ class WPRM_Api_Modal {
 
 		$unit = isset( $params['unit'] ) ? sanitize_text_field( wp_strip_all_tags( $params['unit'] ) ) : '';
 		$create = isset( $params['create'] ) ? rest_sanitize_boolean( $params['create'] ) : false;
-		$standard_forms = WPRM_Recipe_Parser::get_ingredient_unit_forms( $unit );
 
 		if ( ! $unit ) {
 			return rest_ensure_response( array(
@@ -331,16 +330,10 @@ class WPRM_Api_Modal {
 		$term_id = $create ? WPRM_Recipe_Sanitizer::get_ingredient_unit_id( $unit ) : self::get_existing_ingredient_unit_id( $unit );
 
 		if ( ! $term_id ) {
-			$data = array(
+			return rest_ensure_response( array(
 				'term_id' => 0,
 				'found' => false,
-			);
-
-			if ( $standard_forms ) {
-				$data = array_merge( $data, $standard_forms );
-			}
-
-			return rest_ensure_response( $data );
+			) );
 		}
 
 		$term = get_term( $term_id, 'wprm_ingredient_unit' );
@@ -355,13 +348,6 @@ class WPRM_Api_Modal {
 		$connector_data = WPRM_Ingredient_Display::get_unit_connector_data( $term_id );
 		$plural = get_term_meta( $term_id, 'wprm_ingredient_unit_plural', true );
 		$singular = $term->name;
-
-		// Standard units can be singularized before their taxonomy metadata has
-		// been configured, including while editing a brand-new recipe.
-		if ( ! $plural && $standard_forms ) {
-			$singular = $standard_forms['singular'];
-			$plural = $standard_forms['plural'];
-		}
 
 		return rest_ensure_response( array(
 			'term_id' => intval( $term_id ),

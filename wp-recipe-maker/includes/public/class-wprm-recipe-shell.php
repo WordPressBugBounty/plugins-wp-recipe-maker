@@ -54,6 +54,7 @@ class WPRM_Recipe_Shell {
 			'rating' => false,
 			'servings' => 0,
 			'servings_unit' => '',
+			'servings_nutrition' => false,
 			'servings_advanced_enabled' => false,
 			'cost' => '',
 			'my_emissions' => false,
@@ -114,6 +115,7 @@ class WPRM_Recipe_Shell {
 
 		// Servings related data.
 		$recipe['originalServings'] = $this->servings();
+		$recipe['nutritionServings'] = $this->servings_nutrition();
 		
 		$parsed_servings = WPRM_Recipe_Parser::parse_quantity( $this->servings() );
 		$recipe['originalServingsParsed'] = is_numeric( $parsed_servings ) && 0 < $parsed_servings ? $parsed_servings : 1;
@@ -375,6 +377,15 @@ class WPRM_Recipe_Shell {
 	 */
 	public function replace_placeholders( $text ) {
 		return WPRM_Placeholder::replace_recipe_placeholders( $this, $text );
+	}
+
+	/**
+	 * Get the optional nutritional portion count for the complete base recipe.
+	 *
+	 * @return float|false
+	 */
+	public function servings_nutrition() {
+		return WPRM_Nutrition::parse_servings( $this->meta( 'servings_nutrition', false ) );
 	}
 
 	/**

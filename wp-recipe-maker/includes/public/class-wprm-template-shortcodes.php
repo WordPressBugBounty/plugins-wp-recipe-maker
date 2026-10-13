@@ -37,6 +37,9 @@ class WPRM_Template_Shortcodes {
 	 */
 	private static $current_public_post_id = 0;
 
+	/** @var bool Whether the current recipe is being rendered as a print template. */
+	private static $current_print_recipe = false;
+
 	/**
 	 * Current recipe shell.
 	 *
@@ -93,6 +96,7 @@ class WPRM_Template_Shortcodes {
 		// A new post was loaded, reset current recipe ID. This ensures compatibility with the Query Loop.
 		self::$current_recipe_id = false;
 		self::$current_public_post_id = 0;
+		self::$current_print_recipe = false;
 	}
 
 	/**
@@ -123,6 +127,9 @@ class WPRM_Template_Shortcodes {
 		}
 
 		if ( $recipe_id ) {
+			if ( self::$current_print_recipe && intval( self::$current_recipe_id ) === intval( $recipe_id ) ) {
+				return WPRM_Print::get_recipe( $recipe_id );
+			}
 			return WPRM_Recipe_Manager::get_recipe( $recipe_id, self::$current_public_post_id );
 		} else {
 			return false;
@@ -140,7 +147,7 @@ class WPRM_Template_Shortcodes {
 
 			if ( $recipe_ids ) {
 				if ( isset( $recipe_ids[0] ) ) {
-					self::set_current_recipe_id( $recipe_ids[0] );
+					self::set_current_recipe_id( $recipe_ids[0], get_the_ID() );
 				} else {
 					self::set_current_recipe_id( false );
 				}
@@ -156,10 +163,17 @@ class WPRM_Template_Shortcodes {
 	 * @since	3.2.0
 	 * @param	int $id ID to set as the current recipe ID.
 	 * @param	int $public_post_id Optional public post rendering the recipe.
+	 * @param	bool $for_print Whether this is the current print template.
 	 */
-	public static function set_current_recipe_id( $id, $public_post_id = 0 ) {
+	public static function set_current_recipe_id( $id, $public_post_id = 0, $for_print = false ) {
 		self::$current_recipe_id = $id;
 		self::$current_public_post_id = intval( $public_post_id );
+		self::$current_print_recipe = $for_print;
+	}
+
+	/** Preserve all template context when rendering nested templates or snippets. */
+	public static function get_recipe_context() {
+		return array( self::$current_recipe_id, self::$current_public_post_id, self::$current_print_recipe );
 	}
 
 	/**

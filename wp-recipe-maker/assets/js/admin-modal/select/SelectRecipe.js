@@ -3,24 +3,26 @@ import AsyncSelect from 'react-select/async';
 
 import { __wprm } from 'Shared/Translations';
 import AjaxWrapper from 'Shared/AjaxWrapper';
+import createDebouncedSearch from './createDebouncedSearch';
 
 export default class SelectRecipe extends Component {
     constructor(props) {
         super(props);
         this.selectRef = React.createRef();
+        this.search = createDebouncedSearch((input) => this.getOptions(input));
     }
 
     getOptions(input) {
-        if (!input) {
-			return Promise.resolve({ options: [] });
-        }
-
 		return AjaxWrapper.call('wprm_search_recipes', {
             search: input,
         }).then((data) => {
             // Return empty array if no data or error occurred.
             return data && data.recipes_with_id ? data.recipes_with_id : [];
         });
+    }
+
+    componentWillUnmount() {
+        this.search.cancel();
     }
 
     focus() {
@@ -39,7 +41,7 @@ export default class SelectRecipe extends Component {
                 getOptionValue={({id}) => id}
                 getOptionLabel={({text}) => text}
                 defaultOptions={this.props.options.concat(wprm_admin.latest_recipes)}
-                loadOptions={this.getOptions.bind(this)}
+                loadOptions={this.search.loadOptions}
                 noOptionsMessage={() => __wprm( 'No recipes found' ) }
                 isClearable={ this.props.hasOwnProperty( 'isClearable' ) ? this.props.isClearable : false }
             />

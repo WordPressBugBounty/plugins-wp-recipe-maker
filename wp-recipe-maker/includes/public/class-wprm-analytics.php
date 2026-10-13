@@ -33,8 +33,6 @@ class WPRM_Analytics {
 	 * @since    6.7.0
 	 */
 	public static function init() {
-		add_filter( 'wprm_settings_update', array( __CLASS__, 'check_hh_token_on_settings_update' ), 10, 2 );
-
 		add_action( 'wprm_daily_cron', array( __CLASS__, 'remove_old_actions' ) );
 	}
 
@@ -72,6 +70,7 @@ class WPRM_Analytics {
 			'text-share-button' => __( 'Text Share', 'wp-recipe-maker' ),
 			'whatsapp-share-button' => __( 'WhatsApp Share', 'wp-recipe-maker' ),
 			'email-share-button' => __( 'Email Share', 'wp-recipe-maker' ),
+			'google-preferred-sources-button' => __( 'Google Preferred Sources Button', 'wp-recipe-maker' ),
 
 			'favorite-button' => __( 'Favorite Button', 'wp-recipe-maker' ),
 			'add-to-collections-button' => __( 'Add to Recipe Collections', 'wp-recipe-maker' ),
@@ -123,48 +122,6 @@ class WPRM_Analytics {
 	}
 
 	/**
-	 * Check if the Honey & Home integration is enabled and token has changed.
-	 *
-	 * @since    6.7.0
-	 * @param    array $new_settings Settings after update.
-	 * @param    array $old_settings Settings before update.
-	 */
-	public static function check_hh_token_on_settings_update( $new_settings, $old_settings ) {
-		if ( isset( $new_settings['honey_home_integration'] ) && $new_settings['honey_home_integration'] ) {
-			$old_token = isset( $old_settings['honey_home_token'] ) ? $old_settings['honey_home_token'] : '';
-			$new_token = isset( $new_settings['honey_home_token'] ) ? $new_settings['honey_home_token'] : '';
-
-			if ( $new_token !== $old_token ) {
-				// Activate new token.
-				if ( $new_token ) {
-					$domain = isset( $_SERVER['SERVER_NAME'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_NAME'] ) ) : '';
-					$response = wp_remote_get( 'https://dailygrub.com/api/verifyDomain?id=' . urlencode( $new_token ) . '&domain=' . urlencode( $domain ) );
-
-					$status = false;
-					if ( ! is_wp_error( $response ) ) {
-						$status = (array) json_decode( wp_remote_retrieve_body( $response ) );
-					}
-
-					update_option( 'hh_integration_status', $status, false );
-
-					if ( ! $status || ! isset( $status['success'] ) ) {
-						$status = array(
-							'success' => false,
-							'message' => 'Unknown error',
-						);
-					}
-
-					if ( ! $status['success'] ) {
-						$new_settings['honey_home_token'] = '';
-					}
-				}
-			}
-		}
-
-		return $new_settings;
-	}
-
-	/**
 	 * Register a specific action.
 	 *
 	 * @since    6.5.0
@@ -201,7 +158,7 @@ class WPRM_Analytics {
 				case 'ingredient-link':
 					$sanitized_meta['name'] = isset( $meta['name'] ) ? sanitize_text_field( $meta['name'] ) : 'unknown';
 				case 'instruction-link':
-					$sanitized_meta['url'] = isset( $meta['url'] ) && ! is_array( $meta['url'] ) ? $meta['url'] : 'unknown';
+					$sanitized_meta['url'] = self::sanitize_link_url( isset( $meta['url'] ) ? $meta['url'] : '' );
 					break;
 				case 'adjust-servings':
 				case 'unit-conversion':
@@ -218,6 +175,10 @@ class WPRM_Analytics {
 				case 'favorite-button':
 					$action = isset( $meta['action'] ) ? sanitize_key( $meta['action'] ) : 'unknown';
 					$sanitized_meta['action'] = in_array( $action, array( 'add', 'remove' ), true ) ? $action : 'unknown';
+					break;
+				case 'google-preferred-sources-button':
+					$mode = isset( $meta['mode'] ) ? sanitize_key( $meta['mode'] ) : 'unknown';
+					$sanitized_meta['mode'] = in_array( $mode, array( 'official', 'custom' ), true ) ? $mode : 'unknown';
 					break;
 				case 'product-add-to-cart':
 					$item_type = isset( $meta['item_type'] ) ? sanitize_key( $meta['item_type'] ) : 'unknown';
@@ -256,6 +217,22 @@ class WPRM_Analytics {
 
 			WPRM_Analytics_Database::add( $action );
 		}
+	}
+
+	/**
+	 * Sanitize a client-supplied link URL for storage in action meta.
+	 * Only bounded absolute http(s) URLs are kept; the scheme check stops
+	 * esc_url_raw from prefixing http:// to arbitrary text.
+	 *
+	 * @since    10.9.0
+	 * @param    mixed $url URL sent by the browser.
+	 * @return   string Sanitized URL or 'unknown'.
+	 */
+	public static function sanitize_link_url( $url ) {
+		$url = is_string( $url ) ? trim( $url ) : '';
+		$url = preg_match( '#^https?://#i', $url ) ? esc_url_raw( $url, array( 'http', 'https' ) ) : '';
+
+		return $url && strlen( $url ) <= 2048 ? $url : 'unknown';
 	}
 
 	/**

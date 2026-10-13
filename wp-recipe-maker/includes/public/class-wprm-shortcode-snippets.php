@@ -53,41 +53,39 @@ class WPRM_Shortcode_Snippets {
 			if ( $recipe_id ) {
 				WPRM_Assets::load();
 
-				// Set current recipe ID to make sure it outputs for the correct recipe.
-				if ( $atts['id'] ) {
-					WPRM_Template_Shortcodes::set_current_recipe_id( $recipe_id );
-				}
+				$previous_context = WPRM_Template_Shortcodes::get_recipe_context();
+				$public_post_id = get_the_ID();
+				WPRM_Template_Shortcodes::set_current_recipe_id( $recipe_id, $public_post_id );
+				WPRM_Recipe_Manager::remember_public_render_context( $recipe_id, $public_post_id );
+				try {
+					if ( 'legacy' === WPRM_Settings::get( 'recipe_template_mode' ) ) {
+						$alignment = WPRM_Settings::get( 'recipe_snippets_alignment' );
+						return '<div class="wprm-recipe-snippets" style="text-align: ' . esc_attr( $alignment ) . ';">' . do_shortcode( WPRM_Settings::get( 'recipe_snippets_text' ) ) . '</div>';
+					} else {
+						$template = false;
+						$template_slug = trim( $atts['template'] );
 
-				if ( 'legacy' === WPRM_Settings::get( 'recipe_template_mode' ) ) {
-					$alignment = WPRM_Settings::get( 'recipe_snippets_alignment' );
-					return '<div class="wprm-recipe-snippets" style="text-align: ' . esc_attr( $alignment ) . ';">' . do_shortcode( WPRM_Settings::get( 'recipe_snippets_text' ) ) . '</div>';
-				} else {
-					$template = false;
-					$template_slug = trim( $atts['template'] );
-	
-					if ( $template_slug ) {
-						$template = WPRM_Template_Manager::get_template_by_slug( $template_slug );
+						if ( $template_slug ) {
+							$template = WPRM_Template_Manager::get_template_by_slug( $template_slug );
+						}
+
+						if ( ! $template ) {
+							$recipe = WPRM_Template_Shortcodes::get_recipe( $recipe_id );
+							$type = $recipe ? $recipe->type() : 'food';
+
+							$template = WPRM_Template_Manager::get_template_by_type( 'snippet', $type );
+						}
+
+						if ( $template ) {
+							// Add to used templates.
+							WPRM_Template_Manager::add_used_template( $template );
+
+							$output = '<div class="wprm-recipe wprm-recipe-snippet wprm-recipe-template-' . esc_attr( $template['slug'] ) . '">' . do_shortcode( $template['html'] ) . '</div>';
+							return apply_filters( 'wprm_recipe_snippet_shortcode_output', $output, $atts, $recipe_id, $template );
+						}
 					}
-	
-					if ( ! $template ) {
-						$recipe = WPRM_Recipe_Manager::get_recipe( $recipe_id );
-						$type = $recipe ? $recipe->type() : 'food';
-
-						$template = WPRM_Template_Manager::get_template_by_type( 'snippet', $type );
-					}
-
-					if ( $template ) {
-						// Add to used templates.
-						WPRM_Template_Manager::add_used_template( $template );
-
-						$output = '<div class="wprm-recipe wprm-recipe-snippet wprm-recipe-template-' . esc_attr( $template['slug'] ) . '">' . do_shortcode( $template['html'] ) . '</div>';
-						return apply_filters( 'wprm_recipe_snippet_shortcode_output', $output, $atts, $recipe_id, $template );
-					}
-				}
-
-				// Reset current recipe ID.
-				if ( $atts['id'] ) {
-					WPRM_Template_Shortcodes::set_current_recipe_id( false );
+				} finally {
+					WPRM_Template_Shortcodes::set_current_recipe_id( ...$previous_context );
 				}
 			}
 		}

@@ -71,31 +71,12 @@ class WPRM_Api_App {
 			);
 		}
 
-		$result = self::validate_app_token( $request );
-
-		if ( is_wp_error( $result ) ) {
-			return $result;
-		}
-
-		$route = $request->get_route();
-		$required_scope = false !== strpos( $route, '/analytics/' ) ? 'analytics:read' : 'recipes:read';
-
-		if ( ! WPRM_App_Token_Store::has_scope( $result['data'], $required_scope ) ) {
-			return new WP_Error(
-				'wprm_app_insufficient_scope',
-				__( 'The WPRM Kitchen token does not grant access to this endpoint.', 'wp-recipe-maker' ),
-				array( 'status' => 403 )
-			);
-		}
-
-		WPRM_App_Token_Store::touch( $result['hash'] );
-
-		return true;
+		return self::api_app_token_only_permissions( $request );
 	}
 
 	/**
-	 * Token-only permissions, without the premium check. Used for the info
-	 * endpoint so Kitchen can report a missing premium plugin gracefully.
+	 * Connection-wide Kitchen access, without a Premium check. Shared by info
+	 * and free-feature endpoints; paid features check entitlements separately.
 	 *
 	 * @since 10.7.0
 	 * @param WP_REST_Request $request Current request.
@@ -105,14 +86,6 @@ class WPRM_Api_App {
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
-		}
-
-		if ( ! WPRM_App_Token_Store::has_scope( $result['data'], 'site:read' ) ) {
-			return new WP_Error(
-				'wprm_app_insufficient_scope',
-				__( 'The WPRM Kitchen token does not grant access to this endpoint.', 'wp-recipe-maker' ),
-				array( 'status' => 403 )
-			);
 		}
 
 		WPRM_App_Token_Store::touch( $result['hash'] );
@@ -199,6 +172,7 @@ class WPRM_Api_App {
 			'site_id' => WPRM_Api_App_Kitchen::get_site_id(),
 			'wprm_version' => WPRM_VERSION,
 			'premium_active' => WPRM_Addons::is_active( 'premium' ),
+			'premium_version' => WPRM_Template_Package::premium_version(),
 			'site_name' => get_bloginfo( 'name' ),
 			'site_url' => home_url(),
 			'token_name' => $token_name,

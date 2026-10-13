@@ -41,6 +41,9 @@ window.WPRMPrint = {
             });
         }
 
+        // Explain the workaround when printing is likely blocked by an in-app browser.
+        this.maybeShowInAppNotice();
+
         // On click toggle.
         const toggles = [ ...document.querySelectorAll( '.wprm-print-toggle' )];
 
@@ -246,6 +249,104 @@ window.WPRMPrint = {
         if ( currentUrl ) {
             window.history.replaceState( {}, document.title, currentUrl );
         }
+    },
+    isFacebookInAppBrowser( userAgent ) {
+        // Heuristic: Facebook's iOS and Android in-app browsers add FBAN, FBAV or FB_IAB tokens to the user agent.
+        return /\b(FBAN|FBAV|FB_IAB)\//.test( userAgent || '' );
+    },
+    maybeShowInAppNotice() {
+        const notice = document.querySelector( '#wprm-print-in-app-notice' );
+
+        if ( ! notice || ! this.isFacebookInAppBrowser( window.navigator.userAgent ) ) {
+            return;
+        }
+
+        // The Print button stays available, as printing might still work on some devices or app versions.
+        notice.hidden = false;
+        document.body.classList.add( 'wprm-print-in-app-browser' );
+
+        const copyButton = notice.querySelector( '#wprm-print-button-copy-link' );
+        if ( copyButton ) {
+            copyButton.addEventListener( 'click', (e) => {
+                e.preventDefault();
+                this.onClickCopyLink( copyButton );
+            });
+        }
+    },
+    getPageLink() {
+        const url = new URL( window.location.href );
+        url.hash = '';
+        return url.href;
+    },
+    onClickCopyLink( copyButton ) {
+        const link = this.getPageLink();
+        const status = document.querySelector( '#wprm-print-in-app-notice-status' );
+
+        const setStatus = ( message ) => {
+            if ( status ) {
+                // Clear first so screen readers announce repeated messages.
+                status.textContent = '';
+                setTimeout( () => {
+                    status.textContent = message;
+                }, 50 );
+            }
+        };
+
+        this.copyText( link ).then( ( copied ) => {
+            if ( copied ) {
+                setStatus( copyButton.dataset.success );
+            } else {
+                this.showManualCopyLink( link );
+                setStatus( copyButton.dataset.failure );
+            }
+        });
+    },
+    copyText( text ) {
+        if ( window.navigator.clipboard && window.isSecureContext ) {
+            try {
+                return window.navigator.clipboard.writeText( text ).then( () => true, () => this.copyTextLegacy( text ) );
+            } catch {
+                // Fall through to legacy copy.
+            }
+        }
+
+        return Promise.resolve( this.copyTextLegacy( text ) );
+    },
+    copyTextLegacy( text ) {
+        const textarea = document.createElement( 'textarea' );
+        textarea.value = text;
+        textarea.setAttribute( 'readonly', '' );
+        textarea.style.position = 'fixed';
+        textarea.style.top = '0';
+        textarea.style.left = '-9999px';
+        textarea.style.fontSize = '16px'; // Prevent iOS zoom.
+
+        document.body.appendChild( textarea );
+        textarea.select();
+        textarea.setSelectionRange( 0, text.length );
+
+        let copied = false;
+        try {
+            copied = document.execCommand( 'copy' );
+        } catch {
+            copied = false;
+        }
+
+        document.body.removeChild( textarea );
+        return copied;
+    },
+    showManualCopyLink( link ) {
+        const input = document.querySelector( '#wprm-print-in-app-notice-url' );
+
+        if ( ! input ) {
+            return;
+        }
+
+        input.value = link;
+        input.parentNode.hidden = false;
+        input.focus();
+        input.select();
+        input.setSelectionRange( 0, link.length );
     },
     onClickEmail() {
         window.location = 'mailto:?body=' + window.location;
