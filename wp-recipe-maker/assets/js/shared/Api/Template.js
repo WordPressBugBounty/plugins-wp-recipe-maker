@@ -72,8 +72,21 @@ export default {
         };
 
         return fetch(templateEndpoint, { method: 'POST', headers: { 'X-WP-Nonce': wprm_admin.api_nonce, 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(data) }).then(async response => {
-            const result = await response.json();
-            if (!response.ok) { const error = new Error(result.message || 'Template save failed.'); error.code = result.code; throw error; }
+            let result;
+            try { result = await response.json(); }
+            catch (e) { throw new Error('The server did not confirm the save. Your changes are still available in the editor.'); }
+            if (!response.ok) {
+                const error = new Error(result?.message || 'Template save failed.');
+                error.code = result?.code;
+                error.data = result?.data;
+                // WordPress rejects these authentication/permission errors before the save callback.
+                error.saveNotStarted = [401, 403].includes(response.status)
+                    && ['rest_cookie_invalid_nonce', 'rest_forbidden'].includes(error.code);
+                throw error;
+            }
+            if (!result || typeof result.slug !== 'string' || !result.slug || typeof result.html !== 'string' || typeof result.css !== 'string' || !Number.isInteger(result.revision) || result.revision < 1) {
+                throw new Error('The server did not return a saved template. Your changes are still available in the editor.');
+            }
             return result;
         });
     },

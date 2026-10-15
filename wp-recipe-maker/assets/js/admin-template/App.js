@@ -54,6 +54,8 @@ class App extends Component {
             historyPastCapped: false,
             codeHistoryResetNotice: false,
             savingTemplate: false,
+            templateSaveError: false,
+            templateSaveConflict: false,
             sidebarCollapsed: false,
             initializingFromUrl: true,
             editingBlock: false,
@@ -67,6 +69,8 @@ class App extends Component {
         
         // Track if we're updating URL ourselves to prevent re-parsing
         this.isUpdatingUrl = false;
+        this.discardingTemplateChanges = false;
+        this.beforeWindowClose = this.beforeWindowClose.bind(this);
         this.historyDebounceTimer = null;
         this.historyDebounceOpen = false;
         this.historyDebounceMs = 750;
@@ -80,7 +84,7 @@ class App extends Component {
     }
 
     componentDidMount() {
-        window.addEventListener( 'beforeunload', this.beforeWindowClose.bind(this) );
+        window.addEventListener( 'beforeunload', this.beforeWindowClose );
         
         // Parse URL to restore state
         this.parseUrlAndRestoreState();
@@ -604,12 +608,14 @@ class App extends Component {
     
     componentWillUnmount() {
         this.closeHistoryDebounceWindow();
-        window.removeEventListener( 'beforeunload', this.beforeWindowClose.bind(this) );
+        window.removeEventListener( 'beforeunload', this.beforeWindowClose );
     }
 
     beforeWindowClose(event) {
-        if ( this.changesMade() ) {
-            return false;
+        if ( ! this.discardingTemplateChanges && ( this.changesMade() || this.state.templateSaveError || this.state.templateSaveConflict || this.state.savingTemplate ) ) {
+            event.preventDefault();
+            event.returnValue = '';
+            return '';
         }
     }
 
@@ -1278,6 +1284,8 @@ class App extends Component {
         if ( ! this.state.savingTemplate ) {
             this.setState({
                 savingTemplate: true,
+                templateSaveError: false,
+                templateSaveConflict: false,
             });
 
             // For new templates without a style property, use the raw CSS
@@ -1289,74 +1297,108 @@ class App extends Component {
                     : (template.css || ''),
             }
     
-            Api.template.save(parsedTemplate).then(savedTemplate => {
-                if ( savedTemplate ) {
-                    const slug = savedTemplate.slug;
-                    const newTemplates = { ...this.state.templates };
-                    if ( slug ) {
-                        newTemplates[slug] = savedTemplate;
-                    }
-
-                    this.setState({
-                        savingTemplate: false,
-                        templates: newTemplates,
-                    }, () => {
-                        // Force refresh of active template to make sure things are synced.
-                        // If we're editing, update URL to the new slug with current mode
-                        if (this.state.editing && slug) {
-                            const mode = this.state.mode || 'properties';
-                            // Allow editingBlock to be 0 (first block) - only exclude false
-                            const editingBlock = (this.state.mode === 'blocks' && this.state.editingBlock !== false && typeof this.state.editingBlock === 'number') ? this.state.editingBlock : false;
-                            if (editingBlock !== false) {
-                                this.updateUrl(`/template/${slug}/${mode}/${editingBlock}`);
-                            } else {
-                                this.updateUrl(`/template/${slug}/${mode}`);
-                            }
-                        }
-                        
-                        // Make sure template exists in state before trying to change to it
-                        if (this.state.templates.hasOwnProperty(slug)) {
-                            this.onChangeTemplate(slug);
-                            
-                            // Automatically open for editing if this is a blank template (empty html and css)
-                            const isBlankTemplate = savedTemplate && 
-                                (!savedTemplate.html || savedTemplate.html.trim() === '') && 
-                                (!savedTemplate.css || savedTemplate.css.trim() === '');
-                            if (isBlankTemplate) {
-                                // Use setTimeout to ensure template is loaded before opening for editing
-                                setTimeout(() => {
-                                    this.onChangeEditing(true);
-                                }, 100);
-                            }
-                        } else {
-                            console.error('Template not found in state after saving:', slug, this.state.templates);
-                        }
-                    });
-                } else {
-                    this.setState({
-                        savingTemplate: false,
-                    });
-                    alert('Failed to save template. The server did not return a valid template. Please try again.');
+            return Api.template.save(parsedTemplate).then(savedTemplate => {
+                const slug = savedTemplate.slug;
+                const newTemplates = { ...this.state.templates };
+                if ( slug ) {
+                    newTemplates[slug] = savedTemplate;
                 }
-            }).catch(error => {
-                console.error('Error saving template:', error);
+
                 this.setState({
                     savingTemplate: false,
+                    templateSaveConflict: false,
+                    templates: newTemplates,
+                }, () => {
+                    // Force refresh of active template to make sure things are synced.
+                    // If we're editing, update URL to the new slug with current mode
+                    if (this.state.editing && slug) {
+                        const mode = this.state.mode || 'properties';
+                        // Allow editingBlock to be 0 (first block) - only exclude false
+                        const editingBlock = (this.state.mode === 'blocks' && this.state.editingBlock !== false && typeof this.state.editingBlock === 'number') ? this.state.editingBlock : false;
+                        if (editingBlock !== false) {
+                            this.updateUrl(`/template/${slug}/${mode}/${editingBlock}`);
+                        } else {
+                            this.updateUrl(`/template/${slug}/${mode}`);
+                        }
+                    }
+
+                    // Make sure template exists in state before trying to change to it
+                    if (this.state.templates.hasOwnProperty(slug)) {
+                        this.onChangeTemplate(slug);
+
+                        // Automatically open for editing if this is a blank template (empty html and css)
+                        const isBlankTemplate = savedTemplate &&
+                            (!savedTemplate.html || savedTemplate.html.trim() === '') &&
+                            (!savedTemplate.css || savedTemplate.css.trim() === '');
+                        if (isBlankTemplate) {
+                            // Use setTimeout to ensure template is loaded before opening for editing
+                            setTimeout(() => {
+                                this.onChangeEditing(true);
+                            }, 100);
+                        }
+                    } else {
+                        console.error('Template not found in state after saving:', slug, this.state.templates);
+                    }
                 });
-                if (error.code === 'wprm_template_stale') {
-                    this.setState({ templateSaveConflict: parsedTemplate });
-                } else { alert(error.message || 'Template save failed. Your changes are still in the editor.'); }
+                return savedTemplate;
+            }).catch(error => {
+                console.error('Error saving template:', error);
+                const conflict = error.code === 'wprm_template_stale';
+                const createsTemplate = !parsedTemplate.slug || parsedTemplate.location !== 'database';
+                const retrySafe = !createsTemplate || error.saveNotStarted || error.data?.recovery === 'restored' || error.data?.recovery === 'not_started' || error.code === 'wprm_template_busy';
+                this.setState({
+                    savingTemplate: false,
+                    templateSaveError: conflict ? false : { template: parsedTemplate, message: error.message || 'Template save failed.', retrySafe },
+                    templateSaveConflict: conflict ? parsedTemplate : false,
+                });
+                return false;
             });
+        }
+        return Promise.resolve(false);
+    }
+
+    unsavedTemplateForRecovery() {
+        const failed = this.state.templateSaveError ? this.state.templateSaveError.template : this.state.templateSaveConflict;
+        const current = this.state.template;
+        // While editing, include changes made after the failed save as well.
+        return this.state.editing && current && current.slug && current.slug === failed.slug ? current : failed;
+    }
+
+    downloadUnsavedTemplate(template) {
+        const url = URL.createObjectURL(new Blob([JSON.stringify({ ...template, css: Helpers.parseCSS(template) }, null, 2)], { type: 'application/json' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${ String(template.slug || 'unsaved-template').replace(/[^a-z0-9_-]/gi, '-') }.json`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        // Allow the browser to consume the download before releasing its backing data.
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+    }
+
+    discardTemplateChanges() {
+        if (confirm("Discard your unsaved changes and reload?")) {
+            this.discardingTemplateChanges = true;
+            window.location.reload();
         }
     }
 
     render() {
         return (
             <div>
+                {this.state.templateSaveError ? <div role="alert" className="wprm-main-container" style={{ padding: '12px', marginBottom: '12px' }}>
+                    <p>{this.state.templateSaveError.message} Your unsaved changes are preserved. Download a backup before leaving this page.</p>
+                    {this.state.templateSaveError.retrySafe
+                        ? <button disabled={this.state.savingTemplate} onClick={() => this.onSaveTemplate(this.unsavedTemplateForRecovery())}>Retry save</button>
+                        : <p>The new template may already exist. Check the site templates before saving it again to avoid creating a duplicate.</p>}
+                    <button onClick={() => this.downloadUnsavedTemplate(this.unsavedTemplateForRecovery())}>Download unsaved template</button>
+                    <button onClick={() => this.discardTemplateChanges()}>Discard and reload</button>
+                </div> : null}
                 {this.state.templateSaveConflict ? <div role="alert" className="wprm-main-container">
-                    <p>This template changed elsewhere. Your unsaved changes are preserved.</p>
-                    <button onClick={() => { const copy = { ...this.state.templateSaveConflict, name: `${this.state.templateSaveConflict.name} (copy)`, oldSlug: this.state.templateSaveConflict.slug, slug: false }; this.setState({ templateSaveConflict: false }, () => this.onSaveTemplate(copy)); }}>Save as a copy</button>
-                    <button onClick={() => { if (confirm("Discard your unsaved changes and reload?")) window.location.reload(); }}>Discard and reload</button>
+                    <p>The stored template no longer matches this editor's version. An earlier save may have succeeded, or the template may have changed in another tab. Your unsaved changes are preserved.</p>
+                    <button onClick={() => { const template = this.unsavedTemplateForRecovery(); const copy = { ...template, name: `${template.name} (copy)`, oldSlug: template.slug, slug: false }; this.onSaveTemplate(copy); }}>Save as a copy</button>
+                    <button onClick={() => this.downloadUnsavedTemplate(this.unsavedTemplateForRecovery())}>Download unsaved template</button>
+                    <button onClick={() => this.discardTemplateChanges()}>Discard and reload</button>
                 </div> : null}
                 <Menu
                     mode={ this.state.mode }

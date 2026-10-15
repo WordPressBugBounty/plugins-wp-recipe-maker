@@ -545,7 +545,12 @@ class WPRM_Template_Manager {
 		return WPRM_Template_Store::save( $template, $expected_revision );
 	}
 
-	/** Normalize a modern template without writing storage. */
+	/**
+	 * Normalize a modern template without writing storage.
+	 *
+	 * @param array $template Template to normalize.
+	 * @return array Template prepared for database storage.
+	 */
 	public static function prepare_template_for_save( $template ) {
 		$templates = self::get_templates();
 		$slug = isset( $template['slug'] ) && false !== $template['slug'] ? self::slugify( $template['slug'] ) : false;
@@ -557,7 +562,7 @@ class WPRM_Template_Manager {
 
 			$slug = $slug_base;
 			$i = 2;
-			while ( array_key_exists( $slug, $templates['modern'] ) ) {
+			while ( array_key_exists( $slug, $templates['modern'] ) || WPRM_Template_Store::option_exists( 'wprm_template_' . $slug ) ) {
 				$slug = $slug_base . '-' . $i;
 				$i++;
 			}
@@ -719,12 +724,13 @@ class WPRM_Template_Manager {
 		}
 
 		// Load templates from database.
-		$db_templates = get_option( 'wprm_templates', array() );
+		$db_templates = WPRM_Template_Store::get_option( 'wprm_templates', array() );
 
 		foreach ( $db_templates as $slug ) {
-			$template = get_option( 'wprm_template_' . $slug, false );
+			if ( ! is_string( $slug ) || '' === $slug ) { continue; }
+			$template = WPRM_Template_Store::get_option( 'wprm_template_' . $slug, false );
 
-			if ( $template ) {
+			if ( is_array( $template ) && $template ) {
 				// Check for potential broken slug.
 				if ( $slug !== self::slugify( $slug ) ) {
 					$template['brokenSlug'] = true;

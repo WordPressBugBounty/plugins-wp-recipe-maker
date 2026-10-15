@@ -40,18 +40,22 @@ class WPRM_Api_App_Template_Preview {
 			return new WP_Error( 'wprm_preview_size', 'Template preview is too large.', array( 'status' => 413 ) );
 		}
 
-		// Only native template blocks and inline ingredients may run. Force every recipe
-		// reference to the demo, including nested shortcodes with explicit IDs.
+		// Only native template blocks, inline ingredients and template conditions may run.
+		// Force every recipe reference to the demo, including nested shortcodes with explicit IDs.
 		global $shortcode_tags;
 		$original_tags = $shortcode_tags;
 		$context = WPRM_Template_Shortcodes::get_recipe_context();
 		try {
 			$shortcode_tags = array();
+			// Match both name and callback so third-party replacements stay blocked.
+			$native_helpers = array(
+				'wprm-ingredient' => array( 'WPRM_Shortcode_Other', 'ingredient_shortcode' ),
+				'wprm-condition' => array( 'WPRM_Shortcode_Other', 'condition_shortcode' ),
+			);
 			foreach ( $original_tags as $tag => $callback ) {
 				$is_template_block = is_array( $callback ) && is_string( $callback[0] ) && is_subclass_of( $callback[0], 'WPRM_Template_Shortcode' );
-				// Match both name and callback so third-party replacements stay blocked.
-				$is_inline_ingredient = 'wprm-ingredient' === $tag && array( 'WPRM_Shortcode_Other', 'ingredient_shortcode' ) === $callback;
-				if ( $is_template_block || $is_inline_ingredient ) {
+				$is_native_helper = isset( $native_helpers[ $tag ] ) && $native_helpers[ $tag ] === $callback;
+				if ( $is_template_block || $is_native_helper ) {
 					$shortcode_tags[ $tag ] = function ( $atts, $content = null, $name = '' ) use ( $callback ) {
 						$atts = is_array( $atts ) ? $atts : array();
 						$atts['id'] = 'demo';

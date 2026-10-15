@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "package": "wp-recipe-maker",
-  "version": "10.9.0",
+  "version": "10.9.1",
   "runtime": 1,
   "families": {
     "free-public": {
@@ -12,15 +12,15 @@
           "assets": [
             {
               "name": "public-legacy.css",
-              "size": 15323
+              "size": 15352
             },
             {
               "name": "public-legacy.js",
-              "size": 96666
+              "size": 97218
             }
           ],
           "filteredAssets": 0,
-          "assetsSize": 111989,
+          "assetsSize": 112570,
           "filteredAuxiliaryAssets": 0,
           "auxiliaryAssetsSize": 0
         },
@@ -29,15 +29,15 @@
           "assets": [
             {
               "name": "public-modern.css",
-              "size": 59412
+              "size": 59480
             },
             {
               "name": "public-modern.js",
-              "size": 96222
+              "size": 96774
             }
           ],
           "filteredAssets": 0,
-          "assetsSize": 155634,
+          "assetsSize": 156254,
           "filteredAuxiliaryAssets": 0,
           "auxiliaryAssetsSize": 0
         },
@@ -46,7 +46,7 @@
           "assets": [
             {
               "name": "amp.css",
-              "size": 46291
+              "size": 46330
             },
             {
               "name": "amp.js",
@@ -54,7 +54,7 @@
             }
           ],
           "filteredAssets": 0,
-          "assetsSize": 46902,
+          "assetsSize": 46941,
           "filteredAuxiliaryAssets": 0,
           "auxiliaryAssetsSize": 0
         },
@@ -107,11 +107,11 @@
           "assets": [
             {
               "name": "public-modern-split.js",
-              "size": 85952
+              "size": 86504
             }
           ],
           "filteredAssets": 0,
-          "assetsSize": 85952,
+          "assetsSize": 86504,
           "filteredAuxiliaryAssets": 0,
           "auxiliaryAssetsSize": 0
         }
@@ -138,15 +138,15 @@
           "assets": [
             {
               "name": "admin.css",
-              "size": 31363
+              "size": 31392
             },
             {
               "name": "admin.js",
-              "size": 114643
+              "size": 115983
             }
           ],
           "filteredAssets": 0,
-          "assetsSize": 146006,
+          "assetsSize": 147375,
           "filteredAuxiliaryAssets": 0,
           "auxiliaryAssetsSize": 0
         },
@@ -159,11 +159,11 @@
             },
             {
               "name": "admin-dashboard.js",
-              "size": 554545
+              "size": 555333
             }
           ],
           "filteredAssets": 0,
-          "assetsSize": 579032,
+          "assetsSize": 579820,
           "filteredAuxiliaryAssets": 0,
           "auxiliaryAssetsSize": 0
         },
@@ -176,11 +176,11 @@
             },
             {
               "name": "admin-manage.js",
-              "size": 231657
+              "size": 232445
             }
           ],
           "filteredAssets": 0,
-          "assetsSize": 264235,
+          "assetsSize": 265023,
           "filteredAuxiliaryAssets": 0,
           "auxiliaryAssetsSize": 0
         },
@@ -193,11 +193,11 @@
             },
             {
               "name": "admin-modal.js",
-              "size": 779996
+              "size": 781251
             }
           ],
           "filteredAssets": 0,
-          "assetsSize": 887622,
+          "assetsSize": 888877,
           "filteredAuxiliaryAssets": 0,
           "auxiliaryAssetsSize": 0
         },
@@ -206,15 +206,15 @@
           "assets": [
             {
               "name": "admin-faq.css",
-              "size": 89528
+              "size": 89567
             },
             {
               "name": "admin-faq.js",
-              "size": 513126
+              "size": 513914
             }
           ],
           "filteredAssets": 0,
-          "assetsSize": 602654,
+          "assetsSize": 603481,
           "filteredAuxiliaryAssets": 0,
           "auxiliaryAssetsSize": 0
         },
@@ -227,11 +227,11 @@
             },
             {
               "name": "admin-settings.js",
-              "size": 976934
+              "size": 977736
             }
           ],
           "filteredAssets": 0,
-          "assetsSize": 1022317,
+          "assetsSize": 1023119,
           "filteredAuxiliaryAssets": 0,
           "auxiliaryAssetsSize": 0
         },
@@ -240,15 +240,15 @@
           "assets": [
             {
               "name": "admin-template.css",
-              "size": 113678
+              "size": 113717
             },
             {
               "name": "admin-template.js",
-              "size": 1127812
+              "size": 1130682
             }
           ],
           "filteredAssets": 0,
-          "assetsSize": 1241490,
+          "assetsSize": 1244399,
           "filteredAuxiliaryAssets": 0,
           "auxiliaryAssetsSize": 0
         }
@@ -345,60 +345,60 @@
       "sha256": "96347d11873102e18e91cdb0e856c393ddc018eba2ddf54caf35d8803764c8e2"
     },
     "admin-dashboard.js": {
-      "bytes": 554545,
-      "sha256": "065c65cf10dcb658d95a705d14eab5594a29f034ce98af72f2687258592077a3"
+      "bytes": 555333,
+      "sha256": "b985a106cb567072c057ccbd3a9d7cf98a2aabead8917fba0d8b203d4f8950d3"
     },
     "admin-faq.css": {
-      "bytes": 89528,
-      "sha256": "d76afd014065fe9b3c8a7d76838b515573291690c20de0cbab4b1f8995bc3e61"
+      "bytes": 89567,
+      "sha256": "86d45cdbc87f62f943bb8b014b29d10c0407f2bf3a93a46807623555429271ac"
     },
     "admin-faq.js": {
-      "bytes": 513126,
-      "sha256": "0e9cb0b3817069cb91f4028a2ae4ad88aafe072dfe74cefcd8bc3d08e290b89f"
+      "bytes": 513914,
+      "sha256": "90c1291d44a0ededb39406310cc7bbfba136a130531248923498c72a06974ae3"
     },
     "admin-manage.css": {
       "bytes": 32578,
       "sha256": "854b4679f60df83b34491b130b7bdd9ae445366d16a2963a05c19fb76c451fe4"
     },
     "admin-manage.js": {
-      "bytes": 231657,
-      "sha256": "16004a1378ec80dd7775d5083a5ff2a471d8bed14be4a3f65688af159f43008c"
+      "bytes": 232445,
+      "sha256": "8dc95744b5a41b46314508a63719a9090f46b720dde96959458409c99737a113"
     },
     "admin-modal.css": {
       "bytes": 107626,
       "sha256": "3dea9da59ab869d0848b6c7d38fd6c85ca1eab2f180fb568cef294560a53bb9f"
     },
     "admin-modal.js": {
-      "bytes": 779996,
-      "sha256": "497f6f80afefe33ca1da652a1fb43d79f8e31aff24aaa5e565fa1622478ad5ad"
+      "bytes": 781251,
+      "sha256": "a4805f53ab07ed8554c43f2d1121b3f8ace409ab84f2ec26c4dde0401a206d95"
     },
     "admin-settings.css": {
       "bytes": 45383,
       "sha256": "8ca3793477e617eac8c71ba8663db78c9bdd347707e87c74a3b398898d69f2f8"
     },
     "admin-settings.js": {
-      "bytes": 976934,
-      "sha256": "341542b2ce6eda5add8a5e02f70db3cec9367a0fdad5ff75e30a26176ad9e9f4"
+      "bytes": 977736,
+      "sha256": "52ad6ecce52f962b137feeae560f49548a230c2fca5697c14240e38753e3e719"
     },
     "admin-template.css": {
-      "bytes": 113678,
-      "sha256": "f7786fd575cd7f97fa4f8898a6ffd0d1348097c615f114f4ebd91ebfdb3c6f5b"
+      "bytes": 113717,
+      "sha256": "205d5c79037737cfc05f79e85ab951dd013192a1e9df84e912785e1b8ab09864"
     },
     "admin-template.js": {
-      "bytes": 1127812,
-      "sha256": "0deec065bedbff7c43797d6f1dcb2ae39b6f0b6514967e95b319e1bfa624f4cd"
+      "bytes": 1130682,
+      "sha256": "dbf295607c003f1a4f22652e5258f7fa29a04beedb314683b6902e99dc5a1ead"
     },
     "admin.css": {
-      "bytes": 31363,
-      "sha256": "9e5ddb227e649d3bd1c1bbdf4e9919b90c25c3f0da824f27b0273ab670633a2c"
+      "bytes": 31392,
+      "sha256": "6c1d41682947cc37050b5e00bb43e01419a94806c287f2dea583c3b7fb296ec2"
     },
     "admin.js": {
-      "bytes": 114643,
-      "sha256": "d2598b8e8a3f000828b6db3e598a3f615f3ace88cbdf68e342267aebf20d8cd2"
+      "bytes": 115983,
+      "sha256": "0f9fe24722777ec5ce610b3303eeea3ab9d2a55f81da1374dccbc0651de34aca"
     },
     "amp.css": {
-      "bytes": 46291,
-      "sha256": "2572cc09e9d9bb1bd2ecea66250629ecf06febbeee3420d1a815c276c00c643b"
+      "bytes": 46330,
+      "sha256": "57564b4e6e1edc7f2a9285fc399743a993ee062e27246d9399df1eba553d4f26"
     },
     "amp.js": {
       "bytes": 611,
@@ -477,24 +477,24 @@
       "sha256": "4690738c1e0b2d5e9f5122083ce1916c841af57d3bef8f766627b54dcb9fcb4f"
     },
     "public-legacy.css": {
-      "bytes": 15323,
-      "sha256": "ab19628579ca621b2e1fd12af651cd8f9758a4b51431da3c8f0bc5c8e4ccf758"
+      "bytes": 15352,
+      "sha256": "24d40b7975160bc75dde66b76d069b901a5350311fce429b5a0e643fad87c436"
     },
     "public-legacy.js": {
-      "bytes": 96666,
-      "sha256": "766cc5a3c27762283b444b030482991bd2ea0821032966a2e06d20f4ca2437e0"
+      "bytes": 97218,
+      "sha256": "08aeae51c3c30ac0dd0fa7cae1b303bbcae4a699a1e55f7a561d43463b4603e6"
     },
     "public-modern-split.js": {
-      "bytes": 85952,
-      "sha256": "495585a23278624d1a600e2ddbed342af19f0ec8de14b27abcbcc06eeb9ce036"
+      "bytes": 86504,
+      "sha256": "cf07065bd84302f9a82bb270b50d9df8d5abdbec827513f050116b628051ea23"
     },
     "public-modern.css": {
-      "bytes": 59412,
-      "sha256": "ce14ef585698780f5dad7edae4fd1538e014fe20b6886ccec598c0c03f52b42a"
+      "bytes": 59480,
+      "sha256": "f8dc4f018123f9c016bee3eaf1ad3e3e79ad4c697eab3e7b6a031f3404dd5aad"
     },
     "public-modern.js": {
-      "bytes": 96222,
-      "sha256": "60b69b29e4bac73bc26c44f3817e85d15de7d0366ef87b13d3134acea5f4d35c"
+      "bytes": 96774,
+      "sha256": "332af56948765bf5ffef9c4181975037724ee8c6c941caa3574834581545c5e6"
     },
     "shared.js": {
       "bytes": 529797,

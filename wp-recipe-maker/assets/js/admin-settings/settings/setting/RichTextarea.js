@@ -11,6 +11,12 @@ const SettingRichTextarea = (props) => {
             theme="snow"
             value={props.value}
             onChange={(content, delta, source) => {
+                // Mounting and controlled value updates can normalize HTML through Quill's API.
+                // ReactQuill synchronizes the editor itself; only user edits should change settings.
+                if ( 'user' !== source ) {
+                    return;
+                }
+
                 if('<p></p>' === content || '<p><br></p>' === content || '<p><br/></p>' === content) {
                     content = '';
                 }

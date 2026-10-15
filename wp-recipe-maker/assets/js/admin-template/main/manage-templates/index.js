@@ -174,8 +174,9 @@ export default class ManageTemplates extends Component {
                                             ...importedTemplate,
                                             oldSlug: importedTemplate.slug,
                                             slug: false, // Importing, so generate new slug.
+                                        }).then((saved) => {
+                                            if (saved) { alert( 'The template has been imported.' ); }
                                         });
-                                        alert( 'The template has been imported.' );
                                     } catch (e) {
                                         alert( 'No valid template found.' );
                                     }

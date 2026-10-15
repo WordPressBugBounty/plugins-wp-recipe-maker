@@ -4,46 +4,85 @@ import ApiWrapper from '../ApiWrapper';
 
 const rateLimit = 500;
 
-let gettingSuggestions = false;
-let gettingSuggestionsAt = false;
-let gettingSuggestionsNextArgs = false;
+// Each editor owns its queue. Pending searches may be replaced, but a response
+// always settles the promise belonging to the payload that produced it.
+function createSuggestionsRequester() {
+    let active = null;
+    let pending = null;
+    let timer = null;
+    let startedAt = null;
+
+    const runNext = () => {
+        if ( active || ! pending ) { return; }
+
+        const remaining = null === startedAt ? 0 : rateLimit - ( Date.now() - startedAt );
+        if ( 0 < remaining ) {
+            timer = setTimeout(() => {
+                timer = null;
+                runNext();
+            }, remaining);
+            return;
+        }
+
+        const request = pending;
+        pending = null;
+        active = request;
+        startedAt = Date.now();
+
+        const finish = () => {
+            active = null;
+            runNext();
+        };
+
+        // Also release the queue after a rejected request or synchronous error.
+        Promise.resolve().then(() => request.cancelled ? false : ApiWrapper.call( `${modalEndpoint}/suggest`, 'POST', request.args )).then(data => {
+            request.resolve( data );
+            finish();
+        }, error => {
+            request.reject( error );
+            finish();
+        });
+    };
+
+    const cancel = () => {
+        if ( null !== timer ) {
+            clearTimeout( timer );
+            timer = null;
+        }
+        if ( pending ) {
+            pending.resolve( false );
+            pending = null;
+        }
+        // The transport can finish, but its caller no longer needs the result.
+        if ( active ) {
+            active.cancelled = true;
+            active.resolve( false );
+        }
+    };
+
+    return {
+        getSuggestions(args) {
+            if ( pending ) { pending.resolve( false ); }
+            if ( null !== timer ) {
+                clearTimeout( timer );
+                timer = null;
+            }
+
+            return new Promise((resolve, reject) => {
+                pending = { args: { ...args }, resolve, reject };
+                runNext();
+            });
+        },
+        cancel,
+    };
+}
+
+const suggestionsRequester = createSuggestionsRequester();
 
 export default {
+    createSuggestionsRequester,
     getSuggestions(args) {
-        if ( ! gettingSuggestions ) {
-            return this.getSuggestionsDebounced(args);
-        } else {
-            gettingSuggestionsNextArgs = args;
-            return new Promise(r => r(false));
-        }
-    },
-    getSuggestionsDebounced(args) {
-        gettingSuggestions = true;
-        const now = Date.now();
-        
-        if ( false !== gettingSuggestionsAt && rateLimit > now - gettingSuggestionsAt ) {
-            return new Promise(r => {
-                setTimeout(() => {
-                    r( this.getSuggestionsDebounced( args ) );
-                }, now - gettingSuggestionsAt );
-            });
-        }
-
-        gettingSuggestionsAt = now;
-
-        return ApiWrapper.call( `${modalEndpoint}/suggest`, 'POST', args ).then(json => {
-            // Check if another request is queued.
-            if ( gettingSuggestionsNextArgs ) {
-                const newArgs = gettingSuggestionsNextArgs;
-                gettingSuggestionsNextArgs = false;
-
-                return this.getSuggestionsDebounced(newArgs);
-            } else {
-                // Return this request.
-                gettingSuggestions = false;
-                return json;
-            }
-        });
+        return suggestionsRequester.getSuggestions( args );
     },
     getIngredientUnitConnector(unit, create = false) {
         return ApiWrapper.call( `${modalEndpoint}/ingredient-unit/connector`, 'POST', {

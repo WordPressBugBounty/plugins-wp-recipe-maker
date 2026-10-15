@@ -4,9 +4,11 @@
         margin: 0 auto;
     }
 
-    // Compatibility.
+    // Compatibility. Grow wraps the image in an inline-table; aligning it to the top
+    // stops the line box from adding descender space below the image.
     .dpsp-pin-it-wrapper {
         margin: 0 auto;
+        vertical-align: top;
     }
     picture {
         border: none !important;

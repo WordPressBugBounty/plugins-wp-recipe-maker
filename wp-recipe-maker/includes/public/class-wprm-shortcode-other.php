@@ -678,7 +678,8 @@ nn	 * Set the count and total for the recipe counter shortcode.
 						}
 						break;
 					default:
-						if ( method_exists( $recipe, $field_condition ) ) {
+						// is_callable() also covers recipe shells (demo previews), which resolve fields through __call().
+						if ( is_callable( array( $recipe, $field_condition ) ) ) {
 							$matches_conditions[] = ! ! $recipe->$field_condition();
 						} else {
 							$matches_conditions[] = false;

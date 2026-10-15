@@ -42,7 +42,8 @@ class WPRM_Template_Package {
 
 	/**
 	 * Canonical inline styles, as safecss_filter_attr() writes them: line breaks and tabs
-	 * removed, declarations trimmed and joined by ';' without empties. Comparing this form
+	 * removed, declarations trimmed and joined by ';' without empties, and attribute quotes
+	 * normalized to double quotes (as in WordPress 7's wp_kses_hair()). Comparing this form
 	 * accepts kses rewrites that keep meaning (such as a trailing ';') while a dropped
 	 * declaration, attribute or tag still differs. The stored HTML is never changed.
 	 */
@@ -50,7 +51,7 @@ class WPRM_Template_Package {
 		return preg_replace_callback( '~\sstyle\s*=\s*(["\'])(.*?)\1~is', function ( $match ) {
 			$declarations = array_filter( array_map( 'trim', explode( ';', str_replace( array( "\n", "\r", "\t" ), '', $match[2] ) ) ), 'strlen' );
 			// kses removes a style attribute left without declarations.
-			return $declarations ? ' style=' . $match[1] . implode( ';', $declarations ) . $match[1] : '';
+			return $declarations ? ' style="' . implode( ';', $declarations ) . '"' : '';
 		}, $html );
 	}
 

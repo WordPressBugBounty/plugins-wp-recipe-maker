@@ -7,94 +7,88 @@ import { __wprm } from 'Shared/Translations';
 
 export default class ToolbarSuggest extends Component {
     constructor(props) {
-		super(props);
-		
-		// Cache suggestions.
-		window.wprm_admin_modal_suggestions = window.wprm_admin_modal_suggestions || {};
+        super(props);
 
+        window.wprm_admin_modal_suggestions = window.wprm_admin_modal_suggestions || Object.create( null );
         this.state = {
-			search: '',
-			suggestions: [],
-			loading: false,
-		}
+            search: '',
+            suggestions: [],
+            loading: false,
+        };
+        this.suggestionsRequester = Api.modal.createSuggestionsRequester();
+        this.debounceTimer = null;
+        this.requestId = 0;
+        this.unmounted = false;
+    }
 
-		// Debounce timer for API calls.
-		this.debounceTimer = null;
-	}
+    componentDidMount() {
+        this.unmounted = false;
+        this.updateSuggestions();
+    }
 
-	componentDidMount() {
-		this.updateSuggestions( this.props.value );
-	}
+    componentDidUpdate(prevProps) {
+        const search = ( this.props.value || '' ).trim();
+        const previousSearch = ( prevProps.value || '' ).trim();
+        if ( search !== previousSearch || prevProps.type !== this.props.type || ( prevProps.language || '' ) !== ( this.props.language || '' ) ) {
+            // Invalidate immediately, including responses arriving during debounce.
+            this.cancelSuggestions();
+            this.setState({ search, suggestions: [], loading: true });
+            this.debounceTimer = setTimeout(() => {
+                this.debounceTimer = null;
+                this.updateSuggestions();
+            }, 300);
+        }
+    }
 
-	componentDidUpdate(prevProps) {
-		// Only update if the search value actually changed (not just on every render).
-		const trimmedValue = this.props.value ? this.props.value.trim() : '';
-		if ( trimmedValue !== this.state.search || prevProps.language !== this.props.language ) {
-			// Clear any pending debounce timer.
-			if ( this.debounceTimer ) {
-				clearTimeout( this.debounceTimer );
-				this.debounceTimer = null;
-			}
+    componentWillUnmount() {
+        this.unmounted = true;
+        this.cancelSuggestions();
+    }
 
-			// Debounce API calls to avoid making requests on every keystroke.
-			// Empty searches will be cached after the first call, so no performance impact.
-			this.debounceTimer = setTimeout(() => {
-				this.updateSuggestions( trimmedValue );
-				this.debounceTimer = null;
-			}, 300); // 300ms debounce delay.
-		}
-	}
+    cancelSuggestions() {
+        this.requestId++;
+        if ( null !== this.debounceTimer ) {
+            clearTimeout( this.debounceTimer );
+            this.debounceTimer = null;
+        }
+        this.suggestionsRequester.cancel();
+    }
 
-	componentWillUnmount() {
-		// Clean up debounce timer on unmount.
-		if ( this.debounceTimer ) {
-			clearTimeout( this.debounceTimer );
-			this.debounceTimer = null;
-		}
-	}
-	
-	updateSuggestions( search ) {
+    updateSuggestions() {
+        this.cancelSuggestions();
+        const requestId = this.requestId;
+        const search = ( this.props.value || '' ).trim();
+        const type = this.props.type;
         const language = this.props.language || '';
-        const cacheKey = `${this.props.type}:${language}`;
-        window.wprm_admin_modal_suggestions[ cacheKey ] = window.wprm_admin_modal_suggestions[ cacheKey ] || {};
-		// Check cache first - empty searches will be cached after first call.
-		if ( window.wprm_admin_modal_suggestions[ cacheKey ].hasOwnProperty( search ) ) {
-			this.setState({
-				suggestions: window.wprm_admin_modal_suggestions[ cacheKey ][ search ],
-				search,
-			});
-		} else {
-			this.setState({
-				loading: true,
-				search,
-			});
-	
-			Api.modal.getSuggestions({
-				type: this.props.type,
-                language,
-				search
-			}).then(data => {
-                if ( language !== (this.props.language || '') ) { return; }
-				if ( data ) {
-					window.wprm_admin_modal_suggestions[ cacheKey ][ search ] = data.suggestions;
+        const cacheKey = JSON.stringify([ type, language ]);
+        const cache = window.wprm_admin_modal_suggestions[ cacheKey ] = window.wprm_admin_modal_suggestions[ cacheKey ] || Object.create( null );
 
-					this.setState({
-						suggestions: data.suggestions,
-						loading: false,
-					});
-				} else {
-					this.setState({
-						loading: false,
-					});
-				}
-			}).catch(() => {
-				// Handle errors gracefully.
-				this.setState({
-					loading: false,
-				});
-			});
-		}
-	}
+        if ( Object.prototype.hasOwnProperty.call( cache, search ) ) {
+            this.setState({ suggestions: cache[ search ], search, loading: false });
+            return;
+        }
+
+        this.setState({ suggestions: [], loading: true, search });
+        const isCurrentRequest = () => ! this.unmounted
+            && requestId === this.requestId
+            && search === ( this.props.value || '' ).trim()
+            && type === this.props.type
+            && language === ( this.props.language || '' );
+
+        this.suggestionsRequester.getSuggestions({ type, language, search }).then(data => {
+            if ( ! isCurrentRequest() ) { return; }
+            if ( data && Array.isArray( data.suggestions ) ) {
+                cache[ search ] = data.suggestions;
+                this.setState({ suggestions: data.suggestions, loading: false });
+            } else {
+                this.setState({ loading: false });
+            }
+        }).catch(() => {
+            if ( isCurrentRequest() ) {
+                this.setState({ loading: false });
+            }
+        });
+    }
   
     render() {
         return (

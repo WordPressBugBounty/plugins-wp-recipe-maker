@@ -20,7 +20,8 @@ html body.wprm-popup-modal-open {
 .wprm-popup-modal {
     display: none;
 
-    &.is-open {
+    &.is-open,
+    &.is-closing {
         display: block;
     }
 }

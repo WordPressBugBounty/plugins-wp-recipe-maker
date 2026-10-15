@@ -7,6 +7,30 @@ window.WPRecipeMaker.modal = {
     savedScrollPosition: 0,
     currentOpenUid: null,
     htmlMarginTopValue: null,
+    closeAnimations: new WeakMap(),
+
+    cancelCloseAnimation( modal ) {
+        const onAnimationEnd = this.closeAnimations.get( modal );
+        if ( onAnimationEnd ) {
+            modal.removeEventListener( 'animationend', onAnimationEnd );
+            this.closeAnimations.delete( modal );
+        }
+        modal.classList.remove( 'is-closing' );
+    },
+
+    awaitCloseAnimation( modal ) {
+        this.cancelCloseAnimation( modal );
+        // Keep the modal visible while MicroModal removes is-open. Own the
+        // listener so reopening can cancel it before the next animation ends.
+        modal.classList.add( 'is-closing' );
+        const onAnimationEnd = event => {
+            if ( event.animationName === 'wprmPopupModalFadeOut' && event.target.classList.contains( 'wprm-popup-modal__overlay' ) ) {
+                this.cancelCloseAnimation( modal );
+            }
+        };
+        this.closeAnimations.set( modal, onAnimationEnd );
+        modal.addEventListener( 'animationend', onAnimationEnd );
+    },
 
     getHtmlMarginTopValue() {
         if ( null !== this.htmlMarginTopValue ) {
@@ -33,10 +57,13 @@ window.WPRecipeMaker.modal = {
         }
 
         const modalId = `wprm-popup-modal-${ uid }`;
-        if ( ! document.getElementById( modalId ) ) {
+        const modalElement = document.getElementById( modalId );
+        if ( ! modalElement ) {
             console.warn( `WPRM modal "${ modalId }" could not be found in the DOM.` );
             return;
         }
+
+        this.cancelCloseAnimation( modalElement );
 
         // Prevent body scroll by fixing it in place
         this.savedScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
@@ -54,6 +81,7 @@ window.WPRecipeMaker.modal = {
                 document.dispatchEvent( new CustomEvent( 'wprm-modal-open', { detail: { type, uid, modal, data } } ) );
             },
             onClose: modal => {
+                this.awaitCloseAnimation( modal );
                 // Clear the currently open modal tracking
                 if ( this.currentOpenUid === uid ) {
                     this.currentOpenUid = null;
@@ -73,7 +101,7 @@ window.WPRecipeMaker.modal = {
                     behavior: 'instant'
                 } );
             },
-            awaitCloseAnimation: true,
+            awaitCloseAnimation: false,
         });
     },
     close( uid ) {

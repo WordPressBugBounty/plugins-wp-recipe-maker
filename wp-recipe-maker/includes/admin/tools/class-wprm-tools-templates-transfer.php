@@ -222,14 +222,20 @@ class WPRM_Tools_Templates_Transfer {
 
 			$saved = WPRM_Template_Manager::save_template( $prepared );
 
-			if ( $saved ) {
+			if ( ! is_wp_error( $saved ) && $saved ) {
 				$imported++;
 			} else {
 				$warnings[] = sprintf(
-					/* translators: %s: Template name or slug. */
-					__( '"%s" could not be saved.', 'wp-recipe-maker' ),
-					$template_label
+					/* translators: 1: Template name or slug. 2: Error message. */
+					__( '"%1$s" could not be saved: %2$s', 'wp-recipe-maker' ),
+					$template_label,
+					is_wp_error( $saved ) ? $saved->get_error_message() : __( 'No success was confirmed.', 'wp-recipe-maker' )
 				);
+				$data = is_wp_error( $saved ) ? $saved->get_error_data() : null;
+				if ( ! $saved || ( is_array( $data ) && 'unconfirmed' === ( $data['recovery'] ?? null ) ) ) {
+					$warnings[] = __( 'Import stopped because the last save could not be verified. Check the site templates before importing again.', 'wp-recipe-maker' );
+					break;
+				}
 			}
 		}
 

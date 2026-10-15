@@ -5,7 +5,7 @@ Tags: recipe, recipes, food, cooking, schema
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 7.2
-Stable tag: 10.9.0
+Stable tag: 10.9.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -141,6 +141,12 @@ Please report security bugs found in the source code of the WP Recipe Maker plug
 7. Our Template Editor allows you to completely customize the look and feel.
 
 == Changelog ==
+
+= 10.9.1 =
+* Fix: Template import compatibility with WordPress 7
+* Fix: Prevent rich text settings from showing unsaved changes without user edits
+* Fix: Prevent stale recipe editor suggestions
+* Fix: Saving of templates when the database does not support transactions
 
 = 10.9.0 =
 * Feature: WPRM Kitchen Integration
@@ -660,6 +666,9 @@ Please report security bugs found in the source code of the WP Recipe Maker plug
 For earlier versions, please refer to [our full changelog](https://help.bootstrapped.ventures/article/124-wp-recipe-maker-changelog).
 
 == Upgrade notice ==
+= 10.9.1 =
+Fix WordPress 7 template imports, template saving, unexpected unsaved settings changes, and stale recipe editor suggestions.
+
 = 10.9.0 =
 Some great new features and improvements
 
