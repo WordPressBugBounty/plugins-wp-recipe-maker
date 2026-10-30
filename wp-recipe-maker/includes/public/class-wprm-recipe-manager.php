@@ -908,6 +908,63 @@ class WPRM_Recipe_Manager {
 		return $recipe;
 	}
 
+	/**
+	 * Check the recipe's own password and its recorded parent's password before
+	 * public output. Only refuses: callers still need the ordinary accessor.
+	 *
+	 * Recipe editors keep their existing access. Otherwise the recipe's own password
+	 * needs a valid cookie or the matching native REST password, and the parent's
+	 * password needs its cookie or edit access to that parent.
+	 *
+	 * @since 10.9.2
+	 * @param int         $recipe_id Recipe ID.
+	 * @param string|null $password  Optional password supplied for the recipe itself.
+	 */
+	public static function recipe_passwords_allow_read( $recipe_id, $password = null ) {
+		$recipe_id = intval( $recipe_id );
+		$post = $recipe_id > 0 ? get_post( $recipe_id ) : null;
+		if ( ! $post instanceof WP_Post || WPRM_POST_TYPE !== $post->post_type ) {
+			return false;
+		}
+		if ( current_user_can( 'edit_post', $recipe_id ) ) {
+			return true;
+		}
+
+		if ( post_password_required( $post ) && ! ( is_string( $password ) && '' !== $password && hash_equals( $post->post_password, $password ) ) ) {
+			return false;
+		}
+
+		$parent_id = intval( get_post_meta( $recipe_id, 'wprm_parent_post_id', true ) );
+		if ( $parent_id > 0 && $parent_id !== $recipe_id ) {
+			$parent = get_post( $parent_id );
+			if ( $parent instanceof WP_Post && post_password_required( $parent ) && ! current_user_can( 'edit_post', $parent_id ) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Rendering post to put on a recipe wrapper, so frontend data can still be loaded
+	 * when footer data is missing. Only a candidate: requests validate it again.
+	 *
+	 * @since 10.9.2
+	 * @param int $recipe_id Recipe ID.
+	 * @param int $post_id   Post rendering the recipe.
+	 */
+	public static function public_render_post_candidate( $recipe_id, $post_id ) {
+		$post_id = intval( $post_id );
+		if ( ! self::is_public_recipe_context( $recipe_id, $post_id ) ) {
+			return 0;
+		}
+		// Not needed when the recipe is published and its parent is the rendering post.
+		if ( 'publish' === get_post_status( $recipe_id ) && $post_id === intval( get_post_meta( $recipe_id, 'wprm_parent_post_id', true ) ) ) {
+			return 0;
+		}
+		return $post_id;
+	}
+
 	/** Remember a context only when server-side recipe rendering has authorized it. */
 	public static function remember_public_render_context( $recipe_id, $post_id ) {
 		$recipe_id = intval( $recipe_id );

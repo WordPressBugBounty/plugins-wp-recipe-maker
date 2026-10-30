@@ -126,13 +126,20 @@ window.WPRecipeMaker.print = {
 			servings,
 			advancedServings,
 		};
-		localStorage.setItem( 'wprmPrintArgs', JSON.stringify( printArgs ) );
+		try {
+			localStorage.setItem( 'wprmPrintArgs', JSON.stringify( printArgs ) );
+		} catch ( e ) {
+			// Storage unavailable or full. Still open the print page; a new tab gets the args through its onload handler.
+			try {
+				localStorage.removeItem( 'wprmPrintArgs' );
+			} catch {}
+		}
 
 		// Open print window.
 		const printWindow = window.open( url, target );
 
 		// Focus on print window when opening in new tab.
-		if ( '_blank' === target ) {
+		if ( '_blank' === target && printWindow ) {
 			printWindow.onload = () => {
 				printWindow.focus();
 

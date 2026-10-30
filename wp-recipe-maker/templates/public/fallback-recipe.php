@@ -86,31 +86,51 @@ if ( count( $args ) > 0 ) {
 				echo '<h4>'. wp_kses_post( $instruction_group['name'] ) . '</h4>';
 			}
 
-			if ( count( $instruction_group['instructions'] ) > 0 ) {
-				echo '<ol>';
+			// Tips sit between steps without being one, so close the list around them and keep numbering going after.
+			$step_number = 0;
+			$list_open = false;
 
-				foreach ( $instruction_group['instructions'] as $instruction ) {
-					echo '<li>';
-					if ( $instruction['text'] ) {
-						echo wp_kses_post( $instruction['text'] );
+			foreach ( $instruction_group['instructions'] as $instruction ) {
+				if ( isset( $instruction['type'] ) && 'tip' === $instruction['type'] ) {
+					if ( $list_open ) {
+						echo '</ol>';
+						$list_open = false;
 					}
 
-					if ( $instruction['image'] ) {
-						$thumb = wp_get_attachment_image_src( $instruction['image'], 'thumbnail' );
-						$image_url = $thumb && isset( $thumb[0] ) ? $thumb[0] : '';
-
-						if ( $instruction['text'] && $image_url ) {
-							echo '<br />';
-						}
-
-						if ( $image_url ) {
-							echo '<img src="' . esc_attr( $image_url ) . '"/>';
-							echo '<br />';
-						}
+					if ( ! empty( $instruction['text'] ) ) {
+						echo '<div class="wprm-fallback-recipe-tip">' . wp_kses_post( $instruction['text'] ) . '</div>';
 					}
-					echo '</li>';
+					continue;
 				}
 
+				if ( ! $list_open ) {
+					echo 0 === $step_number ? '<ol>' : '<ol start="' . intval( $step_number + 1 ) . '">';
+					$list_open = true;
+				}
+				$step_number++;
+
+				echo '<li>';
+				if ( $instruction['text'] ) {
+					echo wp_kses_post( $instruction['text'] );
+				}
+
+				if ( ! empty( $instruction['image'] ) ) {
+					$thumb = wp_get_attachment_image_src( $instruction['image'], 'thumbnail' );
+					$image_url = $thumb && isset( $thumb[0] ) ? $thumb[0] : '';
+
+					if ( $instruction['text'] && $image_url ) {
+						echo '<br />';
+					}
+
+					if ( $image_url ) {
+						echo '<img src="' . esc_attr( $image_url ) . '"/>';
+						echo '<br />';
+					}
+				}
+				echo '</li>';
+			}
+
+			if ( $list_open ) {
 				echo '</ol>';
 			}
 		}

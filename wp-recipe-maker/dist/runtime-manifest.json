@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "package": "wp-recipe-maker",
-  "version": "10.9.1",
+  "version": "10.9.2",
   "runtime": 1,
   "families": {
     "free-public": {
@@ -16,11 +16,11 @@
             },
             {
               "name": "public-legacy.js",
-              "size": 97218
+              "size": 97871
             }
           ],
           "filteredAssets": 0,
-          "assetsSize": 112570,
+          "assetsSize": 113223,
           "filteredAuxiliaryAssets": 0,
           "auxiliaryAssetsSize": 0
         },
@@ -33,11 +33,11 @@
             },
             {
               "name": "public-modern.js",
-              "size": 96774
+              "size": 97427
             }
           ],
           "filteredAssets": 0,
-          "assetsSize": 156254,
+          "assetsSize": 156907,
           "filteredAuxiliaryAssets": 0,
           "auxiliaryAssetsSize": 0
         },
@@ -89,11 +89,11 @@
             },
             {
               "name": "print.js",
-              "size": 13790
+              "size": 14430
             }
           ],
           "filteredAssets": 0,
-          "assetsSize": 19271,
+          "assetsSize": 19911,
           "filteredAuxiliaryAssets": 0,
           "auxiliaryAssetsSize": 0
         }
@@ -107,11 +107,11 @@
           "assets": [
             {
               "name": "public-modern-split.js",
-              "size": 86504
+              "size": 87157
             }
           ],
           "filteredAssets": 0,
-          "assetsSize": 86504,
+          "assetsSize": 87157,
           "filteredAuxiliaryAssets": 0,
           "auxiliaryAssetsSize": 0
         }
@@ -176,11 +176,11 @@
             },
             {
               "name": "admin-manage.js",
-              "size": 232445
+              "size": 232472
             }
           ],
           "filteredAssets": 0,
-          "assetsSize": 265023,
+          "assetsSize": 265050,
           "filteredAuxiliaryAssets": 0,
           "auxiliaryAssetsSize": 0
         },
@@ -193,11 +193,11 @@
             },
             {
               "name": "admin-modal.js",
-              "size": 781251
+              "size": 781359
             }
           ],
           "filteredAssets": 0,
-          "assetsSize": 888877,
+          "assetsSize": 888985,
           "filteredAuxiliaryAssets": 0,
           "auxiliaryAssetsSize": 0
         },
@@ -210,11 +210,11 @@
             },
             {
               "name": "admin-faq.js",
-              "size": 513914
+              "size": 514109
             }
           ],
           "filteredAssets": 0,
-          "assetsSize": 603481,
+          "assetsSize": 603676,
           "filteredAuxiliaryAssets": 0,
           "auxiliaryAssetsSize": 0
         },
@@ -244,11 +244,11 @@
             },
             {
               "name": "admin-template.js",
-              "size": 1130682
+              "size": 1130877
             }
           ],
           "filteredAssets": 0,
-          "assetsSize": 1244399,
+          "assetsSize": 1244594,
           "filteredAuxiliaryAssets": 0,
           "auxiliaryAssetsSize": 0
         }
@@ -353,24 +353,24 @@
       "sha256": "86d45cdbc87f62f943bb8b014b29d10c0407f2bf3a93a46807623555429271ac"
     },
     "admin-faq.js": {
-      "bytes": 513914,
-      "sha256": "90c1291d44a0ededb39406310cc7bbfba136a130531248923498c72a06974ae3"
+      "bytes": 514109,
+      "sha256": "703a02f11411a5789f0189a303b0388b601b7e8b3366892f03a82091610814a9"
     },
     "admin-manage.css": {
       "bytes": 32578,
       "sha256": "854b4679f60df83b34491b130b7bdd9ae445366d16a2963a05c19fb76c451fe4"
     },
     "admin-manage.js": {
-      "bytes": 232445,
-      "sha256": "8dc95744b5a41b46314508a63719a9090f46b720dde96959458409c99737a113"
+      "bytes": 232472,
+      "sha256": "8397458173fdb672f0d0d0b8679d82c209b83d91a4f24d83f451a827b9894524"
     },
     "admin-modal.css": {
       "bytes": 107626,
       "sha256": "3dea9da59ab869d0848b6c7d38fd6c85ca1eab2f180fb568cef294560a53bb9f"
     },
     "admin-modal.js": {
-      "bytes": 781251,
-      "sha256": "a4805f53ab07ed8554c43f2d1121b3f8ace409ab84f2ec26c4dde0401a206d95"
+      "bytes": 781359,
+      "sha256": "d24b6b4e9786548152c37912e167d5e91964d4b1371655394a3ac3c3fb88fdbb"
     },
     "admin-settings.css": {
       "bytes": 45383,
@@ -385,8 +385,8 @@
       "sha256": "205d5c79037737cfc05f79e85ab951dd013192a1e9df84e912785e1b8ab09864"
     },
     "admin-template.js": {
-      "bytes": 1130682,
-      "sha256": "dbf295607c003f1a4f22652e5258f7fa29a04beedb314683b6902e99dc5a1ead"
+      "bytes": 1130877,
+      "sha256": "57f8a67a49c896099349c1afb03e651a852c2dd393bfac13327a9e7f77d6d719"
     },
     "admin.css": {
       "bytes": 31392,
@@ -429,8 +429,8 @@
       "sha256": "8b0da98d7fd2cde225ce78285ff7eb59d770018a63038eb6ed5d506b017b6c5d"
     },
     "print.js": {
-      "bytes": 13790,
-      "sha256": "236d359f7159e639086043059c27f73d95a32d790c5443a992bc19f0720bdd30"
+      "bytes": 14430,
+      "sha256": "95472204761fe46f04ca13c158c4266c9e43cf3040e91b4b3b72905f660693cb"
     },
     "public-feature-cookpal.836d8d7d.js": {
       "bytes": 1231,
@@ -481,20 +481,20 @@
       "sha256": "24d40b7975160bc75dde66b76d069b901a5350311fce429b5a0e643fad87c436"
     },
     "public-legacy.js": {
-      "bytes": 97218,
-      "sha256": "08aeae51c3c30ac0dd0fa7cae1b303bbcae4a699a1e55f7a561d43463b4603e6"
+      "bytes": 97871,
+      "sha256": "5eca02b106df1c478133dc2f41903ecb641b85643e43aa6ca7cd9f052604fb63"
     },
     "public-modern-split.js": {
-      "bytes": 86504,
-      "sha256": "cf07065bd84302f9a82bb270b50d9df8d5abdbec827513f050116b628051ea23"
+      "bytes": 87157,
+      "sha256": "5c20ca152a672eb5c64cf46ca4d66186ac607914147092452822612afd1ab9a5"
     },
     "public-modern.css": {
       "bytes": 59480,
       "sha256": "f8dc4f018123f9c016bee3eaf1ad3e3e79ad4c697eab3e7b6a031f3404dd5aad"
     },
     "public-modern.js": {
-      "bytes": 96774,
-      "sha256": "332af56948765bf5ffef9c4181975037724ee8c6c941caa3574834581545c5e6"
+      "bytes": 97427,
+      "sha256": "714df3e44d4343b23e79a0955cf48eef42b30f31df464e421ccd080db27a9b19"
     },
     "shared.js": {
       "bytes": 529797,

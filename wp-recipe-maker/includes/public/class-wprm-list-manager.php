@@ -281,7 +281,7 @@ class WPRM_List_Manager {
 			}
 		}
 
-		return $gutenberg_matches + $classic_matches;
+		return array_values( array_unique( array_merge( $gutenberg_matches, $classic_matches ) ) );
 	}
 
 	/**

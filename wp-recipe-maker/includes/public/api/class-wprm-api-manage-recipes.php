@@ -103,6 +103,14 @@ class WPRM_Api_Manage_Recipes {
 
 		$recipe = WPRM_Recipe_Manager::get_recipe( $recipe_id );
 
+		if ( 'frontend' === $format && ( ! $recipe || ! WPRM_Recipe_Manager::recipe_passwords_allow_read( $recipe_id ) ) ) {
+			// The page rendering the recipe can still provide its frontend data, after
+			// checking that it is accessible and actually contains the recipe.
+			$context = isset( $params['public_render_context'] ) ? $params['public_render_context'] : array();
+			$public_post_id = WPRM_Recipe_Manager::get_public_render_post_id( $recipe_id, $context );
+			$recipe = $public_post_id ? WPRM_Recipe_Manager::get_recipe( $recipe_id, $public_post_id ) : false;
+		}
+
 		if ( $recipe ) {
 			if ( 'frontend' === $format ) {
 				// Only return data if recipe is published, user has permission to edit, or setting allows non-published recipes.

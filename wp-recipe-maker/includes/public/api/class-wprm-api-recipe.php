@@ -27,6 +27,7 @@ class WPRM_Api_Recipe{
 	public static function init() {
 		add_action( 'rest_api_init', array( __CLASS__, 'api_register_recipe_data' ) );
 		add_action( 'rest_insert_' . WPRM_POST_TYPE, array( __CLASS__, 'api_insert_update_recipe' ), 10, 3 );
+		add_filter( 'rest_prepare_' . WPRM_POST_TYPE, array( __CLASS__, 'api_protect_content' ), 10, 3 );
 
 		// Make sure this gets added.
 		add_filter( 'wprm_recipe_post_type_arguments', array( __CLASS__, 'recipe_post_type_arguments' ), 99 );
@@ -67,7 +68,58 @@ class WPRM_Api_Recipe{
 		WPRM_Recipe_Manager::invalidate_recipe( $object['id'] );
 		$recipe = WPRM_Recipe_Manager::get_recipe( $object['id'] );
 
-		return $recipe ? $recipe->get_data( 'api' ) : array();
+		if ( ! $recipe ) {
+			return array();
+		}
+
+		// Core only unlocks its own content fields for a matching password, so check the recipe and its parent here.
+		$password = $request instanceof WP_REST_Request ? $request['password'] : null;
+		if ( ! WPRM_Recipe_Manager::recipe_passwords_allow_read( $recipe->id(), $password ) ) {
+			return array();
+		}
+
+		$data = $recipe->get_data( 'api' );
+
+		// Only editors need the password, also in the default view context the recipe modal uses.
+		if ( ! current_user_can( 'edit_post', $recipe->id() ) ) {
+			unset( $data['post_password'] );
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Hide the recipe summary in the core content field when the recipe or its parent is password protected.
+	 * Core only checks the recipe's own password there.
+	 *
+	 * @since 10.9.2
+	 * @param WP_REST_Response $response Response to filter.
+	 * @param WP_Post          $post     Recipe post.
+	 * @param WP_REST_Request  $request  Current request.
+	 */
+	public static function api_protect_content( $response, $post, $request ) {
+		if ( ! $response instanceof WP_REST_Response ) {
+			return $response;
+		}
+
+		$data = $response->get_data();
+		$fields = array_intersect( array( 'content', 'excerpt' ), array_keys( $data ) );
+
+		if ( $fields ) {
+			$password = $request instanceof WP_REST_Request ? $request['password'] : null;
+
+			if ( ! WPRM_Recipe_Manager::recipe_passwords_allow_read( $post->ID, $password ) ) {
+				foreach ( $fields as $field ) {
+					$data[ $field ] = array(
+						'rendered' => '',
+						'protected' => true,
+					);
+				}
+				$response->set_data( $data );
+			}
+		}
+
+		return $response;
 	}
 
 	/**

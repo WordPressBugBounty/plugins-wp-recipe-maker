@@ -375,7 +375,9 @@ class WPRM_Api_App_Kitchen {
 			return new WP_Error( 'wprm_kitchen_already_connected', __( 'This site is already connected to WPRM Kitchen.', 'wp-recipe-maker' ), array( 'status' => 409 ) );
 		}
 
-		self::clear_pending();
+		if ( ! self::clear_pending() ) {
+			return self::unavailable_pending();
+		}
 		self::clear_error();
 		$verifier = self::random_base64url( 32 );
 		$challenge = self::base64url_encode( hash( 'sha256', $verifier, true ) );
@@ -403,7 +405,7 @@ class WPRM_Api_App_Kitchen {
 			return $validated;
 		}
 
-		self::set_pending( array(
+		$stored = self::set_pending( array(
 			'direction' => 'plugin_start',
 			'state' => 'awaiting_kitchen',
 			'pairing_id' => $validated['pairing_id'],
@@ -411,6 +413,9 @@ class WPRM_Api_App_Kitchen {
 			'code_challenge' => $challenge,
 			'created_by' => get_current_user_id(),
 		), array( 'verifier' => $verifier ), $validated['expires_at'] - time() );
+		if ( is_wp_error( $stored ) ) {
+			return $stored;
+		}
 
 		return rest_ensure_response( self::get_status() );
 	}
@@ -500,7 +505,9 @@ class WPRM_Api_App_Kitchen {
 
 	/** Cancel a pending pairing without affecting an active connection. */
 	public static function api_cancel() {
-		self::clear_pending();
+		if ( ! self::clear_pending() ) {
+			return self::unavailable_pending();
+		}
 		self::clear_error();
 
 		return rest_ensure_response( self::get_status() );
@@ -545,6 +552,13 @@ class WPRM_Api_App_Kitchen {
 			$result = self::ingest_plugin_callback( $pairing_id, $authorization_code );
 			$notice = is_wp_error( $result ) ? $result->get_error_code() : 'completing';
 		}
+		// A storage outage may also prevent retaining the error across the redirect.
+		if ( isset( $result ) && is_wp_error( $result ) && 'wprm_kitchen_pairing_unavailable' === $result->get_error_code() ) {
+			$retained = get_option( self::ERROR_OPTION, array() );
+			if ( ! is_array( $retained ) || $result->get_error_code() !== ( $retained['code'] ?? '' ) ) {
+				wp_die( esc_html( $result->get_error_message() ), '', array( 'response' => 503 ) );
+			}
+		}
 
 		wp_safe_redirect( add_query_arg( 'wprm_kitchen_notice', sanitize_key( $notice ), self::authorize_url() ) );
 		exit;
@@ -561,21 +575,24 @@ class WPRM_Api_App_Kitchen {
 			return $error;
 		}
 
-		self::clear_pending();
+		if ( ! self::clear_pending() ) {
+			return self::unavailable_pending();
+		}
 		self::clear_error();
-		self::set_pending( array(
+		return self::set_pending( array(
 			'direction' => 'kitchen_start',
 			'state' => 'awaiting_approval',
 			'pairing_id' => $pairing_id,
 			'created_by' => get_current_user_id(),
 		), array( 'claim_code' => $claim_code ), self::PAIRING_TTL );
-
-		return true;
 	}
 
 	/** Validate plugin-start callback state and store its one-time code. */
 	private static function ingest_plugin_callback( $pairing_id, $authorization_code ) {
 		$pending = self::get_pending();
+		if ( is_wp_error( $pending ) ) {
+			return $pending;
+		}
 		if ( ! $pending || 'plugin_start' !== $pending['direction'] || 'awaiting_kitchen' !== $pending['state'] ) {
 			return new WP_Error( 'wprm_kitchen_pairing_replayed', __( 'This WPRM Kitchen pairing is no longer active.', 'wp-recipe-maker' ) );
 		}
@@ -584,21 +601,21 @@ class WPRM_Api_App_Kitchen {
 			self::remember_error( $error );
 			return $error;
 		}
-		$secrets = get_transient( self::TRANSIENT_PREFIX . $pending['pending_key'] );
-		if ( ! is_array( $secrets ) || empty( $secrets['verifier'] ) ) {
-			return self::expire_pending();
+		$secrets = self::get_pending_secrets( $pending );
+		if ( is_wp_error( $secrets ) ) {
+			return $secrets;
 		}
 		$secrets['authorization_code'] = $authorization_code;
-		set_transient( self::TRANSIENT_PREFIX . $pending['pending_key'], $secrets, max( 1, $pending['expires_at'] - time() ) );
 		$pending['state'] = 'callback_received';
-		update_option( self::PENDING_OPTION, $pending, false );
-
-		return true;
+		return self::store_pending( $pending, $secrets );
 	}
 
 	/** Complete either direction exactly once. */
 	private static function complete_pending( $direction ) {
 		$pending = self::get_pending();
+		if ( is_wp_error( $pending ) ) {
+			return $pending;
+		}
 		$expected_state = 'kitchen_start' === $direction ? 'awaiting_approval' : 'callback_received';
 		if ( ! $pending || $direction !== $pending['direction'] || $expected_state !== $pending['state'] ) {
 			if ( self::get_connection() ) {
@@ -610,18 +627,17 @@ class WPRM_Api_App_Kitchen {
 			return new WP_Error( 'wprm_kitchen_forbidden', __( 'Only the administrator who started this pairing can finish it.', 'wp-recipe-maker' ), array( 'status' => 403 ) );
 		}
 
-		$secrets = get_transient( self::TRANSIENT_PREFIX . $pending['pending_key'] );
-		if ( ! is_array( $secrets ) ) {
-			return self::expire_pending();
+		$secrets = self::get_pending_secrets( $pending );
+		if ( is_wp_error( $secrets ) ) {
+			return $secrets;
 		}
 
 		// Consume locally before the remote exchange to make retries/replays safe.
-		self::clear_pending();
+		if ( ! self::clear_pending( $pending ) ) {
+			return self::unavailable_pending( $pending );
+		}
 		$flow_credential = array();
 		if ( 'kitchen_start' === $direction ) {
-			if ( empty( $secrets['claim_code'] ) ) {
-				return self::expire_pending();
-			}
 			$claim_path = WPRM_Kitchen_Client::path( 'claim', $pending['pairing_id'] );
 			if ( is_wp_error( $claim_path ) ) {
 				return $claim_path;
@@ -642,9 +658,6 @@ class WPRM_Api_App_Kitchen {
 			}
 			$flow_credential['completion_token'] = $claimed['completion_token'];
 		} else {
-			if ( empty( $secrets['verifier'] ) || empty( $secrets['authorization_code'] ) ) {
-				return self::expire_pending();
-			}
 			$flow_credential['authorization_code'] = $secrets['authorization_code'];
 			$flow_credential['code_verifier'] = $secrets['verifier'];
 		}
@@ -819,6 +832,11 @@ class WPRM_Api_App_Kitchen {
 		}
 
 		$pending = self::get_pending();
+		if ( is_wp_error( $pending ) ) {
+			$base['state'] = 'error';
+			$base['error'] = array( 'code' => $pending->get_error_code(), 'message' => $pending->get_error_message() );
+			return $base;
+		}
 		if ( $pending ) {
 			$base['state'] = $pending['state'];
 			$base['direction'] = $pending['direction'];
@@ -861,15 +879,22 @@ class WPRM_Api_App_Kitchen {
 		return is_array( $connection ) && ! empty( $connection['id'] ) ? $connection : false;
 	}
 
-	/** Get pending metadata, expiring it when needed. */
+	/** Get usable pending state, distinguishing elapsed time from lost storage. */
 	private static function get_pending() {
 		$pending = get_option( self::PENDING_OPTION, false );
-		if ( ! is_array( $pending ) || empty( $pending['pending_key'] ) || empty( $pending['expires_at'] ) ) {
+		if ( false === $pending ) {
 			return false;
 		}
-		if ( time() >= intval( $pending['expires_at'] ) ) {
-			self::expire_pending();
-			return false;
+		if ( ! is_array( $pending )
+			|| ! isset( $pending['pending_key'], $pending['expires_at'], $pending['created_by'], $pending['pairing_id'], $pending['direction'], $pending['state'] )
+			|| ! is_string( $pending['pending_key'] ) || ! preg_match( '/^[a-f0-9]{32}$/', $pending['pending_key'] )
+			|| ! is_numeric( $pending['expires_at'] ) || ! intval( $pending['created_by'] ) || ! self::valid_opaque_id( $pending['pairing_id'] )
+		) {
+			return self::unavailable_pending();
+		}
+		$secrets = self::get_pending_secrets( $pending );
+		if ( is_wp_error( $secrets ) ) {
+			return $secrets;
 		}
 
 		return $pending;
@@ -881,23 +906,94 @@ class WPRM_Api_App_Kitchen {
 		$key = bin2hex( self::random_bytes( 16 ) );
 		$metadata['pending_key'] = $key;
 		$metadata['expires_at'] = time() + $ttl;
-		update_option( self::PENDING_OPTION, $metadata, false );
-		set_transient( self::TRANSIENT_PREFIX . $key, $secrets, $ttl );
+		return self::store_pending( $metadata, $secrets );
 	}
 
-	/** Remove pending metadata and its transient secrets. */
-	private static function clear_pending() {
-		$pending = get_option( self::PENDING_OPTION, false );
-		if ( is_array( $pending ) && ! empty( $pending['pending_key'] ) ) {
-			delete_transient( self::TRANSIENT_PREFIX . $pending['pending_key'] );
+	/** Publish/advance metadata only after its exact secrets can be retrieved. */
+	private static function store_pending( $pending, $secrets ) {
+		if ( time() >= intval( $pending['expires_at'] ) ) {
+			return self::expire_pending( $pending );
 		}
-		delete_option( self::PENDING_OPTION );
+		$key = self::TRANSIENT_PREFIX . $pending['pending_key'];
+		set_transient( $key, $secrets, max( 1, $pending['expires_at'] - time() ) );
+		if ( $secrets !== get_transient( $key ) ) {
+			return self::unavailable_pending( $pending );
+		}
+
+		// update_option (and DB-backed set_transient) can return false for unchanged values.
+		// Read-back, rather than the write's boolean alone, determines success.
+		update_option( self::PENDING_OPTION, $pending, false );
+		if ( $pending !== get_option( self::PENDING_OPTION, false ) || $secrets !== get_transient( $key ) ) {
+			return self::unavailable_pending( $pending );
+		}
+		if ( time() >= intval( $pending['expires_at'] ) ) {
+			return self::expire_pending( $pending );
+		}
+
+		return true;
+	}
+
+	/** Transients can disappear before their maximum TTL, including cache eviction. */
+	private static function get_pending_secrets( $pending ) {
+		if ( time() >= intval( $pending['expires_at'] ) ) {
+			return self::expire_pending( $pending );
+		}
+		$secrets = get_transient( self::TRANSIENT_PREFIX . $pending['pending_key'] );
+		$required = array();
+		if ( 'kitchen_start' === $pending['direction'] && 'awaiting_approval' === $pending['state'] ) {
+			$required = array( 'claim_code' );
+		} elseif ( 'plugin_start' === $pending['direction'] && in_array( $pending['state'], array( 'awaiting_kitchen', 'callback_received' ), true ) ) {
+			$required = 'callback_received' === $pending['state'] ? array( 'verifier', 'authorization_code' ) : array( 'verifier' );
+		}
+		if ( ! is_array( $secrets ) || ! $required ) {
+			return self::unavailable_pending( $pending );
+		}
+		foreach ( $required as $field ) {
+			if ( ! isset( $secrets[ $field ] ) || ! self::valid_secret( $secrets[ $field ] ) ) {
+				return self::unavailable_pending( $pending );
+			}
+		}
+
+		return $secrets;
+	}
+
+	/** Remove only the expected pending state, leaving any replacement pairing alone. */
+	private static function clear_pending( $expected = null ) {
+		$current = get_option( self::PENDING_OPTION, false );
+		$pending = null === $expected ? $current : $expected;
+		$removed = true;
+		if ( is_array( $pending ) && ! empty( $pending['pending_key'] ) && is_string( $pending['pending_key'] ) ) {
+			$key = self::TRANSIENT_PREFIX . $pending['pending_key'];
+			delete_transient( $key );
+			// A failed DB value INSERT may leave only a timeout, which core won't delete.
+			if ( ! wp_using_ext_object_cache() && false === get_option( '_transient_' . $key, false ) ) {
+				delete_option( '_transient_timeout_' . $key );
+			}
+			$removed = false === get_transient( $key );
+		}
+		$same_attempt = is_array( $current ) && is_array( $expected )
+			&& isset( $current['pending_key'], $current['pairing_id'], $expected['pending_key'], $expected['pairing_id'] )
+			&& $current['pending_key'] === $expected['pending_key'] && $current['pairing_id'] === $expected['pairing_id'];
+		if ( null === $expected || $same_attempt ) {
+			delete_option( self::PENDING_OPTION );
+		}
+
+		return false === get_option( self::PENDING_OPTION, false ) && $removed;
 	}
 
 	/** Expire pending state with an actionable error. */
-	private static function expire_pending() {
-		self::clear_pending();
+	private static function expire_pending( $pending = null ) {
+		self::clear_pending( $pending );
 		$error = new WP_Error( 'wprm_kitchen_pairing_expired', __( 'The WPRM Kitchen pairing expired. Start a new connection.', 'wp-recipe-maker' ), array( 'status' => 410 ) );
+		self::remember_error( $error );
+
+		return $error;
+	}
+
+	/** Fail closed without claiming that a missing/unsaved secret elapsed its TTL. */
+	private static function unavailable_pending( $pending = null ) {
+		self::clear_pending( $pending );
+		$error = new WP_Error( 'wprm_kitchen_pairing_unavailable', __( 'WordPress could not save or retrieve the secure WPRM Kitchen pairing details. Start a new connection. If this keeps happening, ask your host to check WordPress transient and object cache storage.', 'wp-recipe-maker' ), array( 'status' => 503 ) );
 		self::remember_error( $error );
 
 		return $error;

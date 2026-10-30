@@ -44,7 +44,8 @@ class WPRM_Metadata_Rank_Math {
 	 * @param	JsonLD $jsonld	JsonLD instance.
 	 */
 	public static function rank_math_json_ld( $data, $jsonld ) {
-		if ( WPRM_Settings::get( 'rank_math_integration' ) ) {
+		// The selected recipe is kept for later calls, so check the page on every output.
+		if ( WPRM_Settings::get( 'rank_math_integration' ) && WPRM_Metadata::page_allows_metadata() ) {
 			$recipe = self::get_recipe();
 
 			if ( $recipe ) {

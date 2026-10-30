@@ -20,12 +20,13 @@
 class WPRM_Metadata {
 	/**
 	 * Version for the recipe metadata cache format/hash.
+	 * Version 9: use the cached written-review total instead of the selected sample count, leaving out a zero reviewCount.
 	 *
 	 * @since    10.8.1
 	 * @access   private
 	 * @var      int METADATA_CACHE_VERSION Version for the recipe metadata cache.
 	 */
-	const METADATA_CACHE_VERSION = 8;
+	const METADATA_CACHE_VERSION = 9;
 
 	/**
 	 * List of recipes we've already outputted the metadata for.
@@ -207,7 +208,8 @@ class WPRM_Metadata {
 	public static function get_recipe_ids_to_output() {
 		$recipe_ids_to_output_metadata_for = array();
 
-		if ( is_singular() ) {
+		// Password-protected content should not leak through its metadata.
+		if ( is_singular() && self::page_allows_metadata() ) {
 			$recipe_ids = WPRM_Recipe_Manager::get_recipe_ids_from_post();
 
 			if ( $recipe_ids ) {
@@ -226,6 +228,18 @@ class WPRM_Metadata {
 		}
 
 		return $recipe_ids_to_output_metadata_for;
+	}
+
+	/**
+	 * Check whether the page being rendered shows its content, so its recipe metadata can be output.
+	 * Checked on every output instead of cached, because it depends on the visitor's password cookie.
+	 *
+	 * @since	10.9.2
+	 * @param	mixed $post_id Optional post being rendered. Defaults to the current post.
+	 */
+	public static function page_allows_metadata( $post_id = false ) {
+		$post_id = $post_id ? $post_id : get_the_ID();
+		return ! $post_id || ! post_password_required( $post_id );
 	}
 
 	/**
@@ -1177,6 +1191,13 @@ class WPRM_Metadata {
 
 			// Check if Review metadata should be included.
 			if ( 'never' !== WPRM_Settings::get( 'metadata_review_include' ) ) {
+				// Use the full cached written-review count, independently of the selected reviews below.
+				// Older summaries without this breakdown omit the count without an expensive recount.
+				// Google only accepts a positive reviewCount, so recipes without written reviews leave it out.
+				if ( isset( $rating['type']['comment'] ) && 0 < intval( $rating['type']['comment'] ) ) {
+					$metadata['aggregateRating']['reviewCount'] = intval( $rating['type']['comment'] );
+				}
+
 				// Get comments given to parent post.
 				if ( $recipe->parent_post_id() ) {
 					// Get featured comments.
@@ -1268,7 +1289,6 @@ class WPRM_Metadata {
 
 						if ( $reviews ) {
 							$metadata['review'] = $reviews;
-							$metadata['aggregateRating']['reviewCount'] = count( $reviews );
 						}
 					}
 				}

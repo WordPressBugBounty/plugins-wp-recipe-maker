@@ -257,6 +257,12 @@ export default class Recipe extends Component {
         let historyPast = prevState.historyPast;
         const currentRecipeSnapshot = this.cloneRecipe(prevState.recipe);
 
+        // Leaving an unchanged text input closes no edit. In particular, focusing a
+        // field after Undo and then clicking Redo must not discard the redo stack.
+        if ( 'debounced' === mode && historyBoundary && ! recipeChanged && ! this.historyPendingSnapshot ) {
+            return { historyPast, historyFuture: prevState.historyFuture };
+        }
+
         if ( 'debounced' === mode ) {
             const pendingKey = historyKey || '__default__';
 

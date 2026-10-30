@@ -29,6 +29,25 @@ class WPRM_Post_Type {
 
 		add_filter( 'comments_open', array( __CLASS__, 'comments_open' ), 10, 2 );
 		add_filter( 'post_type_link', array( __CLASS__, 'recipe_permalink' ), 10, 2 );
+		add_filter( 'is_protected_meta', array( __CLASS__, 'protect_meta' ), 10, 3 );
+	}
+
+	/**
+	 * Keep our post meta (wprm_ and wprmp_ for Premium) out of WordPress's generic Custom Fields editor.
+	 * Recipes and lists are saved through the plugin's own sanitizing code instead.
+	 *
+	 * @since	10.9.2
+	 * @param	bool   $protected Whether the meta key is protected.
+	 * @param	string $meta_key  Meta key being checked.
+	 * @param	string $meta_type Type of metadata.
+	 * @return	bool
+	 */
+	public static function protect_meta( $protected, $meta_key, $meta_type ) {
+		if ( 'post' === $meta_type && is_string( $meta_key ) && ( 0 === strpos( $meta_key, 'wprm_' ) || 0 === strpos( $meta_key, 'wprmp_' ) ) ) {
+			return true;
+		}
+
+		return $protected;
 	}
 
 	/**

@@ -99,6 +99,11 @@ class WPRM_Metadata_Yoast_Seo extends \Yoast\WP\SEO\Generators\Schema\Abstract_S
 	 * @return array|bool $graph A graph piece on success, false on failure.
 	 */
 	public function generate() {
+		// The recipe was selected earlier, so check the page again before outputting it.
+		if ( ! $this->recipe || ! WPRM_Metadata::page_allows_metadata() ) {
+			return false;
+		}
+
 		$metadata = WPRM_Metadata::get_sanitized_metadata( $this->recipe );
 
 		// Prevent errors if Schema_IDs are suddenly gone.

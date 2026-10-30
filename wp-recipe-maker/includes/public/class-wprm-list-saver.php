@@ -78,15 +78,23 @@ class WPRM_List_Saver {
 					}
 
 					// Sanitize item fields.
+					$data['id'] = isset( $data['id'] ) ? intval( $data['id'] ) : 0;
 					$data['link'] = sanitize_text_field( $data['link'] );
-					$data['nofollow'] = $data['nofollow'] ? '1' : '';
-					$data['newtab'] = $data['newtab'] ? '1' : '';
+					$data['nofollow'] = ! empty( $data['nofollow'] ) ? '1' : '';
+					$data['newtab'] = ! empty( $data['newtab'] ) ? '1' : '';
 					$data['image'] = intval( $data['image'] );
 					$data['image_url'] = sanitize_text_field( $data['image_url'] );
 					$data['credit'] = sanitize_text_field( $data['credit'] );
 					$data['name'] = sanitize_text_field( $data['name'] );
 					$data['button'] = sanitize_text_field( $data['button'] );
 					$data['summary'] = WPRM_Recipe_Sanitizer::sanitize_html( $data['summary'] );
+
+					if ( isset( $data['template'] ) ) {
+						$data['template'] = sanitize_text_field( $data['template'] );
+					}
+
+					// Only keep the fields a roundup item uses. Every field ends up in a shortcode attribute.
+					$data = array_intersect_key( $data, array_flip( array( 'type', 'id', 'link', 'nofollow', 'newtab', 'image', 'image_url', 'credit', 'name', 'button', 'summary', 'template' ) ) );
 				}
 				
 				if ( 'text' === $item['type'] ) {
@@ -210,13 +218,26 @@ class WPRM_List_Saver {
 			$list_ids = array_diff( $list_ids, array( $post->ID ) );
 		}
 
+		// Only update lists the user saving this post is allowed to edit.
+		foreach ( $list_ids as $index => $list_id ) {
+			if ( WPRM_LIST_POST_TYPE !== get_post_type( $list_id ) || ! current_user_can( 'edit_post', $list_id ) ) {
+				unset( $list_ids[ $index ] );
+			}
+		}
+		$list_ids = array_values( $list_ids );
+
 		if ( count( $list_ids ) > 0 ) {
+			$acting_user_id = get_current_user_id();
+
 			// Immediately update when importing, otherwise do on next load to prevent issues with other plugins.
 			if ( isset( $_POST['importer_uid'] ) || ( isset( $_POST['action'] ) && 'wprm_finding_parents' === $_POST['action'] ) ) { // Input var okay.
-				self::update_lists_in_post( $post->ID, $list_ids );
+				self::update_lists_in_post( $post->ID, $list_ids, $acting_user_id );
 			} else {
 				$post_lists_to_update = get_option( 'wprm_post_lists_to_update', array() );
-				$post_lists_to_update[ $post->ID ] = $list_ids;
+				$post_lists_to_update[ $post->ID ] = array(
+					'user_id'  => $acting_user_id,
+					'list_ids' => $list_ids,
+				);
 				update_option( 'wprm_post_lists_to_update', $post_lists_to_update );
 			}
 		}
@@ -242,7 +263,7 @@ class WPRM_List_Saver {
 			$ids = $query->posts;
 
 			foreach ( $ids as $id ) {
-				if ( ! in_array( $id, $list_ids ) ) {
+				if ( ! in_array( $id, $list_ids ) && current_user_can( 'edit_post', $id ) ) {
 					delete_post_meta( $id, 'wprm_parent_post_id' );
 				}
 			}
@@ -262,10 +283,13 @@ class WPRM_List_Saver {
 				$i = 0;
 				while ( $i < 10 && ! empty( $post_lists_to_update ) ) {
 					// Get first post to update the lists for.
-					$list_ids = reset( $post_lists_to_update );
+					$update = reset( $post_lists_to_update );
 					$post_id = key( $post_lists_to_update );
 
-					self::update_lists_in_post( $post_id, $list_ids );
+					// Entries without an acting user predate the authorization check and cannot be processed safely.
+					if ( is_array( $update ) && isset( $update['user_id'], $update['list_ids'] ) && is_array( $update['list_ids'] ) ) {
+						self::update_lists_in_post( $post_id, $update['list_ids'], intval( $update['user_id'] ) );
+					}
 
 					// Update remaing post/lists to update.
 					unset( $post_lists_to_update[ $post_id ] );
@@ -281,11 +305,13 @@ class WPRM_List_Saver {
 	 * Update lists with post data.
 	 *
 	 * @since	9.0.0
-	 * @param	mixed $post_id    Post to use the data from.
-	 * @param	array $list_ids Lists to update.
+	 * @param	mixed    $post_id        Post to use the data from.
+	 * @param	array    $list_ids       Lists to update.
+	 * @param	int|null $acting_user_id User that requested the update. Defaults to the current user for direct calls.
 	 */
-	public static function update_lists_in_post( $post_id, $list_ids ) {
+	public static function update_lists_in_post( $post_id, $list_ids, $acting_user_id = null ) {
 		$post = get_post( $post_id );
+		$acting_user_id = is_null( $acting_user_id ) ? get_current_user_id() : intval( $acting_user_id );
 
 		// Can happen when revision was scheduled and already removed.
 		if ( ! $post ) {
@@ -333,6 +359,11 @@ class WPRM_List_Saver {
 					continue;
 				}
 
+				// Check the permissions of the user that originally requested this update.
+				if ( ! self::user_can_edit_list( $acting_user_id, $list_id ) ) {
+					continue;
+				}
+
 				$list = array(
 					'ID'          	=> $list_id,
 					'post_status' 	=> $list_post_status,
@@ -349,6 +380,10 @@ class WPRM_List_Saver {
 		} else {
 			// Parent got deleted, set as draft and remove parent post relation.
 			foreach ( $list_ids as $list_id ) {
+				if ( ! self::user_can_edit_list( $acting_user_id, $list_id ) ) {
+					continue;
+				}
+
 				$current_parent_id = intval( get_post_meta( $list_id, 'wprm_parent_post_id', true ) );
 
 				if ( $current_parent_id && intval( $post_id ) !== $current_parent_id ) {
@@ -364,6 +399,21 @@ class WPRM_List_Saver {
 				delete_post_meta( $list_id, 'wprm_parent_post_id' );
 			}
 		}
+	}
+
+	/**
+	 * Check if a user is allowed to edit a list.
+	 *
+	 * @since	10.9.2
+	 * @param	int $user_id User to check.
+	 * @param	int $list_id List to check.
+	 * @return	bool
+	 */
+	private static function user_can_edit_list( $user_id, $list_id ) {
+		$user_id = intval( $user_id );
+		$list_id = intval( $list_id );
+
+		return $user_id && WPRM_LIST_POST_TYPE === get_post_type( $list_id ) && user_can( $user_id, 'edit_post', $list_id );
 	}
 }
 

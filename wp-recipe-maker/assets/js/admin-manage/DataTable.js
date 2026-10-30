@@ -653,6 +653,10 @@ export default class DataTable extends Component {
     refreshData() {
         if ( this.refReactTable ) {
             this.refReactTable.fireFetchData();
+        } else {
+            // Table isn't mounted when the first recipe empty state is showing.
+            // Switching to loading mounts it, which triggers a fetch on mount.
+            this.setState( { loading: true } );
         }
     }
 

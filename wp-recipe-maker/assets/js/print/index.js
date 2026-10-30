@@ -95,27 +95,33 @@ window.WPRMPrint = {
         document.dispatchEvent( new Event( 'wprmPrintInit' ) );
 
         // Check for print args set in local storage. Needs to happen after init.
-        let args = localStorage.getItem( 'wprmPrintArgs' );
-        localStorage.removeItem( 'wprmPrintArgs' );
-
-        if ( args ) {
-            args = JSON.parse( args );
-            this.maybeSetStoredArgs( args );
+        // Storage can be unavailable or hold invalid data, the opener's onload handler can still pass the args.
+        let args = false;
+        try {
+            args = localStorage.getItem( 'wprmPrintArgs' );
+            localStorage.removeItem( 'wprmPrintArgs' );
+            args = args ? JSON.parse( args ) : false;
+        } catch {
+            args = false;
         }
+
+        this.maybeSetStoredArgs( args );
     },
     maybeSetStoredArgs( args ) {
-        if ( ! args ) {
+        if ( ! args || 'object' !== typeof args ) {
             return;
         }
 
-        if ( args.hasOwnProperty( 'id' ) ) {
+        const hasArg = ( key ) => Object.prototype.hasOwnProperty.call( args, key );
+
+        if ( hasArg( 'id' ) ) {
             const firstRecipe = document.querySelector( '#wprm-print-recipe-0' );
             const firstRecipeId = firstRecipe && firstRecipe.dataset.hasOwnProperty( 'recipeId' ) ? parseInt( firstRecipe.dataset.recipeId ) : false;
 
             if ( firstRecipeId && firstRecipeId === parseInt( args.id ) ) {
                 this.setArgs( args );
             }
-        } else if ( args.hasOwnProperty( 'collection' ) && args.hasOwnProperty( 'recipes' ) ) {
+        } else if ( hasArg( 'collection' ) && hasArg( 'recipes' ) ) {
             const collectionPrintApp = document.querySelector( '#wprm-recipe-collections-print-app' );
 
             if ( collectionPrintApp ) {

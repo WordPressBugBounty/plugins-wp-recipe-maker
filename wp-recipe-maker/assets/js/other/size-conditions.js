@@ -66,10 +66,22 @@
     }
   }
 
+  // React overwrites the class attribute when it re-renders a container with a different className
+  // (e.g. switching templates in the Template Editor preview), dropping our classes while the width stays
+  // the same, so the ResizeObserver never fires. Re-apply when that happens. Checking for the classes
+  // first prevents a loop, since apply() itself changes the class attribute.
+  const classMo = new MutationObserver(muts => {
+    for (const m of muts){
+      const el = m.target;
+      if (!el.classList.contains(MIN(BREAKPOINTS[0])) && !el.classList.contains(MAX(BREAKPOINTS[0]))) apply(el);
+    }
+  });
+
   function observe(container){
     if (observed.has(container)) return;
     observed.add(container);
     ro && ro.observe(container);
+    classMo.observe(container, { attributes: true, attributeFilter: ['class'] });
     apply(container);
   }
 

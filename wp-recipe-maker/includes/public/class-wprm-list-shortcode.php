@@ -58,6 +58,10 @@ class WPRM_List_Shortcode {
 			}
 
 			foreach ( $items as $item ) {
+				if ( ! is_array( $item ) || ! isset( $item['type'], $item['data'] ) || ! is_array( $item['data'] ) ) {
+					continue;
+				}
+
 				if ( 'roundup' === $item['type'] ) {
 					$data = $item['data'];
 
@@ -75,6 +79,11 @@ class WPRM_List_Shortcode {
 					// Generate and process shortcode immediately to use the position context.
 					$shortcode = '[wprm-recipe-roundup-item ';
 					foreach ( $data as $key => $value ) {
+						$key = sanitize_key( $key );
+						if ( ! $key || ! is_scalar( $value ) ) {
+							continue;
+						}
+
 						$shortcode .= $key . '="' . self::clean_up_shortcode_attribute( $value ) . '" ';
 					}
 					$shortcode = trim( $shortcode ) . ']';
@@ -83,7 +92,7 @@ class WPRM_List_Shortcode {
 					$output .= do_shortcode( $shortcode );
 				}
 
-				if ( 'text' === $item['type'] ) {					
+				if ( 'text' === $item['type'] && isset( $item['data']['text'] ) && is_string( $item['data']['text'] ) ) {
 					$output .= do_shortcode( $item['data']['text'] );
 				}
 			}
@@ -132,6 +141,10 @@ class WPRM_List_Shortcode {
 		$value = preg_replace('/\x5B/', '%5B', $value); // \x5B is the hex code for '['
 		$value = preg_replace('/\x5D/', '%5D', $value); // \x5D is the hex code for ']'
 		$value = preg_replace('/\r?\n|\r/', '%0A', $value);
+
+		// Encode angle brackets so WordPress can't read part of the shortcode as an HTML tag and skip it.
+		// The roundup shortcode decodes the text fields again before sanitizing them.
+		$value = str_replace( array( '<', '>' ), array( '%3C', '%3E' ), $value );
 
 		return $value;
 	}

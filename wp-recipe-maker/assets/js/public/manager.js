@@ -77,6 +77,27 @@ window.WPRecipeMaker.manager = {
 			});
 		});
 	},
+	getPublicPostCandidates: ( id ) => {
+		let candidates = [];
+
+		// Context the server already validated for this recipe, if any.
+		if ( window.hasOwnProperty( 'wprm_recipes' ) && window.wprm_recipes.hasOwnProperty( `recipe-${id}` ) ) {
+			const context = window.wprm_recipes[ `recipe-${id}` ].public_render_context;
+
+			if ( context && context.wprm_public_post ) {
+				candidates.push( parseInt( context.wprm_public_post ) );
+			}
+		}
+
+		// Posts rendering this recipe, also for cards added through AJAX. The server validates these.
+		const containers = document.querySelectorAll( `[data-recipe-id="${ id }"][data-wprm-public-post]` );
+		for ( let container of containers ) {
+			candidates.push( parseInt( container.dataset.wprmPublicPost ) );
+		}
+
+		// Try each distinct rendering post so stale candidates cannot hide a later accessible instance.
+		return [ ...new Set( candidates.filter( ( candidate ) => 0 < candidate ) ) ];
+	},
 	loadRecipeDataFromAPI: ( id ) => {
 		let headers = {
 			'Accept': 'application/json',
@@ -88,23 +109,43 @@ window.WPRecipeMaker.manager = {
 			headers['X-WP-Nonce'] = wprm_public.api_nonce;
 		}
 
-		return new Promise((resolve, reject) => {
-			fetch(`${wprm_public.endpoints.manage}/recipe/${ id }`, {
+		const candidates = window.WPRecipeMaker.manager.getPublicPostCandidates( id );
+
+		const load = ( publicPost ) => {
+			let body = {
+				format: 'frontend',
+			};
+
+			if ( publicPost ) {
+				body.public_render_context = {
+					wprm_public_post: publicPost,
+				};
+			}
+
+			return fetch(`${wprm_public.endpoints.manage}/recipe/${ id }`, {
 				method: 'POST',
 				headers,
 				credentials: 'same-origin',
-				body: JSON.stringify({
-					format: 'frontend',
-				}),
+				body: JSON.stringify( body ),
 			}).then( (response) => {
 				if ( response.ok ) {
 					return response.json();
 				}
 				return false;
-			}).then( ( result ) => {
-				resolve( result );
 			});
-		});
+		};
+
+		// Without a candidate, keep the single ordinary request. Otherwise try the next candidate when one is rejected.
+		const loadFrom = ( index ) => {
+			return load( candidates[ index ] ).then( ( result ) => {
+				if ( ! result && index + 1 < candidates.length ) {
+					return loadFrom( index + 1 );
+				}
+				return result;
+			});
+		};
+
+		return loadFrom( 0 );
 	},
 	loadRecipeObject: ( id, data ) => {
 		let recipe = {

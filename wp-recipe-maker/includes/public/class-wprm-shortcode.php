@@ -753,14 +753,21 @@ class WPRM_Shortcode {
 				$align_class = ' align' . esc_attr( $atts['align'] );
 			}
 
+			// Lets frontend data load through the API when footer data is missing, validated again there.
+			$public_post_attribute = '';
+			$public_post_candidate = $atts['preview'] ? 0 : WPRM_Recipe_Manager::public_render_post_candidate( $recipe->id(), $public_post_id );
+			if ( $public_post_candidate ) {
+				$public_post_attribute = ' data-wprm-public-post="' . esc_attr( $public_post_candidate ) . '"';
+			}
+
 			if ( $recipe_template && 'snippet-' === substr( $recipe_template, 0, 8 ) ) {
-				$output = '<div id="wprm-recipe-snippet-container-' . esc_attr( $recipe->id() ) . '" class="wprm-recipe-snippet-container' . esc_attr( $align_class ) . '" data-recipe-id="' . esc_attr( $recipe->id() ) . '">';
+				$output = '<div id="wprm-recipe-snippet-container-' . esc_attr( $recipe->id() ) . '" class="wprm-recipe-snippet-container' . esc_attr( $align_class ) . '" data-recipe-id="' . esc_attr( $recipe->id() ) . '"' . $public_post_attribute . '>';
 			} else {
-				$output = '<div id="wprm-recipe-container-' . esc_attr( $recipe->id() ) . '" class="wprm-recipe-container' . esc_attr( $align_class ) . '" data-recipe-id="' . esc_attr( $recipe->id() ) . '" data-servings="' . esc_attr( $recipe->servings() ) . '">';
+				$output = '<div id="wprm-recipe-container-' . esc_attr( $recipe->id() ) . '" class="wprm-recipe-container' . esc_attr( $align_class ) . '" data-recipe-id="' . esc_attr( $recipe->id() ) . '" data-servings="' . esc_attr( $recipe->servings() ) . '"' . $public_post_attribute . '>';
 			}
 
 			if ( 'amp' === $type || 'single' === $type ) {
-				if ( 'recipe' === WPRM_Settings::get( 'metadata_location' ) && ! WPRM_Metadata::use_yoast_seo_integration() && WPRM_Metadata::should_output_metadata_for( $recipe->id() ) ) {
+				if ( 'recipe' === WPRM_Settings::get( 'metadata_location' ) && ! WPRM_Metadata::use_yoast_seo_integration() && WPRM_Metadata::should_output_metadata_for( $recipe->id() ) && WPRM_Metadata::page_allows_metadata( $public_post_id ) ) {
 					$metadata = WPRM_Metadata::get_sanitized_metadata( $recipe );
 					$metadata_output = WPRM_Metadata::get_metadata_output( $recipe, $metadata );
 
